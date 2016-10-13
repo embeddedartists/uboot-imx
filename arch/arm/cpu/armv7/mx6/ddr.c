@@ -243,7 +243,7 @@ void mx6sdl_dram_iocfg(unsigned width,
  */
 #define MR(val, ba, cmd, cs1) \
 	((val << 16) | (1 << 15) | (cmd << 4) | (cs1 << 3) | ba)
-#ifdef CONFIG_MX6SX
+#if defined(CONFIG_MX6SX) || defined(CONFIG_MX6UL)
 #define MMDC1(entry, value)	do {} while (0)
 #else
 #define MMDC1(entry, value) do { mmdc1->entry = value; } while (0)
@@ -253,7 +253,7 @@ void mx6_dram_cfg(const struct mx6_ddr_sysinfo *sysinfo,
 		  const struct mx6_ddr3_cfg *ddr3_cfg)
 {
 	volatile struct mmdc_p_regs *mmdc0;
-#ifndef CONFIG_MX6SX
+#if !defined(CONFIG_MX6SX) && !defined(CONFIG_MX6UL)
 	volatile struct mmdc_p_regs *mmdc1;
 #endif
 	u32 val;
@@ -269,7 +269,7 @@ void mx6_dram_cfg(const struct mx6_ddr_sysinfo *sysinfo,
 	int cs;
 
 	mmdc0 = (struct mmdc_p_regs *)MMDC_P0_BASE_ADDR;
-#ifndef CONFIG_MX6SX
+#if !defined(CONFIG_MX6SX) && !defined(CONFIG_MX6UL)
 	mmdc1 = (struct mmdc_p_regs *)MMDC_P1_BASE_ADDR;
 #endif
 

@@ -19,6 +19,8 @@ obj-y  += timer.o
 endif
 ifeq ($(SOC),$(filter $(SOC),mx7))
 obj-y	+= cpu.o
+obj-$(CONFIG_IMX_VIDEO_SKIP) += video.o
+obj-$(CONFIG_CMD_EADISP) += eadisp.o eatouch.o
 obj-$(CONFIG_SYS_I2C_MXC) += i2c-mxv7.o
 obj-$(CONFIG_GPT_TIMER) += timer.o
 obj-$(CONFIG_MXC_RDC) += rdc-sema.o
@@ -31,6 +33,7 @@ endif
 ifeq ($(SOC),$(filter $(SOC),mx6))
 obj-$(CONFIG_CMD_SATA) += sata.o
 obj-$(CONFIG_IMX_VIDEO_SKIP) += video.o
+obj-$(CONFIG_CMD_EADISP) += eadisp.o eatouch.o
 obj-$(CONFIG_MXC_RDC) += rdc-sema.o
 obj-$(CONFIG_GPT_TIMER) += timer.o
 obj-$(CONFIG_SYSCOUNTER_TIMER) += syscounter.o

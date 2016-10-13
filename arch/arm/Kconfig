@@ -580,6 +580,31 @@ config TARGET_PICOSOM_IMX6UL
         bool "Support picosom-imx6ul"
         select CPU_V7
 
+config TARGET_MX6SXEA_COM
+        bool "Support mx6sxea-com"
+        select CPU_V7
+        select SUPPORT_SPL
+
+config TARGET_MX6QEA_COM
+        bool "Support mx6qea-com"
+        select CPU_V7
+        select SUPPORT_SPL
+
+config TARGET_MX6ULEA_COM
+        bool "Support mx6ulea-com"
+        select CPU_V7
+	select SUPPORT_SPL
+
+config TARGET_MX7DEA_UCOM
+	bool "Support mx7dea-ucom"
+	select CPU_V7
+	select SUPPORT_SPL
+
+config TARGET_MX7DEA_COM
+        bool "Support mx7dea-com"
+        select CPU_V7
+        select SUPPORT_SPL
+
 config TARGET_GW_VENTANA
 	bool "Support gw_ventana"
 	select CPU_V7
@@ -852,6 +877,11 @@ source "board/creative/xfi3/Kconfig"
 source "board/davedenx/qong/Kconfig"
 source "board/denx/m28evk/Kconfig"
 source "board/denx/m53evk/Kconfig"
+source "board/embeddedartists/mx6sxea-com/Kconfig"
+source "board/embeddedartists/mx6qea-com/Kconfig"
+source "board/embeddedartists/mx6ulea-com/Kconfig"
+source "board/embeddedartists/mx7dea-ucom/Kconfig"
+source "board/embeddedartists/mx7dea-com/Kconfig"
 source "board/embest/mx6boards/Kconfig"
 source "board/esg/ima3-mx53/Kconfig"
 source "board/freescale/ls2085a/Kconfig"
