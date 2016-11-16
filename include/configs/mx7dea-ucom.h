@@ -333,6 +333,7 @@
 #define CONFIG_SYS_USE_NAND
 #define CONFIG_ENV_IS_IN_NAND
 #else
+#define CONFIG_SYS_USE_QSPI    /* Enable the QSPI flash by default */
 #define CONFIG_ENV_IS_IN_MMC
 #endif
 
@@ -361,6 +362,7 @@
 #define CONFIG_CMD_SF
 #define	CONFIG_SPI_FLASH
 #define	CONFIG_SPI_FLASH_MACRONIX
+#define	CONFIG_SPI_FLASH_STMICRO
 #define	CONFIG_SPI_FLASH_BAR
 #define	CONFIG_SF_DEFAULT_BUS		0
 #define	CONFIG_SF_DEFAULT_CS		0
