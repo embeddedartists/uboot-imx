@@ -15,7 +15,8 @@ struct touch_info_t {
 #define TOUCH_SITRONIX  2
 #define TOUCH_EGALAX    3
 #define TOUCH_FT5X06    4
-#define TOUCH_COUNT     5
+#define TOUCH_MXT1664   5
+#define TOUCH_COUNT     6
 	int	    type;
 
 	const char* alias;
@@ -36,6 +37,7 @@ void eatouch_init(void);
 	EATOUCH_CONTROLLER(_conn, 0x41, TOUCH_ILITEK,   ilitek_aim),\
 	EATOUCH_CONTROLLER(_conn, 0x55, TOUCH_SITRONIX, sitronix),\
 	EATOUCH_CONTROLLER(_conn, 0x04, TOUCH_EGALAX,   egalax_ts),\
-	EATOUCH_CONTROLLER(_conn, 0x38, TOUCH_FT5X06,   edt-ft5x06)
+	EATOUCH_CONTROLLER(_conn, 0x38, TOUCH_FT5X06,   edt-ft5x06), \
+	EATOUCH_CONTROLLER(_conn, 0x4b, TOUCH_MXT1664,   mxt1664_ts)
 
 #endif /* __EATOUCH_H_ */

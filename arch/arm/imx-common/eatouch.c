@@ -68,6 +68,7 @@ static const char *const short_names[] = {
 [TOUCH_FT5X06] = "ft5x06",
 [TOUCH_ILITEK] = "ilitek",
 [TOUCH_SITRONIX] = "sitronix",
+[TOUCH_MXT1664] = "mxt1664",
 };
 
 static struct touch_info_t controllers[NUM_CONNECTORS][TOUCH_COUNT] = {

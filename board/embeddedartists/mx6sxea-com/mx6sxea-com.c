@@ -519,8 +519,7 @@ void board_enable_lvds0(const struct display_info_t *di, int enable)
 		if (di->pixfmt == IPU_PIX_FMT_RGB24) {
 			/* enable_lvds() defaults to 18-bit data width */
 			struct iomuxc *iomux = (struct iomuxc *)IOMUXC_BASE_ADDR;
-			u32 log;
-			reg = readl(&iomux->gpr[6]);
+			u32 reg = readl(&iomux->gpr[6]);
 			reg |= IOMUXC_GPR2_DATA_WIDTH_CH0_24BIT;
 			writel(reg, &iomux->gpr[6]);
 		}
