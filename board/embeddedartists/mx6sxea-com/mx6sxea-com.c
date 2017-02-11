@@ -516,6 +516,14 @@ void board_enable_lvds0(const struct display_info_t *di, int enable)
 	if (enable) {
 		enable_lcdif_clock(base_addr);
 		enable_lvds(base_addr);
+		if (di->pixfmt == IPU_PIX_FMT_RGB24) {
+			/* enable_lvds() defaults to 18-bit data width */
+			struct iomuxc *iomux = (struct iomuxc *)IOMUXC_BASE_ADDR;
+			u32 log;
+			reg = readl(&iomux->gpr[6]);
+			reg |= IOMUXC_GPR2_DATA_WIDTH_CH0_24BIT;
+			writel(reg, &iomux->gpr[6]);
+		}
 
 		imx_iomux_v3_setup_multiple_pads(lvds_ctrl_pads,
 						ARRAY_SIZE(lvds_ctrl_pads));
@@ -554,6 +562,8 @@ void board_enable_rgb(const struct display_info_t *di, int enable)
 static const struct display_info_t displays[] = {
 	/* LVDS */
 	EADISP_HANNSTAR10(LVDS0, 0, 0),
+	EADISP_LP101WH4_X11(LVDS0, 0, 0),
+	EADISP_LP101WH4(LVDS0, 0, 0),
 
 	/* RGB */
 	EADISP_INNOLUX_AT070TN(RGB, 0, 0),

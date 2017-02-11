@@ -70,6 +70,57 @@ void eadisp_setup_display(const struct display_info_t *displays, int cnt);
 		.vmode          = FB_VMODE_NONINTERLACED\
 	}\
 }
+#define EADISP_LP101WH4(_mode, _detect, _bus) \
+{\
+	.bus	= _bus,\
+	.addr	= 0x4,\
+	.pixfmt	= IPU_PIX_FMT_RGB24,\
+	.detect	= _detect ? eadisp_detect_i2c : NULL,\
+	.enable	= eadisp_enable_fb,\
+	.fbtype = FB_##_mode,\
+	.misc   = MISC_DE_ACTIVE_HIGH,\
+	.mode	= {\
+		.name           = "lp101wh4",\
+		.refresh        = 60,\
+		.xres           = 1366,\
+		.yres           = 768,\
+		.pixclock       = 1000000000000ULL/((1366+80+48+32)*(768+14+3+5)*60),\
+		.left_margin    = 80,\
+		.right_margin   = 48,\
+		.upper_margin   = 14,\
+		.lower_margin   = 3,\
+		.hsync_len      = 32,\
+		.vsync_len      = 5,\
+		.sync           = FB_SYNC_EXT,\
+		.vmode          = FB_VMODE_NONINTERLACED\
+	}\
+}
+
+#define EADISP_LP101WH4_X11(_mode, _detect, _bus) \
+{\
+	.bus	= _bus,\
+	.addr	= 0x4,\
+	.pixfmt	= IPU_PIX_FMT_RGB24,\
+	.detect	= _detect ? eadisp_detect_i2c : NULL,\
+	.enable	= eadisp_enable_fb,\
+	.fbtype = FB_##_mode,\
+	.misc   = MISC_DE_ACTIVE_HIGH,\
+	.mode	= {\
+		.name           = "lp101wh4_X11",\
+		.refresh        = 60,\
+		.xres           = 1360,\
+		.yres           = 768,\
+		.pixclock       = 1000000000000ULL/((1360+80+48+32)*(768+14+3+5)*60),\
+		.left_margin    = 80,\
+		.right_margin   = 48,\
+		.upper_margin   = 14,\
+		.lower_margin   = 3,\
+		.hsync_len      = 32,\
+		.vsync_len      = 5,\
+		.sync           = FB_SYNC_EXT,\
+		.vmode          = FB_VMODE_NONINTERLACED\
+	}\
+}
 
 /* RGB settings */
 #define EADISP_INNOLUX_AT070TN(_mode, _detect, _bus) \
