@@ -40,9 +40,26 @@ static int mmc_load_image_raw_sector(struct mmc *mmc, unsigned long sector)
 
 	spl_parse_image_header(header);
 
-	/* convert size to sectors - round up */
-	image_size_sectors = (spl_image.size + mmc->read_bl_len - 1) /
-			     mmc->read_bl_len;
+#ifdef CONFIG_SECURE_BOOT
+        /*
+         * A signed image will have IVT + CSF at end of image
+         * We must read enough of the image into SDRAM to be able
+         * to verify signature.
+         * - IVT must be added to a 4K boundary
+         * - IVT header is 32 bytes (0x20)
+         * - Read enough to get CSF. Reading 8K although CSF is smaller
+         */
+
+        /* align size to 4K */
+        image_size_sectors = (spl_image.size + 0x1000 - 1) & ~(0x1000 - 1);
+        /* add ivt size (0x20) + CSF pad size (8K) */
+        image_size_sectors = (image_size_sectors + 0x20 + 0x2000 + mmc->read_bl$
+                                mmc->read_bl_len;
+#else
+        /* convert size to sectors - round up */
+        image_size_sectors = (spl_image.size + mmc->read_bl_len - 1) /
+                                mmc->read_bl_len;
+#endif
 
 	/* Read the header too to avoid extra memcpy */
 	count = mmc->block_dev.block_read(&mmc->block_dev, sector,

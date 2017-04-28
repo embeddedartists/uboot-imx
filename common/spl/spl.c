@@ -127,6 +127,17 @@ __weak void __noreturn jump_to_image_no_args(struct spl_image_info *spl_image)
 	image_entry_noargs_t image_entry =
 		(image_entry_noargs_t)(unsigned long)spl_image->entry_point;
 
+#ifdef CONFIG_SECURE_BOOT
+        extern uint32_t authenticate_image(
+                        uint32_t ddr_start, uint32_t image_size);
+
+        if (authenticate_image(spl_image->load_addr, spl_image->size) == 0) {
+                debug("SPL failed to Authenticate image, Please check\n");
+                hang();
+        }
+#endif
+
+
 	debug("image entry point: 0x%X\n", spl_image->entry_point);
 	image_entry();
 }

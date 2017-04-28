@@ -48,6 +48,18 @@ config TARGET_MX7D_19X19_DDR3_ARM2
 	select DM
 	select DM_THERMAL
 
+config TARGET_MX7DEA_UCOM
+	bool "Support mx7dea-ucom"
+	select MX7D
+	select DM
+	select DM_THERMAL
+
+config TARGET_MX7DEA_COM
+	bool "Support mx7dea-com"
+	select MX7D
+	select DM
+	select DM_THERMAL
+
 endchoice
 
 config SYS_SOC
@@ -58,5 +70,7 @@ source "board/freescale/mx7d_12x12_lpddr3_arm2/Kconfig"
 source "board/freescale/mx7d_12x12_ddr3_arm2/Kconfig"
 source "board/freescale/mx7d_19x19_lpddr3_arm2/Kconfig"
 source "board/freescale/mx7d_19x19_ddr3_arm2/Kconfig"
+source "board/embeddedartists/mx7dea-ucom/Kconfig"
+source "board/embeddedartists/mx7dea-com/Kconfig"
 
 endif

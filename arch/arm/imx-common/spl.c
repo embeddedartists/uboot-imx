@@ -66,6 +66,51 @@ u32 spl_boot_device(void)
 	}
 	return BOOT_DEVICE_NONE;
 }
+#elif defined(CONFIG_MX7)
+
+/* determine boot device from SRC_SBMR1 (BOOT_CFG[4:1]) or SRC_GPR9 register */
+u32 spl_boot_device(void)
+{
+        struct src *psrc = (struct src *)SRC_BASE_ADDR;
+        unsigned int gpr10_boot = readl(&psrc->gpr10) & (1 << 28);
+        unsigned reg = gpr10_boot ? readl(&psrc->gpr9) : readl(&psrc->sbmr1);
+
+        /* BOOT_CFG[15:12] - see IMX7DRM Table 6-33 */
+        switch ((reg & 0x0000F000) >> 12) {
+	/* SD/eSD/SDXC: */
+	case 0x1:
+		return BOOT_DEVICE_MMC1;
+
+	/* MMC/eMMC */
+	case 0x2:
+		return BOOT_DEVICE_MMC1;
+
+	/* NAND Flash */
+	case 0x3:
+		return BOOT_DEVICE_NAND;
+
+	/* QSPI */
+	case 0x4:
+		// TODO
+		break;
+
+	/* NOR/OneNAND (EIM) */
+	case 0x5:
+		// BOOT_CFG[11]: NOR/OneNAND selection */
+		if ((reg & 0x00000800) >> 11)
+			return BOOT_DEVICE_ONENAND;
+		else
+			return BOOT_DEVICE_NOR; 
+		break;
+
+	/* Serial ROM (SPI) */
+	case 0x6:
+		return BOOT_DEVICE_SPI;
+
+        }
+        return BOOT_DEVICE_NONE;
+}
+
 #endif
 
 #if defined(CONFIG_SPL_MMC_SUPPORT)

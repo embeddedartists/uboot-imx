@@ -1,0 +1,15 @@
+if TARGET_MX7DEA_COM
+
+config SYS_BOARD
+	default "mx7dea-com"
+
+config SYS_VENDOR
+	default "embeddedartists"
+
+config SYS_SOC
+	default "mx7"
+
+config SYS_CONFIG_NAME
+	default "mx7dea-com"
+
+endif
