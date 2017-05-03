@@ -19,8 +19,9 @@ struct ea_ddr_cfg
 	u32 val;
 };
 
-#define EA_DDR_LIST_BUF_SZ (16)
-static struct ea_ddr_cfg ddr_list_buf[EA_DDR_LIST_BUF_SZ];
+
+#define EA_DDR_LIST_BUF_SZ (8)
+//static struct ea_ddr_cfg ddr_list_buf[EA_DDR_LIST_BUF_SZ];
 
 /*
  * Default values for DDR initialization in case eeprom data 
@@ -485,7 +486,6 @@ int ea_eeprom_init(void)
 	return 0;
 }
 
-
 int ea_eeprom_get_config(ea_eeprom_config_t* config)
 {
 
@@ -493,12 +493,11 @@ int ea_eeprom_get_config(ea_eeprom_config_t* config)
 		return -1;
 	}
 
-	
-	if (i2c_read(EA_EEPROM_I2C_SLAVE, 
-		0, 
-		2, 
-		(uint8_t *)config, 
-		sizeof(ea_eeprom_config_t))) 
+	if (i2c_read(EA_EEPROM_I2C_SLAVE,
+		0,
+		2,
+		(uint8_t *)config,
+		sizeof(ea_eeprom_config_t)))
 	{
 		return -2;
 	}
@@ -516,7 +515,8 @@ static int intern_dram_init(void)
 	int toRead = 0;
 	int haveRead = 0;
 	int i;
-	volatile u32 *reg_ptr;	
+	volatile u32 *reg_ptr;
+	struct ea_ddr_cfg ddr_list_buf[EA_DDR_LIST_BUF_SZ];
 
 	if (ea_eeprom_get_config(&config) != 0) {
 		return -1;
@@ -534,11 +534,10 @@ static int intern_dram_init(void)
 			toRead*sizeof(struct ea_ddr_cfg))) 
 		{
 			return -2;
-		}	
+		}
 
 		config.num_reg_value_pairs -= toRead;
 		haveRead += toRead;
-
 		for (i = 0; i < toRead; i++) {
 			reg_ptr = (volatile u32 *)ddr_list_buf[i].addr;
 			*reg_ptr = ddr_list_buf[i].val;
@@ -551,14 +550,12 @@ static int intern_dram_init(void)
 	return 0;
 }
 
-
 int ea_eeprom_dram_init(void)
 {
 	int i = 0;
 	volatile u32 *reg_ptr;
 
 	if (intern_dram_init() != 0) {
-
 		// try with default values if we failed with eeprom data
 		for(i = 0; i < sizeof(ddr_init_default)/sizeof(struct ea_ddr_cfg); i++)
 		{

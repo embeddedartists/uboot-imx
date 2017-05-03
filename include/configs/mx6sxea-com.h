@@ -9,7 +9,7 @@
 
 #ifndef __MX6SXEA_COM_H
 #define __MX6SXEA_COM_H
-#define DEBUG
+/*#define DEBUG*/
 #include "mx6_common.h"
 
 #define CONFIG_DBG_MONITOR
