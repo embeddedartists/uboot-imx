@@ -1457,19 +1457,19 @@ int board_eth_init(bd_t *bis)
 	/* stored MAC addresses to env variables */
 	if (ea_eeprom_get_config(&config) == 0) {
 
-		if (is_valid_ether_addr(config.mac1) && !getenv("ethaddr")) {
+		if (is_valid_ethaddr(config.mac1) && !getenv("ethaddr")) {
 			eth_setenv_enetaddr("ethaddr", config.mac1);
 		}
 
-		if (is_valid_ether_addr(config.mac2) && !getenv("eth1addr")) {
+		if (is_valid_ethaddr(config.mac2) && !getenv("eth1addr")) {
 			eth_setenv_enetaddr("eth1addr", config.mac2);
 		}
 
-		if (is_valid_ether_addr(config.mac3) && !getenv("eth2addr")) {
+		if (is_valid_ethaddr(config.mac3) && !getenv("eth2addr")) {
 			eth_setenv_enetaddr("eth2addr", config.mac3);
 		}
 
-		if (is_valid_ether_addr(config.mac4) && !getenv("eth3addr")) {
+		if (is_valid_ethaddr(config.mac4) && !getenv("eth3addr")) {
 			eth_setenv_enetaddr("eth3addr", config.mac4);
 		}
 
