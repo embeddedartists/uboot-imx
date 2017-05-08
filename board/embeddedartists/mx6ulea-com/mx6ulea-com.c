@@ -8,6 +8,7 @@
 #include <asm/arch/iomux.h>
 #include <asm/arch/imx-regs.h>
 #include <asm/arch/crm_regs.h>
+#include <asm/arch/mx6ul_pins.h>
 #include <asm/arch/mx6-pins.h>
 #include <asm/arch/sys_proto.h>
 #include <asm/gpio.h>
@@ -31,7 +32,7 @@
 #include <usb.h>
 #include <usb/ehci-fsl.h>
 #include <power/pmic.h>
-#include <power/pfuze300_pmic.h>
+#include <power/pfuze3000_pmic.h>
 
 #ifdef CONFIG_FSL_FASTBOOT
 #include <fsl_fastboot.h>
@@ -551,58 +552,31 @@ int board_video_skip(void)
 #endif
 
 #ifdef CONFIG_FEC_MXC
-int board_eth_init(bd_t *bis)
-{
-	int ret;
-	ea_eeprom_config_t config;
-
-	setup_iomux_fec(CONFIG_FEC_ENET_DEV);
-
-	/* enet pwr en */
-	gpio_direction_output(IMX_GPIO_NR(5, 3) , 0);
-
-	ret = fecmxc_initialize_multi(bis, CONFIG_FEC_ENET_DEV,
-		CONFIG_FEC_MXC_PHYADDR, IMX_FEC_BASE);
-	if (ret)
-		printf("FEC%d MXC: %s:failed\n", CONFIG_FEC_ENET_DEV, __func__);
-
-	/* stored MAC addresses to env variables */
-	if (ea_eeprom_get_config(&config) == 0) {
-
-		if (is_valid_ether_addr(config.mac1) && !getenv("ethaddr")) {
-			eth_setenv_enetaddr("ethaddr", config.mac1);
-		}
-
-		if (is_valid_ether_addr(config.mac2) && !getenv("eth1addr")) {
-			eth_setenv_enetaddr("eth1addr", config.mac2);
-		}
-
-		if (is_valid_ether_addr(config.mac3) && !getenv("eth2addr")) {
-			eth_setenv_enetaddr("eth2addr", config.mac3);
-		}
-
-		if (is_valid_ether_addr(config.mac4) && !getenv("eth3addr")) {
-			eth_setenv_enetaddr("eth3addr", config.mac4);
-		}
-
-	}
-
-	return 0;
-}
 
 static int setup_fec(int fec_id)
 {
-	struct iomuxc_gpr_base_regs *const iomuxc_gpr_regs
-		= (struct iomuxc_gpr_base_regs *) IOMUXC_GPR_BASE_ADDR;
+	struct iomuxc *const iomuxc_regs = (struct iomuxc *)IOMUXC_BASE_ADDR;
 	int ret;
 
 	if (0 == fec_id) {
-		/* Use 50M anatop loopback REF_CLK1 for ENET1, clear gpr1[13], set gpr1[17]*/
-		clrsetbits_le32(&iomuxc_gpr_regs->gpr[1], IOMUX_GPR1_FEC1_MASK,
+                if (check_module_fused(MX6_MODULE_ENET1))
+                        return -1;
+
+		/*
+		 * Use 50M anatop loopback REF_CLK1 for ENET1, 
+		 * clear gpr1[13], set gpr1[17]
+		 */
+		clrsetbits_le32(&iomuxc_regs->gpr[1], IOMUX_GPR1_FEC1_MASK,
 				IOMUX_GPR1_FEC1_CLOCK_MUX1_SEL_MASK);
 	} else {
-		/* Use 50M anatop loopback REF_CLK2 for ENET2, clear gpr1[14], set gpr1[18]*/
-		clrsetbits_le32(&iomuxc_gpr_regs->gpr[1], IOMUX_GPR1_FEC2_MASK,
+                if (check_module_fused(MX6_MODULE_ENET2))
+                        return -1;
+
+		/* 
+		 * Use 50M anatop loopback REF_CLK2 for ENET2, 
+		 * clear gpr1[14], set gpr1[18]
+		 */
+		clrsetbits_le32(&iomuxc_regs->gpr[1], IOMUX_GPR1_FEC2_MASK,
 				IOMUX_GPR1_FEC2_CLOCK_MUX1_SEL_MASK);
 	}
 
@@ -615,16 +589,53 @@ static int setup_fec(int fec_id)
 	return 0;
 }
 
+int board_eth_init(bd_t *bis)
+{
+	ea_eeprom_config_t config;
+
+	setup_iomux_fec(CONFIG_FEC_ENET_DEV);
+
+	/* enet pwr en */
+	gpio_direction_output(IMX_GPIO_NR(5, 3) , 0);
+
+	/* stored MAC addresses to env variables */
+	if (ea_eeprom_get_config(&config) == 0) {
+
+		if (is_valid_ethaddr(config.mac1) && !getenv("ethaddr")) {
+			eth_setenv_enetaddr("ethaddr", config.mac1);
+		}
+
+		if (is_valid_ethaddr(config.mac2) && !getenv("eth1addr")) {
+			eth_setenv_enetaddr("eth1addr", config.mac2);
+		}
+
+		if (is_valid_ethaddr(config.mac3) && !getenv("eth2addr")) {
+			eth_setenv_enetaddr("eth2addr", config.mac3);
+		}
+
+		if (is_valid_ethaddr(config.mac4) && !getenv("eth3addr")) {
+			eth_setenv_enetaddr("eth3addr", config.mac4);
+		}
+
+	}
+
+	return fecmxc_initialize_multi(bis, CONFIG_FEC_ENET_DEV,
+                CONFIG_FEC_MXC_PHYADDR, IMX_FEC_BASE);
+}
+
+
 int board_phy_config(struct phy_device *phydev)
 {
 
 	phy_write(phydev, MDIO_DEVAD_NONE, 0x1f, 0x8190);
+	phy_write(phydev, MDIO_DEVAD_NONE, 0x16, 0x202);
 
 	if (phydev->drv->config)
 		phydev->drv->config(phydev);
 
 	return 0;
 }
+
 
 void board_get_hwaddr(int dev_id, unsigned char *mac)
 {
@@ -685,18 +696,17 @@ int board_ehci_hcd_init(int port)
 
 #ifdef CONFIG_POWER
 #define I2C_PMIC	0
-//static struct pmic *pfuze;
 int power_init_board(void)
 {
 	int ret;
 	u32 rev_id, value;
 	struct pmic *pfuze;
 
-	ret = power_pfuze300_init(I2C_PMIC);
+	ret = power_pfuze3000_init(I2C_PMIC);
 	if (ret)
 		return ret;
 
-	pfuze = pmic_get("PFUZE300");
+	pfuze = pmic_get("PFUZE3000");
 	if (!pfuze)
 		return -ENODEV;
 
@@ -704,59 +714,49 @@ int power_init_board(void)
 	if (ret)
 		return ret;
 
-//	ret = pfuze_mode_init(pfuze, APS_PFM);
-//	if (ret < 0)
-//		return ret;
+	pmic_reg_read(pfuze, PFUZE3000_DEVICEID, &value);
+	pmic_reg_read(pfuze, PFUZE3000_REVID, &rev_id);
+	printf("PMIC: PFUZE3000 DEV_ID=0x%x REV_ID=0x%x\n", value, rev_id);
 
-	pmic_reg_read(pfuze, PFUZE300_DEVICEID, &value);
-	pmic_reg_read(pfuze, PFUZE300_REVID, &rev_id);
-	printf("PMIC: DEV_ID=0x%x REV_ID=0x%x\n", value, rev_id);
-
-	/*
-	 * Our PFUZE0200 is PMPF0200X0AEP, the Pre-programmed OTP
-	 * Configuration is F0.
-	 * Default VOLT:
-	 * VSNVS_VOLT	|	3.0V
-	 * SW1AB	|	1.375V
-	 * SW2		|	3.3V
-	 * SW3A		|	1.5V
-	 * SW3B		|	1.5V
-	 * VGEN1	|	1.5V
-	 * VGEN2	|	1.5V
-	 * VGEN3	|	2.5V
-	 * VGEN4	|	1.8V
-	 * VGEN5	|	2.8V
-	 * VGEN6	|	3.3V
-	 *
-	 * According to schematic, we need SW3A 1.35V, SW3B 3.3V,
-	 * VGEN1 1.2V, VGEN2 1.5V, VGEN3 2.8V, VGEN4 1.8V,
-	 * VGEN5 3.3V, VGEN6 3.0V.
-	 *
-	 * Here we just use the default VOLT, but not configure
-	 * them, when needed, configure them to our requested voltage.
-	 */
-#if 0
-	/* set SW1AB standby volatage 0.975V */
-	pmic_reg_read(pfuze, PFUZE100_SW1ABSTBY, &value);
-	value &= ~0x3f;
-	value |= PFUZE100_SW1ABC_SETP(9750);
-	pmic_reg_write(pfuze, PFUZE100_SW1ABSTBY, value);
-
-	/* set SW1AB/VDDARM step ramp up time from 16us to 4us/25mV */
-	pmic_reg_read(pfuze, PFUZE100_SW1ABCONF, &value);
-	value &= ~0xc0;
-	value |= 0x40;
-	pmic_reg_write(pfuze, PFUZE100_SW1ABCONF, value);
-
-	/* Enable power of VGEN5 3V3 */
-	pmic_reg_read(pfuze, PFUZE100_VGEN5VOL, &value);
-	value &= ~0x1F;
-	value |= 0x1F;
-	pmic_reg_write(pfuze, PFUZE100_VGEN5VOL, value);
-#endif
 	return 0;
 }
 
+#ifdef CONFIG_LDO_BYPASS_CHECK
+void ldo_mode_set(int ldo_bypass)
+{
+        unsigned int value;
+        u32 vddarm;
+
+        struct pmic *p = pmic_get("PFUZE3000");
+
+        if (!p) {
+                printf("No PMIC found!\n");
+                return;
+        }
+
+        /* switch to ldo_bypass mode */
+        if (ldo_bypass) {
+                prep_anatop_bypass();
+                /* decrease VDDARM to 1.275V */
+                pmic_reg_read(p, PFUZE3000_SW1BVOLT, &value);
+                value &= ~0x1f;
+                value |= PFUZE3000_SW1AB_SETP(1275);
+                pmic_reg_write(p, PFUZE3000_SW1BVOLT, value);
+
+                set_anatop_bypass(1);
+                vddarm = PFUZE3000_SW1AB_SETP(1175);
+
+                pmic_reg_read(p, PFUZE3000_SW1BVOLT, &value);
+                value &= ~0x1f;
+                value |= vddarm;
+                pmic_reg_write(p, PFUZE3000_SW1BVOLT, value);
+
+                finish_anatop_bypass();
+
+                printf("switch to ldo_bypass mode!\n");
+        }
+}
+#endif
 #endif
 
 #ifdef CONFIG_SYS_I2C_MXC
@@ -822,9 +822,6 @@ int board_init(void)
 	setup_usb();
 #endif
 
-#ifdef CONFIG_FSL_QSPI
-	board_qspi_init();
-#endif
 
 	return 0;
 }
