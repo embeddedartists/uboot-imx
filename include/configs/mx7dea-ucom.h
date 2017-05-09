@@ -1,50 +1,19 @@
 /*
- * Copyright (C) 2015 Freescale Semiconductor, Inc.
+ * Copyright 2014-2016 Freescale Semiconductor, Inc.
  *
- * Configuration settings for the Embedded Artists i.MX7 Dual uCOM board.
+ * Configuration settings for the Embedded Artists i.MX7 Dual uCOM Board.
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
 
-#ifndef __MX7D_UCOM_KIT_CONFIG_H
-#define __MX7D_UCOM_KIT_CONFIG_H
 
-#include <asm/arch/imx-regs.h>
-#include <linux/sizes.h>
+#ifndef __MX7DEA_UCOM_H
+#define __MX7DEA_UCOM_H
 #include "mx7_common.h"
-#include <asm/imx-common/gpio.h>
-
-#define CONFIG_SPL_TEXT_BASE    0x00908000
-#define CONFIG_SPL_FRAMEWORK
-
-
-#if defined(CONFIG_SPL_BUILD)
-
-
-#define CONFIG_SPL_I2C_SUPPORT
-#define CONFIG_SPL_LIBCOMMON_SUPPORT
-#define CONFIG_SPL_LIBGENERIC_SUPPORT
-#define CONFIG_SPL_GPIO_SUPPORT
-#define CONFIG_SPL_SERIAL_SUPPORT
-
-#define CONFIG_SPL_MMC_SUPPORT
-#define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR 138
-
-#define CONFIG_SPL_BOARD_INIT
-
-#define CONFIG_SYS_SPL_MALLOC_START     0x912800
-#define CONFIG_SYS_SPL_MALLOC_SIZE      0x4800
-
-
-#endif
-
-#define CONFIG_MX7
-#define CONFIG_ROM_UNIFIED_SECTIONS
-#define CONFIG_SYS_GENERIC_BOARD
-#define CONFIG_DISPLAY_CPUINFO
-#define CONFIG_DISPLAY_BOARDINFO
+#undef CONFIG_MX7_SEC
 
 #define CONFIG_DBG_MONITOR
+
 /* uncomment for PLUGIN mode support */
 /* #define CONFIG_USE_PLUGIN */
 
@@ -57,160 +26,58 @@
 #endif
 #endif
 
-#define CONFIG_CMDLINE_TAG
-#define CONFIG_SETUP_MEMORY_TAGS
-#define CONFIG_INITRD_TAG
-#define CONFIG_REVISION_TAG
-
-/* Size of malloc() pool */
-#define CONFIG_SYS_MALLOC_LEN		(32 * SZ_1M)
-
-#define CONFIG_BOARD_EARLY_INIT_F
-#define CONFIG_BOARD_LATE_INIT
-#define CONFIG_MXC_GPIO
-
-#define CONFIG_MXC_UART
-#define CONFIG_MXC_UART_BASE		UART1_IPS_BASE_ADDR
-
-/* allow to overwrite serial and ethaddr */
-#define CONFIG_ENV_OVERWRITE
-#define CONFIG_CONS_INDEX		1
-#define CONFIG_BAUDRATE			115200
-
-#define CONFIG_CMD_FUSE
-#ifdef CONFIG_CMD_FUSE
-#define CONFIG_MXC_OCOTP
+#ifdef CONFIG_IMX_BOOTAUX
+/* Set to QSPI1 A flash at default */
+#ifdef CONFIG_SYS_USE_QSPI
+#define CONFIG_SYS_AUXCORE_BOOTDATA 0x60100000 /* Set to QSPI1 A flash, offset 1M */
+#else
+#define CONFIG_SYS_AUXCORE_BOOTDATA 0x7F8000 /* Set to TCML address */
 #endif
 
-/* MMC Configs */
-#define CONFIG_FSL_ESDHC
-#define CONFIG_FSL_USDHC
-#define CONFIG_SYS_FSL_ESDHC_ADDR	0
 
-#define CONFIG_MMC
-#define CONFIG_CMD_MMC
-#define CONFIG_GENERIC_MMC
-#define CONFIG_CMD_FAT
-#define CONFIG_DOS_PARTITION
-#define CONFIG_SUPPORT_EMMC_BOOT /* eMMC specific */
-
-#define PHYS_SDRAM_SIZE			SZ_1G
-
-#define CONFIG_CMD_PING
-#define CONFIG_CMD_DHCP
-#define CONFIG_CMD_MII
-#define CONFIG_CMD_NET
-#define CONFIG_FEC_MXC
-#define CONFIG_MII
-#define CONFIG_FEC_XCV_TYPE             RGMII
-#define CONFIG_ETHPRIME                 "FEC"
-#define CONFIG_FEC_MXC_PHYADDR          1
-
-#define CONFIG_PHYLIB
-#define CONFIG_PHY_BROADCOM
-#define CONFIG_FEC_DMA_MINALIGN		64
-
-/* ENET1 */
-#define IMX_FEC_BASE			ENET_IPS_BASE_ADDR
-
-/* PMIC */
-#define CONFIG_POWER
-#define CONFIG_POWER_I2C
-#define CONFIG_POWER_PFUZE300
-#define CONFIG_POWER_PFUZE300_I2C_ADDR	0x08
-
-#undef CONFIG_BOOTM_NETBSD
-#undef CONFIG_BOOTM_PLAN9
-#undef CONFIG_BOOTM_RTEMS
-
-#undef CONFIG_CMD_EXPORTENV
-#undef CONFIG_CMD_IMPORTENV
-
-/* I2C configs */
-#define CONFIG_CMD_I2C
-#define CONFIG_SYS_I2C
-#define CONFIG_SYS_I2C_MXC
-#define CONFIG_SYS_I2C_SPEED		100000
-
-/* Command definition */
-#include <config_cmd_default.h>
-
-#undef CONFIG_CMD_IMLS
-
-#define CONFIG_BOOTDELAY		3
-
-#define CONFIG_LOADADDR			0x80800000
-#define CONFIG_SYS_TEXT_BASE		0x87800000
-
-#define CONFIG_SYS_AUXCORE_BOOTDATA 0x60000000 /* Set to QSPI1 A flash at default */
-#define CONFIG_CMD_BOOTAUX /* Boot M4 */
-#define CONFIG_CMD_SETEXPR
-
-#ifdef CONFIG_CMD_BOOTAUX
+#ifdef CONFIG_SYS_USE_QSPI
 #define UPDATE_M4_ENV \
-	"m4image=m4_qspi.bin\0" \
-	"loadm4image=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${m4image}\0" \
-	"update_m4_from_sd=" \
-		"if sf probe 0:0; then " \
-			"if run loadm4image; then " \
-				"setexpr fw_sz ${filesize} + 0xffff; " \
-				"setexpr fw_sz ${fw_sz} / 0x10000; "	\
-				"setexpr fw_sz ${fw_sz} * 0x10000; "	\
-				"sf erase 0x0 ${fw_sz}; " \
-				"sf write ${loadaddr} 0x0 ${filesize}; " \
-			"fi; " \
-		"fi\0" \
-	"m4boot=sf probe 0:0; bootaux "__stringify(CONFIG_SYS_AUXCORE_BOOTDATA)"\0"
+        "m4image=m4_qspi.bin\0" \
+        "loadm4image=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${m4image}\0" \
+        "update_m4_from_sd=" \
+                "if sf probe 0:0; then " \
+                        "if run loadm4image; then " \
+                                "setexpr fw_sz ${filesize} + 0xffff; " \
+                                "setexpr fw_sz ${fw_sz} / 0x10000; "    \
+                                "setexpr fw_sz ${fw_sz} * 0x10000; "    \
+                                "sf erase 0x100000 ${fw_sz}; " \
+                                "sf write ${loadaddr} 0x100000 ${filesize}; " \
+                        "fi; " \
+                "fi\0" \
+        "m4boot=sf probe 0:0; bootaux "__stringify(CONFIG_SYS_AUXCORE_BOOTDATA)"\0"
+#else
+#define UPDATE_M4_ENV \
+        "m4image=m4_qspi.bin\0" \
+        "loadm4image=fatload mmc ${mmcdev}:${mmcpart} "__stringify(CONFIG_SYS_AUXCORE_BOOTDATA)" ${m4image}\0" \
+        "m4boot=run loadm4image; bootaux "__stringify(CONFIG_SYS_AUXCORE_BOOTDATA)"\0"
+#endif
+
 #else
 #define UPDATE_M4_ENV ""
 #endif
 
-#define CONFIG_SYS_MMC_IMG_LOAD_PART	1
-#ifdef CONFIG_SYS_BOOT_NAND
-#define CONFIG_MFG_NAND_PARTITION "mtdparts=gpmi-nand:64m(boot),16m(kernel),16m(dtb),-(rootfs) "
-#else
-#define CONFIG_MFG_NAND_PARTITION ""
-#endif
-
-#ifdef CONFIG_VIDEO
-#define CONFIG_VIDEO_MODE \
-	"panel=TFT43AB\0"
-#else
-#define CONFIG_VIDEO_MODE ""
-#endif
 
 #define CONFIG_MFG_ENV_SETTINGS \
 	"mfgtool_args=setenv bootargs console=${console},${baudrate} " \
 		"rdinit=/linuxrc " \
 		"g_mass_storage.stall=0 g_mass_storage.removable=1 " \
+		"g_mass_storage.file=/fat g_mass_storage.ro=1 " \
 		"g_mass_storage.idVendor=0x066F g_mass_storage.idProduct=0x37FF "\
 		"g_mass_storage.iSerialNumber=\"\" "\
-		CONFIG_MFG_NAND_PARTITION \
-		"clk_ignore_unused "\
+                "clk_ignore_unused "\
 		"\0" \
 	"initrd_addr=0x83800000\0" \
 	"initrd_high=0xffffffff\0" \
 	"bootcmd_mfg=run mfgtool_args;bootz ${loadaddr} ${initrd_addr} ${fdt_addr};\0" \
 
-#if defined(CONFIG_SYS_BOOT_NAND)
-#define CONFIG_EXTRA_ENV_SETTINGS \
-	CONFIG_MFG_ENV_SETTINGS \
-	CONFIG_VIDEO_MODE \
-	"fdt_addr=0x83000000\0" \
-	"fdt_high=0xffffffff\0"	  \
-	"console=ttymxc0\0" \
-	"bootargs=console=ttymxc0,115200 ubi.mtd=3 "  \
-		"root=ubi0:rootfs rootfstype=ubifs "		     \
-		"mtdparts=gpmi-nand:64m(boot),16m(kernel),16m(dtb),-(rootfs)\0"\
-	"bootcmd=nand read ${loadaddr} 0x4000000 0x800000;"\
-		"nand read ${fdt_addr} 0x5000000 0x100000;"\
-		"bootz ${loadaddr} - ${fdt_addr}\0"
-
-#else
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	CONFIG_MFG_ENV_SETTINGS \
 	UPDATE_M4_ENV \
-	CONFIG_VIDEO_MODE \
 	"script=boot.scr\0" \
 	"image=zImage\0" \
 	"console=ttymxc0\0" \
@@ -220,8 +87,9 @@
 	"fdt_addr=0x83000000\0" \
 	"boot_fdt=try\0" \
 	"ip_dyn=yes\0" \
+	"panel=Hannstar-XGA\0" \
 	"mmcdev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0" \
-	"mmcpart=" __stringify(CONFIG_SYS_MMC_IMG_LOAD_PART) "\0" \
+	"mmcpart=1\0" \
 	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
 	"mmcautodetect=yes\0" \
 	"mmcargs=setenv bootargs console=${console},${baudrate} " \
@@ -284,33 +152,21 @@
 			   "fi; " \
 		   "fi; " \
 	   "else run netboot; fi"
-#endif
 
 /* Miscellaneous configurable options */
-#define CONFIG_SYS_LONGHELP
-#define CONFIG_SYS_HUSH_PARSER
-#define CONFIG_SYS_PROMPT		"=> "
-#define CONFIG_AUTO_COMPLETE
-#define CONFIG_SYS_CBSIZE		1024
-
-/* Print Buffer Size */
-#define CONFIG_SYS_PBSIZE (CONFIG_SYS_CBSIZE + sizeof(CONFIG_SYS_PROMPT) + 16)
-#define CONFIG_SYS_MAXARGS		256
-#define CONFIG_SYS_BARGSIZE CONFIG_SYS_CBSIZE
-
 #define CONFIG_CMD_MEMTEST
 #define CONFIG_SYS_MEMTEST_START	0x80000000
-#define CONFIG_SYS_MEMTEST_END		(CONFIG_SYS_MEMTEST_START + 0x20000000)
+#define CONFIG_SYS_MEMTEST_END		(CONFIG_SYS_MEMTEST_START + 0x10000)
 
-#define CONFIG_SYS_LOAD_ADDR		CONFIG_LOADADDR
-#define CONFIG_SYS_HZ			1000
+#define CONFIG_SYS_LOAD_ADDR            CONFIG_LOADADDR
+#define CONFIG_SYS_HZ                   1000
 
-#define CONFIG_CMDLINE_EDITING
 #define CONFIG_STACKSIZE		SZ_128K
 
 /* Physical Memory Map */
 #define CONFIG_NR_DRAM_BANKS		1
 #define PHYS_SDRAM			MMDC0_ARB_BASE_ADDR
+#define PHYS_SDRAM_SIZE			SZ_1G
 
 #define CONFIG_SYS_SDRAM_BASE		PHYS_SDRAM
 #define CONFIG_SYS_INIT_RAM_ADDR	IRAM_BASE_ADDR
@@ -320,11 +176,6 @@
 	(CONFIG_SYS_INIT_RAM_SIZE - GENERATED_GBL_DATA_SIZE)
 #define CONFIG_SYS_INIT_SP_ADDR \
 	(CONFIG_SYS_INIT_RAM_ADDR + CONFIG_SYS_INIT_SP_OFFSET)
-
-/* FLASH and environment organization */
-#define CONFIG_SYS_NO_FLASH
-
-#define CONFIG_ENV_SIZE			SZ_8K
 
 #ifdef CONFIG_SYS_BOOT_QSPI
 #define CONFIG_SYS_USE_QSPI
@@ -337,113 +188,56 @@
 #define CONFIG_ENV_IS_IN_MMC
 #endif
 
-#ifdef CONFIG_SYS_USE_NAND
-#define CONFIG_CMD_NAND
-#define CONFIG_CMD_NAND_TRIMFFS
-
-/* NAND stuff */
-#define CONFIG_NAND_MXS
-#define CONFIG_SYS_MAX_NAND_DEVICE	1
-#define CONFIG_SYS_NAND_BASE		0x40000000
-#define CONFIG_SYS_NAND_5_ADDR_CYCLE
-#define CONFIG_SYS_NAND_ONFI_DETECTION
-
-/* DMA stuff, needed for GPMI/MXS NAND support */
-#define CONFIG_APBH_DMA
-#define CONFIG_APBH_DMA_BURST
-#define CONFIG_APBH_DMA_BURST8
-#endif
-
 #ifdef CONFIG_SYS_USE_QSPI
-#define CONFIG_FSL_QSPI    /* enable the QUADSPI driver */
-#define CONFIG_QSPI_BASE		QSPI1_IPS_BASE_ADDR
-#define CONFIG_QSPI_MEMMAP_BASE		QSPI0_ARB_BASE_ADDR
-
+#define CONFIG_FSL_QSPI
 #define CONFIG_CMD_SF
-#define	CONFIG_SPI_FLASH
-#define	CONFIG_SPI_FLASH_MACRONIX
+#define CONFIG_SPI_FLASH
+#define CONFIG_SPI_FLASH_MACRONIX
 #define	CONFIG_SPI_FLASH_STMICRO
-#define	CONFIG_SPI_FLASH_BAR
-#define	CONFIG_SF_DEFAULT_BUS		0
-#define	CONFIG_SF_DEFAULT_CS		0
-#define	CONFIG_SF_DEFAULT_SPEED		40000000
-#define	CONFIG_SF_DEFAULT_MODE		SPI_MODE_0
+#define CONFIG_SPI_FLASH_BAR
+#define CONFIG_SF_DEFAULT_BUS           0
+#define CONFIG_SF_DEFAULT_CS            0
+#define CONFIG_SF_DEFAULT_SPEED         40000000
+#define CONFIG_SF_DEFAULT_MODE          SPI_MODE_0
+#define CONFIG_QSPI_BASE                QSPI1_IPS_BASE_ADDR
+#define CONFIG_QSPI_MEMMAP_BASE         QSPI0_ARB_BASE_ADDR
 #endif
 
-#if defined(CONFIG_ENV_IS_IN_MMC)
-#define CONFIG_ENV_OFFSET		(8 * SZ_64K)
-#elif defined(CONFIG_ENV_IS_IN_SPI_FLASH)
-#define CONFIG_ENV_OFFSET		(768 * 1024)
-#define CONFIG_ENV_SECT_SIZE		(64 * 1024)
-#define CONFIG_ENV_SPI_BUS		CONFIG_SF_DEFAULT_BUS
-#define CONFIG_ENV_SPI_CS		CONFIG_SF_DEFAULT_CS
-#define CONFIG_ENV_SPI_MODE		CONFIG_SF_DEFAULT_MODE
-#define CONFIG_ENV_SPI_MAX_HZ		CONFIG_SF_DEFAULT_SPEED
-#elif defined(CONFIG_ENV_IS_IN_NAND)
-#undef CONFIG_ENV_SIZE
-#define CONFIG_ENV_OFFSET		(37 << 20)
-#define CONFIG_ENV_SECT_SIZE		(128 << 10)
-#define CONFIG_ENV_SIZE			CONFIG_ENV_SECT_SIZE
-#endif
 
-#ifdef CONFIG_SYS_USE_NAND
-#define CONFIG_SYS_FSL_USDHC_NUM	1
-#else
+/* MMC Configuration */
 #define CONFIG_SYS_FSL_USDHC_NUM	2
-#endif
-#define CONFIG_SYS_MMC_ENV_DEV		0   /* USDHC1 */
-#define CONFIG_SYS_MMC_ENV_PART		0	/* user area */
+#define CONFIG_SYS_MMC_ENV_DEV		0  /*USDHC1*/
+#define CONFIG_SYS_MMC_ENV_PART		0  /* user area */
 #define CONFIG_MMCROOT			"/dev/mmcblk0p2"  /* USDHC1 */
 
-#define CONFIG_OF_LIBFDT
-#define CONFIG_CMD_BOOTZ
+#define CONFIG_SYS_FSL_ESDHC_ADDR	0
 
-#define CONFIG_CMD_BMODE
+/* I2C Configs */
+#define CONFIG_CMD_I2C
+#define CONFIG_SYS_I2C
+#define CONFIG_SYS_I2C_MXC
+#define CONFIG_SYS_I2C_MXC_I2C1		/* enable I2C bus 1 */
+#define CONFIG_SYS_I2C_SPEED		  100000
 
-#ifndef CONFIG_SYS_DCACHE_OFF
-#define CONFIG_CMD_CACHE
-#endif
+/* PMIC */
+#define CONFIG_POWER
+#define CONFIG_POWER_I2C
+#define CONFIG_POWER_PFUZE3000
+#define CONFIG_POWER_PFUZE3000_I2C_ADDR	0x08
 
-#define CONFIG_VIDEO
-#define CONFIG_CMD_EADISP
+/* Network */
+#define CONFIG_CMD_MII
+#define CONFIG_FEC_MXC
+#define CONFIG_MII
 
-#ifdef CONFIG_VIDEO
-#define	CONFIG_CFB_CONSOLE
-#define	CONFIG_VIDEO_MXS
-#define	CONFIG_VIDEO_LOGO
-#define	CONFIG_VIDEO_SW_CURSOR
-#define	CONFIG_VGA_AS_SINGLE_DEVICE
-#define	CONFIG_SYS_CONSOLE_IS_IN_ENV
-#define	CONFIG_SPLASH_SCREEN
-#define CONFIG_SPLASH_SCREEN_ALIGN
-#define	CONFIG_CMD_BMP
-#define	CONFIG_BMP_16BPP
-#define	CONFIG_VIDEO_BMP_RLE8
-#define CONFIG_VIDEO_BMP_LOGO
-#endif
+#define IMX_FEC_BASE			ENET_IPS_BASE_ADDR
+#define CONFIG_FEC_MXC_PHYADDR          0x1
 
-/* #define CONFIG_SPLASH_SCREEN*/
-/* #define CONFIG_MXC_EPDC*/
+#define CONFIG_FEC_XCV_TYPE             RGMII
+#define CONFIG_ETHPRIME                 "FEC"
 
-/*
- * SPLASH SCREEN Configs
- */
-#if defined(CONFIG_SPLASH_SCREEN) && defined(CONFIG_MXC_EPDC)
-/*
- * Framebuffer and LCD
- */
-#define	CONFIG_CFB_CONSOLE
-#define CONFIG_CMD_BMP
-#define CONFIG_LCD
-#define CONFIG_SYS_CONSOLE_IS_IN_ENV
-
-#undef LCD_TEST_PATTERN
-/* #define CONFIG_SPLASH_IS_IN_MMC			1 */
-#define LCD_BPP					LCD_MONOCHROME
-/* #define CONFIG_SPLASH_SCREEN_ALIGN		1 */
-
-#define CONFIG_WAVEFORM_BUF_SIZE		0x400000
-#endif
+#define CONFIG_PHYLIB
+#define CONFIG_PHY_BROADCOM
 
 /* USB Configs */
 #define CONFIG_CMD_USB
@@ -459,11 +253,46 @@
 
 #define CONFIG_IMX_THERMAL
 
-#if defined(CONFIG_MXC_EPDC) && defined(CONFIG_SYS_USE_QSPI)
-#error "EPDC Pins conflicts QSPI, Either EPDC or QSPI can be enabled!"
+#define CONFIG_CMD_TIME
+
+#define CONFIG_CMD_BMODE
+
+#define CONFIG_VIDEO
+#ifdef CONFIG_VIDEO
+#define CONFIG_CFB_CONSOLE
+#define CONFIG_VIDEO_MXS
+#define CONFIG_VIDEO_LOGO
+#define CONFIG_VIDEO_SW_CURSOR
+#define CONFIG_VGA_AS_SINGLE_DEVICE
+#define CONFIG_SYS_CONSOLE_IS_IN_ENV
+#define CONFIG_SPLASH_SCREEN
+#define CONFIG_SPLASH_SCREEN_ALIGN
+#define CONFIG_CMD_BMP
+#define CONFIG_BMP_16BPP
+#define CONFIG_VIDEO_BMP_RLE8
+#define CONFIG_VIDEO_BMP_LOGO
+/*#define CONFIG_IMX_VIDEO_SKIP*/
+
+/* EA: display commands */
+#define CONFIG_CMD_EADISP
 #endif
+
+#define CONFIG_SYS_NO_FLASH
+#define CONFIG_ENV_SIZE			SZ_8K
+#define CONFIG_ENV_OFFSET		(8 * SZ_64K)
+
+
+/* EA: EEPROM */
+#define CONFIG_CMD_EEPROM
+#define CONFIG_SYS_I2C_EEPROM_ADDR_LEN 2
+#define CONFIG_ENV_EEPROM_IS_ON_I2C
+#define CONFIG_SYS_I2C_MULTI_EEPROMS
+/* the page boundary is 32 bytes (2^5 = 32) */
+#define CONFIG_SYS_EEPROM_PAGE_WRITE_BITS 5
+#define CONFIG_SYS_EEPROM_PAGE_WRITE_DELAY_MS 10
 
 #if defined(CONFIG_ANDROID_SUPPORT)
 #include "mx7dsabresdandroid.h"
 #endif
-#endif	/* __MX7D_UCOM_KIT_CONFIG_H */
+
+#endif				/* __CONFIG_H */
