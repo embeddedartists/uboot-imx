@@ -783,11 +783,13 @@ int board_early_init_f(void)
 			ARRAY_SIZE(peri_pwr_pads));
 	gpio_direction_output(IMX_GPIO_NR(5, 2), 1);
 
+#ifndef CONFIG_EA_NO_UART_FLUSH
         /* Empty UART RX FIFO 5ms after PERI_PWR_ENABLE goes high */
         udelay(5000);
         while (tstc()) {
                 (void)getc();
         }
+#endif
 
 	setup_iomux_uart();
 

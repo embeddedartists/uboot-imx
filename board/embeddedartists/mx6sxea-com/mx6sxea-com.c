@@ -981,12 +981,13 @@ int board_early_init_f(void)
 	/* Enable PERI_3V3, which is used by SD2, ENET, LVDS, BT */
 	imx_iomux_v3_setup_multiple_pads(peri_3v3_pads, ARRAY_SIZE(peri_3v3_pads));
 	gpio_direction_output(IMX_GPIO_NR(4, 26) , 1);
-
+#ifndef CONFIG_EA_NO_UART_FLUSH
 	/* Empty UART RX FIFO 5ms after PERI_PWR_ENABLE goes high */
 	udelay(5000);
 	while (tstc()) {
 		(void)getc();
 	}
+#endif
 
 	setup_iomux_uart();
 

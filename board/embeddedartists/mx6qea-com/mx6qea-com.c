@@ -1488,11 +1488,13 @@ int board_early_init_f(void)
 	/* enable USB 5V. Doesn't seem to work to do this in Linux/DTS?? */
 	gpio_direction_output(IMX_GPIO_NR(1, 0), 1);
 
+#ifndef CONFIG_EA_NO_UART_FLUSH
         /* Empty UART RX FIFO 5ms after PERI_PWR_ENABLE goes high */
         udelay(5000);
         while (tstc()) {
                 (void)getc();
         }
+#endif
 
 	setup_iomux_uart();
 #if defined(CONFIG_VIDEO_IPUV3)
