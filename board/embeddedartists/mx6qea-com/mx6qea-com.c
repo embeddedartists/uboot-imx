@@ -1147,7 +1147,14 @@ void board_enable_hdmi(const struct display_info_t *di, int enable)
 		writel(reg, &iomux->gpr[2]);
 
 		/* Now enable HDMI */
-		imx_enable_hdmi_phy();
+
+		/* NOTE:
+		 * We have seen problems with hdmi when it has been enabled both
+		 * in u-boot and in the Linux kernel. The kernel could seem to freeze
+		 * due to a massive amount of overflow interrupts.
+		 * https://community.nxp.com/thread/342916
+
+		//imx_enable_hdmi_phy();
 	}
 }
 
