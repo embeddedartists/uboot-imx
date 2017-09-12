@@ -1153,8 +1153,9 @@ void board_enable_hdmi(const struct display_info_t *di, int enable)
 		 * in u-boot and in the Linux kernel. The kernel could seem to freeze
 		 * due to a massive amount of overflow interrupts.
 		 * https://community.nxp.com/thread/342916
+		 */
 
-		//imx_enable_hdmi_phy();
+		/*imx_enable_hdmi_phy();*/
 	}
 }
 
