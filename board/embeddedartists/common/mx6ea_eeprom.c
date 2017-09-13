@@ -523,6 +523,14 @@ static int intern_dram_init(void)
 	}
 
 	do {
+		/*
+		 * Have seen issues with i2c access after some  register 
+		 * updates/accesses (eg.g for iMX6 Quad). Re-initializing
+		 * i2c just in case.
+		 */
+		i2c_set_bus_num(EA_EEPROM_I2C_BUS);
+	        i2c_init(CONFIG_SYS_I2C_SPEED, EA_EEPROM_I2C_SLAVE);
+
 		toRead = config.num_reg_value_pairs;
 		if (toRead > EA_DDR_LIST_BUF_SZ)
 			toRead = EA_DDR_LIST_BUF_SZ;
