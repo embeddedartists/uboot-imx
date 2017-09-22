@@ -35,7 +35,7 @@
 #include <usb.h>
 #include <usb/ehci-fsl.h>
 
-#ifdef CONFIG_MXC_RDC
+#ifdef CONFIG_IMX_RDC
 #include <asm/imx-common/rdc-sema.h>
 #include <asm/arch/imx-rdc.h>
 #endif
@@ -962,15 +962,16 @@ void ldo_mode_set(int ldo_bypass)
 
 
 
-#ifdef CONFIG_MXC_RDC
+#ifdef CONFIG_IMX_RDC
 static rdc_peri_cfg_t const shared_resources[] = {
-	(RDC_PER_GPIO1 | RDC_DOMAIN(0) | RDC_DOMAIN(1)),
+	(RDC_PER_UART1 | RDC_DOMAIN(0)),
+	(RDC_PER_GPT | RDC_DOMAIN(0)),
 };
 #endif
 
 int board_early_init_f(void)
 {
-#ifdef CONFIG_MXC_RDC
+#ifdef CONFIG_IMX_RDC
 	imx_rdc_setup_peripherals(shared_resources, ARRAY_SIZE(shared_resources));
 #endif
 
