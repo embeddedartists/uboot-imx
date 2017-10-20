@@ -59,8 +59,15 @@
 #define CONFIG_FDT_FILE "imx6qea-com-kit.dtb"
 #endif
 
+#ifdef EA_IMX_PTP
+#define EA_IMX_PTP_ENV_SETTINGS "eadisp_hdmi_enabled=yes\0eadisp_prefer=hdmi\0"
+#else
+#define EA_IMX_PTP_ENV_SETTINGS ""
+#endif
+
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	CONFIG_MFG_ENV_SETTINGS \
+	EA_IMX_PTP_ENV_SETTINGS \
 	"script=boot.scr\0" \
 	"image=zImage\0" \
 	"console=ttymxc0\0" \
