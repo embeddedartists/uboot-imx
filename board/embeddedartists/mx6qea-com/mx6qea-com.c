@@ -1743,7 +1743,7 @@ void board_recovery_setup(void)
 	case MMC4_BOOT:
 		if (!getenv("bootcmd_android_recovery"))
 			setenv("bootcmd_android_recovery",
-				"booti mmc2 recovery");
+				"boota mmc2 recovery");
 		break;
 #endif /*CONFIG_FASTBOOT_STORAGE_MMC*/
 	default:
