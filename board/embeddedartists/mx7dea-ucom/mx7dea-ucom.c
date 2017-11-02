@@ -610,7 +610,7 @@ iomux_v3_cfg_t const usb_otg1_pads[] = {
 };
 
 iomux_v3_cfg_t const usb_otg2_pads[] = {
-	MX7D_PAD_UART3_CTS_B__USB_OTG2_PWR | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX7D_PAD_GPIO1_IO07__USB_OTG2_PWR | MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
 static void setup_usb(void)
