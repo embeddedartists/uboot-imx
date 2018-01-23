@@ -73,10 +73,17 @@
 		"\0" \
 	"initrd_addr=0x83800000\0" \
 	"initrd_high=0xffffffff\0" \
-	"bootcmd_mfg=run mfgtool_args;bootz ${loadaddr} ${initrd_addr} ${fdt_addr};\0" \
+	"bootcmd_mfg=run mfgtool_args;bootz ${loadaddr} ${initrd_addr} ${fdt_addr};\0"
+
+#ifdef EA_IMX_PTP
+#define EA_IMX_PTP_ENV_SETTINGS "eadisp_rgb_enabled=yes\0"
+#else
+#define EA_IMX_PTP_ENV_SETTINGS ""
+#endif
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	CONFIG_MFG_ENV_SETTINGS \
+	EA_IMX_PTP_ENV_SETTINGS \
 	UPDATE_M4_ENV \
 	"script=boot.scr\0" \
 	"image=zImage\0" \

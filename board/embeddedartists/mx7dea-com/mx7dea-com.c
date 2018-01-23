@@ -557,7 +557,9 @@ static int setup_fec(void)
 		 IOMUXC_GPR_GPR1_GPR_ENET1_CLK_DIR_MASK), 0);
 
 
-	/* enet pwr en */
+	/* enet reset (active high) before pwr en */
+	gpio_direction_output(IMX_GPIO_NR(7, 15) , 1);
+	udelay(10000);
 	gpio_direction_output(IMX_GPIO_NR(7, 15) , 0);
 
 	ret = set_clk_enet(ENET_125MHz);

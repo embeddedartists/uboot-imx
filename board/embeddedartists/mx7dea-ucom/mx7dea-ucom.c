@@ -326,6 +326,49 @@ int board_video_skip(void)
 #endif /* CONFIG_CMD_EADISP */
 #endif /* CONFIG_VIDEO_MXS */
 
+#ifdef CONFIG_EA_IMX_PTP
+#define TFP410_ADDR 0x3A
+/*
+ * Configure the TFP410 chip on the iMX PTP board.
+ */
+static void configure_tfp410(void)
+{
+       uint8_t buff[15] = {0};
+       printf("Override for mfgtool\n");
+       i2c_set_bus_num(0);
+       i2c_init(CONFIG_SYS_I2C_SPEED, TFP410_ADDR);
+       if (i2c_probe(TFP410_ADDR)) {
+               printf("Failed to probe TFP410\n");
+               return;
+       }
+       if (i2c_read(TFP410_ADDR, 0, 1, buff, 5)) {
+               printf("Failed to read reg 0x00 from TFP410\n");
+               return;
+       }
+       printf("TFP410: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x\n", buff[0], buff[1], buff[2], buff[3], buff[4]);
+       buff[0] = 0x35;
+       buff[1] = 0x3d;
+       buff[2] = 0x80;
+       if (i2c_write(TFP410_ADDR, 0x08, 1, buff, 3)) {
+               printf("Failed to write to reg 0x08-0x0a on TFP410\n");
+               return;
+       }
+       buff[0] = 0x16;
+       buff[1] = 0x40;
+       buff[2] = 0x50;
+       buff[3] = 0x00;
+       buff[4] = 0x80;
+       buff[5] = 0x02;
+       buff[6] = 0xe0;
+       buff[7] = 0x01;
+       if (i2c_write(TFP410_ADDR, 0x32, 1, buff, 8)) {
+               printf("Failed to write to reg 0x32-0x39 on TFP410\n");
+               return;
+       }
+       printf("Successfully initialized TFP410!\n");
+}
+#endif
+
 #ifdef CONFIG_FEC_MXC
 static iomux_v3_cfg_t const fec1_pads[] = {
 	MX7D_PAD_ENET1_RGMII_RX_CTL__ENET1_RGMII_RX_CTL | MUX_PAD_CTRL(ENET_RX_PAD_CTRL),
@@ -557,7 +600,9 @@ static int setup_fec(void)
 		 IOMUXC_GPR_GPR1_GPR_ENET1_CLK_DIR_MASK), 0);
 
 
-	/* enet pwr en */
+	/* enet reset (active high) before pwr en */
+	gpio_direction_output(IMX_GPIO_NR(7, 15) , 1);
+	udelay(10000);
 	gpio_direction_output(IMX_GPIO_NR(7, 15) , 0);
 
 	ret = set_clk_enet(ENET_125MHz);
@@ -674,6 +719,9 @@ int board_init(void)
 
 #ifdef CONFIG_CMD_EADISP
 	eadisp_setup_display(displays, ARRAY_SIZE(displays));
+#endif
+#ifdef CONFIG_EA_IMX_PTP
+	configure_tfp410();
 #endif
 	return 0;
 }
