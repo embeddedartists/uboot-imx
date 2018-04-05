@@ -740,10 +740,11 @@ static void configure_tfp410(void)
        buff[5] = 0x02;
        buff[6] = 0xe0;
        buff[7] = 0x01;
-       if (i2c_write(TFP410_ADDR, 0x32, 1, buff, 8)) {
-               printf("Failed to write to reg 0x32-0x39 on TFP410\n");
-               return;
-       }
+       //if (i2c_write(TFP410_ADDR, 0x32, 1, buff, 8)) {
+       //        printf("Failed to write to reg 0x32-0x39 on TFP410\n");
+       //        return;
+       //}
+       printf("TFP410: DE generator disabled\n");
        printf("Successfully initialized TFP410!\n");
 }
 #endif
