@@ -576,6 +576,7 @@ static const struct display_info_t displays[] = {
 	EADISP_HANNSTAR10(LVDS0, 0, 0),
 	EADISP_LP101WH4_X11(LVDS0, 0, 0),
 	EADISP_LP101WH4(LVDS0, 0, 0),
+	EADISP_NHD_1024600AF(LVDS0, 0, 0),
 
 	/* RGB */
 	EADISP_INNOLUX_AT070TN(RGB, 0, 0),

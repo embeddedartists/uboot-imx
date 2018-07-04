@@ -96,6 +96,19 @@ struct i2c_pads_info i2c_pad_info1 = {
 	},
 };
 
+/* I2C2 */
+struct i2c_pads_info i2c_pad_info2 = {
+	.scl = {
+		.i2c_mode = MX7D_PAD_I2C2_SCL__I2C2_SCL | PC,
+		.gpio_mode = MX7D_PAD_I2C2_SCL__GPIO4_IO10 | PC,
+		.gp = IMX_GPIO_NR(4, 10),
+	},
+	.sda = {
+		.i2c_mode = MX7D_PAD_I2C2_SDA__I2C2_SDA | PC,
+		.gpio_mode = MX7D_PAD_I2C2_SDA__GPIO4_IO11 | PC,
+		.gp = IMX_GPIO_NR(4, 11),
+	},
+};
 /* I2C3 */
 struct i2c_pads_info i2c_pad_info3 = {
 	.scl = {
@@ -413,8 +426,8 @@ int board_mmc_getcd(struct mmc *mmc)
 
 	switch (cfg->esdhc_base) {
 	case USDHC1_BASE_ADDR:
-		ret = !gpio_get_value(USDHC1_CD_GPIO);
-		break;
+//		ret = !gpio_get_value(USDHC1_CD_GPIO);
+//		break;
 	case USDHC3_BASE_ADDR:
 		ret = 1; /* Assume uSDHC3 emmc is always present */
 		break;
@@ -642,6 +655,7 @@ int board_early_init_f(void)
 
 #ifdef CONFIG_SYS_I2C_MXC
 	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
+	setup_i2c(1, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info2);
 	setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info3);
 #endif
 
