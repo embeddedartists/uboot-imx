@@ -117,6 +117,19 @@ struct i2c_pads_info i2c_pad_info1 = {
 		.gp = IMX_GPIO_NR(1, 29),
 	},
 };
+
+struct i2c_pads_info i2c_pad_info2 = {
+	.scl = {
+		.i2c_mode =  MX6_PAD_UART5_TX_DATA__I2C2_SCL | PC,
+		.gpio_mode = MX6_PAD_UART5_TX_DATA__GPIO1_IO30 | PC,
+		.gp = IMX_GPIO_NR(1, 30),
+	},
+	.sda = {
+		.i2c_mode = MX6_PAD_UART5_RX_DATA__I2C2_SDA | PC,
+		.gpio_mode = MX6_PAD_UART5_RX_DATA__GPIO1_IO31 | PC,
+		.gp = IMX_GPIO_NR(1, 31),
+	},
+};
 #endif
 
 int dram_init(void)
@@ -798,6 +811,7 @@ int board_early_init_f(void)
 // early in the boot sequence
 #ifdef CONFIG_SYS_I2C_MXC
 	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
+	setup_i2c(1, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info2);
 #endif
 
 	ea_eeprom_init();
