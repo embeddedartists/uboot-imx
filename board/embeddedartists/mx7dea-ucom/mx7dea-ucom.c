@@ -693,6 +693,38 @@ int board_usb_phy_mode(int port)
 
 #endif
 
+#ifdef CONFIG_SYS_I2C_MXC
+/* Configure the GPIO Expander on COM Carrier Boards rev PE9 and later */
+static int configure_gpio_expander(void)
+{
+#define PCA6416_ADDR 0x20
+        unsigned char val = 0x00;
+
+        i2c_set_bus_num(1);
+        if (!i2c_probe(PCA6416_ADDR)) {
+                if (i2c_write(PCA6416_ADDR, 0x06, 1, &val, 1)) {
+                        printf("Failed to configure PCA6416 GPIO Expander!\n");
+                        return -1;
+                }
+                if (i2c_write(PCA6416_ADDR, 0x07, 1, &val, 1)) {
+                        printf("Failed to configure PCA6416 GPIO Expander!\n");
+                        return -1;
+                }
+                if (i2c_write(PCA6416_ADDR, 0x02, 1, &val, 1)) {
+                        printf("Failed to configure PCA6416 GPIO Expander!\n");
+                        return -1;
+                }
+                if (i2c_write(PCA6416_ADDR, 0x03, 1, &val, 1)) {
+                        printf("Failed to configure PCA6416 GPIO Expander!\n");
+                        return -1;
+                }
+	} else {
+                printf("Failed to detect PCA6416 GPIO Expander!\n");
+                return -1;
+	}
+	return 0;
+}
+#endif
 
 int board_early_init_f(void)
 {
@@ -806,6 +838,10 @@ int board_late_init(void)
 
 #ifdef CONFIG_CMD_EADISP
 	eatouch_init();
+#endif
+
+#ifdef CONFIG_SYS_I2C_MXC
+	configure_gpio_expander();
 #endif
 
 	imx_iomux_v3_setup_multiple_pads(wdog_pads, ARRAY_SIZE(wdog_pads));

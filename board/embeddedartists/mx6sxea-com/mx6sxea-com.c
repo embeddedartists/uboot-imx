@@ -869,6 +869,37 @@ static int disable_ar1021(void)
 	}
 	return 0;
 }
+
+/* Configure the GPIO Expander on COM Carrier Boards rev PE9 and later */
+static int configure_gpio_expander(void)
+{
+#define PCA6416_ADDR 0x20
+        unsigned char val = 0x00;
+
+        i2c_set_bus_num(1);
+        if (!i2c_probe(PCA6416_ADDR)) {
+                if (i2c_write(PCA6416_ADDR, 0x06, 1, &val, 1)) {
+                        printf("Failed to configure PCA6416 GPIO Expander!\n");
+                        return -1;
+                }
+                if (i2c_write(PCA6416_ADDR, 0x07, 1, &val, 1)) {
+                        printf("Failed to configure PCA6416 GPIO Expander!\n");
+                        return -1;
+                }
+                if (i2c_write(PCA6416_ADDR, 0x02, 1, &val, 1)) {
+                        printf("Failed to configure PCA6416 GPIO Expander!\n");
+                        return -1;
+                }
+                if (i2c_write(PCA6416_ADDR, 0x03, 1, &val, 1)) {
+                        printf("Failed to configure PCA6416 GPIO Expander!\n");
+                        return -1;
+                }
+	} else {
+                printf("Failed to detect PCA6416 GPIO Expander!\n");
+                return -1;
+	}
+	return 0;
+}
 #endif
 
 int power_init_board(void)
@@ -1111,8 +1142,10 @@ int board_late_init(void)
 #ifdef CONFIG_CMD_EADISP
 	eatouch_init();
 #endif
+
 #ifdef CONFIG_SYS_I2C_MXC
 	disable_ar1021();
+	configure_gpio_expander();
 #endif
 	return 0;
 }
