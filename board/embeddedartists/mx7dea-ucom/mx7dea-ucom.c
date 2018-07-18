@@ -702,19 +702,21 @@ static int configure_gpio_expander(void)
 
         i2c_set_bus_num(1);
         if (!i2c_probe(PCA6416_ADDR)) {
+                val = 0x40;
+                if (i2c_write(PCA6416_ADDR, 0x02, 1, &val, 1)) {
+                        printf("Failed to configure PCA6416 GPIO Expander!\n");
+                        return -1;
+                }
+                val = 0x00;
+                if (i2c_write(PCA6416_ADDR, 0x03, 1, &val, 1)) {
+                        printf("Failed to configure PCA6416 GPIO Expander!\n");
+                        return -1;
+                }
                 if (i2c_write(PCA6416_ADDR, 0x06, 1, &val, 1)) {
                         printf("Failed to configure PCA6416 GPIO Expander!\n");
                         return -1;
                 }
                 if (i2c_write(PCA6416_ADDR, 0x07, 1, &val, 1)) {
-                        printf("Failed to configure PCA6416 GPIO Expander!\n");
-                        return -1;
-                }
-                if (i2c_write(PCA6416_ADDR, 0x02, 1, &val, 1)) {
-                        printf("Failed to configure PCA6416 GPIO Expander!\n");
-                        return -1;
-                }
-                if (i2c_write(PCA6416_ADDR, 0x03, 1, &val, 1)) {
                         printf("Failed to configure PCA6416 GPIO Expander!\n");
                         return -1;
                 }
