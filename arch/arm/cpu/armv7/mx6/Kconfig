@@ -470,6 +470,27 @@ config TARGET_MX6SXSCM
         select DM_THERMAL
         select BOARD_EARLY_INIT_F
 
+config TARGET_MX6SXEA_COM
+        bool "Support mx6sxea-com"
+        select MX6SX
+        select SUPPORT_SPL
+        select DM
+        select DM_THERMAL
+
+config TARGET_MX6QEA_COM
+        bool "Support mx6qea-com"
+        select SUPPORT_SPL
+        select DM
+        select DM_THERMAL
+
+config TARGET_MX6ULEA_COM
+        bool "Support mx6ulea-com"
+        select MX6UL
+        select SUPPORT_SPL
+        select DM
+        select DM_THERMAL
+
+
 endchoice
 
 config SYS_SOC
@@ -527,5 +548,8 @@ source "board/wandboard/Kconfig"
 source "board/warp/Kconfig"
 source "board/freescale/mx6dqscm/Kconfig"
 source "board/freescale/mx6sxscm/Kconfig"
+source "board/embeddedartists/mx6sxea-com/Kconfig"
+source "board/embeddedartists/mx6qea-com/Kconfig"
+source "board/embeddedartists/mx6ulea-com/Kconfig"
 
 endif
