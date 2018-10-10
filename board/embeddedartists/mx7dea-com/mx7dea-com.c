@@ -23,6 +23,7 @@
 #include <miiphy.h>
 #include <netdev.h>
 #include <power/pmic.h>
+#include <power/pfuze3000_pmic.h>
 #ifdef CONFIG_SYS_I2C_MXC
 #include <i2c.h>
 #include <asm/imx-common/mxc_i2c.h>
@@ -33,7 +34,7 @@
 #endif
 #include <asm/arch/crm_regs.h>
 #include <usb.h>
-#include <usb/ehci-fsl.h>
+#include <usb/ehci-ci.h>
 #ifdef CONFIG_VIDEO_MXS
 #include <linux/fb.h>
 #include <mxsfb.h>
@@ -695,6 +696,44 @@ static const struct boot_mode board_boot_modes[] = {
 #define I2C_PMIC	0
 int power_init_board(void)
 {
+        struct pmic *p;
+        int ret;
+        unsigned int reg, rev_id;
+
+        ret = power_pfuze3000_init(I2C_PMIC);
+        if (ret)
+                return ret;
+
+        p = pmic_get("PFUZE3000");
+        ret = pmic_probe(p);
+        if (ret)
+                return ret;
+
+        pmic_reg_read(p, PFUZE3000_DEVICEID, &reg);
+        pmic_reg_read(p, PFUZE3000_REVID, &rev_id);
+        printf("PMIC: PFUZE3000 DEV_ID=0x%x REV_ID=0x%x\n", reg, rev_id);
+
+        /* disable Low Power Mode during standby mode */
+        pmic_reg_read(p, PFUZE3000_LDOGCTL, &reg);
+        reg |= 0x1;
+        pmic_reg_write(p, PFUZE3000_LDOGCTL, reg);
+
+        /* SW1A/1B mode set to APS/APS */
+        reg = 0x8;
+        pmic_reg_write(p, PFUZE3000_SW1AMODE, reg);
+        pmic_reg_write(p, PFUZE3000_SW1BMODE, reg);
+
+        /* SW1A/1B standby voltage set to 0.975V */
+        reg = 0xb;
+        pmic_reg_write(p, PFUZE3000_SW1ASTBY, reg);
+        pmic_reg_write(p, PFUZE3000_SW1BSTBY, reg);
+
+        /* set SW1B normal voltage to 0.975V */
+        pmic_reg_read(p, PFUZE3000_SW1BVOLT, &reg);
+        reg &= ~0x1f;
+        reg |= PFUZE3000_SW1AB_SETP(9750);
+        pmic_reg_write(p, PFUZE3000_SW1BVOLT, reg);
+
 	return 0;
 }
 #endif

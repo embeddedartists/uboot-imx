@@ -33,7 +33,7 @@
 #endif
 #include <asm/arch/crm_regs.h>
 #include <usb.h>
-#include <usb/ehci-fsl.h>
+#include <usb/ehci-ci.h>
 #ifdef CONFIG_VIDEO_MXS
 #include <linux/fb.h>
 #include <mxsfb.h>

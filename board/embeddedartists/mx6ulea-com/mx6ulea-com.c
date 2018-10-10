@@ -30,7 +30,7 @@
 #include <mxsfb.h>
 #include <netdev.h>
 #include <usb.h>
-#include <usb/ehci-fsl.h>
+#include <usb/ehci-ci.h>
 #include <power/pmic.h>
 #include <power/pfuze3000_pmic.h>
 
@@ -102,7 +102,7 @@ iomux_v3_cfg_t const peri_pwr_pads[] = {
 	(MX6_PAD_SNVS_TAMPER2__GPIO5_IO02 | MUX_PAD_CTRL(PERI_PWR_PAD_CTRL)),
 };
 
-#ifdef CONFIG_SYS_I2C_MXC
+#ifdef CONFIG_SYS_I2C
 #define PC MUX_PAD_CTRL(I2C_PAD_CTRL)
 /* I2C1 for PMIC and EEPROM */
 struct i2c_pads_info i2c_pad_info1 = {
@@ -127,7 +127,6 @@ int dram_init(void)
 	gd->ram_size = PHYS_SDRAM_SIZE;
 
 	// getting actual size from eeprom configuration
-
 	if (ea_eeprom_get_config(&config) == 0) {
 		gd->ram_size = (config.ddr_size << 20);
 	}
@@ -440,7 +439,7 @@ static iomux_v3_cfg_t const lcd_pads[] = {
 void board_enable_rgb(const struct display_info_t *di, int enable)
 {
 	if (enable) {
-		enable_lcdif_clock(LCDIF1_BASE_ADDR);
+		enable_lcdif_clock(LCDIF1_BASE_ADDR, 1);
 
 		imx_iomux_v3_setup_multiple_pads(lcd_pads, ARRAY_SIZE(lcd_pads));
 
@@ -470,7 +469,6 @@ static const struct display_info_t displays[] = {
 };
 
 #else /* CONFIG_CMD_EADISP */
-
 struct lcd_panel_info_t {
 	unsigned int lcdif_base_addr;
 	int depth;
@@ -480,7 +478,7 @@ struct lcd_panel_info_t {
 
 void do_enable_parallel_lcd(struct lcd_panel_info_t const *dev)
 {
-	enable_lcdif_clock(dev->lcdif_base_addr);
+	enable_lcdif_clock(dev->lcdif_base_addr, 1);
 
 	imx_iomux_v3_setup_multiple_pads(lcd_pads, ARRAY_SIZE(lcd_pads));
 
@@ -495,7 +493,7 @@ void do_enable_parallel_lcd(struct lcd_panel_info_t const *dev)
 }
 
 static struct lcd_panel_info_t const displays[] = {{
-	.lcdif_base_addr = LCDIF1_BASE_ADDR,
+	.lcdif_base_addr = MX6UL_LCDIF1_BASE_ADDR,
 	.depth = 24,
 	.enable	= do_enable_parallel_lcd,
 	.mode	= {
@@ -740,11 +738,11 @@ void ldo_mode_set(int ldo_bypass)
                 /* decrease VDDARM to 1.275V */
                 pmic_reg_read(p, PFUZE3000_SW1BVOLT, &value);
                 value &= ~0x1f;
-                value |= PFUZE3000_SW1AB_SETP(1275);
+                value |= PFUZE3000_SW1AB_SETP(12750);
                 pmic_reg_write(p, PFUZE3000_SW1BVOLT, value);
 
                 set_anatop_bypass(1);
-                vddarm = PFUZE3000_SW1AB_SETP(1175);
+                vddarm = PFUZE3000_SW1AB_SETP(11750);
 
                 pmic_reg_read(p, PFUZE3000_SW1BVOLT, &value);
                 value &= ~0x1f;
@@ -759,7 +757,7 @@ void ldo_mode_set(int ldo_bypass)
 #endif
 #endif
 
-#ifdef CONFIG_SYS_I2C_MXC
+#ifdef CONFIG_SYS_I2C
 static int disable_ar1021(void)
 {
         unsigned char cmd[] = { 0x55, 0x01, 0x13 };
@@ -796,12 +794,11 @@ int board_early_init_f(void)
 // Configuration parameters are stored in I2C mapped eeprom and
 // must be initialized here since the configuration is accessed
 // early in the boot sequence
-#ifdef CONFIG_SYS_I2C_MXC
+#ifdef CONFIG_SYS_I2C
 	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
 #endif
 
 	ea_eeprom_init();
-
 	return 0;
 }
 
@@ -851,7 +848,7 @@ int board_late_init(void)
 #ifdef CONFIG_CMD_EADISP
         eatouch_init();
 #endif
-#ifdef CONFIG_SYS_I2C_MXC
+#ifdef CONFIG_SYS_I2C
 	disable_ar1021();
 #endif
 

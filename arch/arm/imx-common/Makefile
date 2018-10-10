@@ -40,13 +40,17 @@ ifeq ($(SOC),$(filter $(SOC),mx6 mx7))
 obj-y 	+= cache.o init.o
 obj-$(CONFIG_CMD_SATA) += sata.o
 obj-$(CONFIG_IMX_VIDEO_SKIP) += video.o
-obj-$(CONFIG_CMD_EADISP) += eadisp.o eatouch.o
 obj-$(CONFIG_IMX_RDC) += rdc-sema.o
 obj-$(CONFIG_IMX_BOOTAUX) += imx_bootaux.o
 obj-$(CONFIG_SECURE_BOOT)    += hab.o
 obj-$(CONFIG_GPT_TIMER) += timer.o
 obj-$(CONFIG_SYSCOUNTER_TIMER) += syscounter.o
 obj-$(CONFIG_IMX_TRUSTY_OS) += trusty.o
+
+ifneq ($(CONFIG_SPL_BUILD),y)
+obj-$(CONFIG_CMD_EADISP) += eadisp.o eatouch.o
+endif
+
 endif
 ifeq ($(SOC),$(filter $(SOC),mx7ulp))
 obj-y  += cache.o

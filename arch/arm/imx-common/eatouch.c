@@ -3,7 +3,7 @@
  */
 
 #include <common.h>
-#include <asm/errno.h>
+#include <linux/errno.h>
 #include <asm/gpio.h>
 #include <asm/imx-common/eatouch.h>
 #include <asm/io.h>

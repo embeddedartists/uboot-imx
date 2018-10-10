@@ -13,8 +13,6 @@
 #include "mx6_common.h"
 
 #ifdef CONFIG_SPL
-#define CONFIG_SPL_LIBCOMMON_SUPPORT
-#define CONFIG_SPL_MMC_SUPPORT
 #define CONFIG_SPL_BOARD_INIT
 #include "imx6_spl.h"
 #endif
@@ -34,7 +32,6 @@
 /* Size of malloc() pool */
 #define CONFIG_SYS_MALLOC_LEN		(16 * SZ_1M)
 
-#define CONFIG_BOARD_EARLY_INIT_F
 #define CONFIG_BOARD_LATE_INIT
 
 #define CONFIG_MXC_UART
@@ -130,7 +127,6 @@
 	   "else run netboot; fi"
 
 /* Miscellaneous configurable options */
-#define CONFIG_CMD_MEMTEST
 #define CONFIG_SYS_MEMTEST_START	0x80000000
 #define CONFIG_SYS_MEMTEST_END		(CONFIG_SYS_MEMTEST_START + 0x10000)
 
@@ -161,24 +157,25 @@
 #define CONFIG_SYS_FSL_ESDHC_ADDR	USDHC2_BASE_ADDR
 
 /* I2C Configs */
-#define CONFIG_CMD_I2C
+#ifndef CONFIG_DM_I2C
 #define CONFIG_SYS_I2C
+#endif
+#ifdef CONFIG_CMD_I2C
 #define CONFIG_SYS_I2C_MXC
 #define CONFIG_SYS_I2C_MXC_I2C1		/* enable I2C bus 1 */
 #define CONFIG_SYS_I2C_MXC_I2C2		/* enable I2C bus 2 */
 #define CONFIG_SYS_I2C_SPEED		  100000
+#endif
 
 /* PMIC */
+#ifndef CONFIG_DM_PMIC
 #define CONFIG_POWER
 #define CONFIG_POWER_I2C
 #define CONFIG_POWER_PFUZE3000
 #define CONFIG_POWER_PFUZE3000_I2C_ADDR	0x08
-#define CONFIG_PMIC_I2C_BUS		0
+#endif
 
 /* Network */
-#define CONFIG_CMD_PING
-#define CONFIG_CMD_DHCP
-#define CONFIG_CMD_MII
 #define CONFIG_FEC_MXC
 #define CONFIG_MII
 
@@ -193,17 +190,20 @@
 #endif
 
 #define CONFIG_FEC_XCV_TYPE             RGMII
-#define CONFIG_ETHPRIME                 "FEC"
+#ifdef CONFIG_DM_ETH
+#define CONFIG_ETHPRIME                        "eth0"
+#else
+#define CONFIG_ETHPRIME                        "FEC"
+#endif
+
 
 #define CONFIG_PHYLIB
 #define CONFIG_PHY_MICREL
 
-
-#define CONFIG_CMD_USB
+/* USB configs */
 #ifdef CONFIG_CMD_USB
 #define CONFIG_USB_EHCI
 #define CONFIG_USB_EHCI_MX6
-#define CONFIG_USB_STORAGE
 #define CONFIG_EHCI_HCD_INIT_AFTER_RESET
 #define CONFIG_USB_HOST_ETHER
 #define CONFIG_USB_ETHER_ASIX
@@ -214,31 +214,17 @@
 
 #define CONFIG_IMX_THERMAL
 
-#define CONFIG_CMD_TIME
 
 #define CONFIG_CMD_BMODE
 
-#ifndef CONFIG_SPL_BUILD
-#define CONFIG_VIDEO
-#ifdef CONFIG_VIDEO
-#define CONFIG_CFB_CONSOLE
 #define CONFIG_VIDEO_MXS
 #define CONFIG_VIDEO_LOGO
-#define CONFIG_VIDEO_SW_CURSOR
-#define CONFIG_VGA_AS_SINGLE_DEVICE
-#define CONFIG_SYS_CONSOLE_IS_IN_ENV
 #define CONFIG_SPLASH_SCREEN
 #define CONFIG_SPLASH_SCREEN_ALIGN
-#define CONFIG_CMD_BMP
 #define CONFIG_BMP_16BPP
-#define CONFIG_VIDEO_BMP_RLE8
 #define CONFIG_VIDEO_BMP_LOGO
 /*#define CONFIG_IMX_VIDEO_SKIP*/
 
-/* EA: display commands */
-#define CONFIG_CMD_EADISP
-#endif
-#endif
 
 #define CONFIG_ENV_SIZE			SZ_8K
 #if defined(CONFIG_ENV_IS_IN_MMC)
@@ -250,13 +236,19 @@
 #define CONFIG_CMD_EEPROM
 #define CONFIG_SYS_I2C_EEPROM_ADDR_LEN 2
 #define CONFIG_ENV_EEPROM_IS_ON_I2C
-#define CONFIG_SYS_I2C_MULTI_EEPROMS
 /* the page boundary is 32 bytes (2^5 = 32) */
 #define CONFIG_SYS_EEPROM_PAGE_WRITE_BITS 5
 #define CONFIG_SYS_EEPROM_PAGE_WRITE_DELAY_MS 10
 
 #if defined(CONFIG_ANDROID_SUPPORT)
 #include "mx6ul_14x14_evk_android.h"
+#else
+
+#ifndef CONFIG_SPL
+#define CONFIG_USBD_HS
+#define CONFIG_USB_FUNCTION_MASS_STORAGE
 #endif
+
+#endif /* CONFIG_ANDROID_SUPPORT */
 
 #endif				/* __CONFIG_H */

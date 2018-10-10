@@ -24,7 +24,7 @@
 #include <mmc.h>
 #include <miiphy.h>
 #include <netdev.h>
-#ifdef CONFIG_SYS_I2C_MXC
+#ifdef CONFIG_SYS_I2C
 #include <i2c.h>
 #include <asm/imx-common/mxc_i2c.h>
 #include <power/pmic.h>
@@ -33,7 +33,7 @@
 #endif
 
 #include <usb.h>
-#include <usb/ehci-fsl.h>
+#include <usb/ehci-ci.h>
 
 #ifdef CONFIG_IMX_RDC
 #include <asm/imx-common/rdc-sema.h>
@@ -88,7 +88,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define WDOG_PAD_CTRL (PAD_CTL_PUE | PAD_CTL_PKE | PAD_CTL_SPEED_MED |	\
 	PAD_CTL_DSE_40ohm)
 
-#ifdef CONFIG_SYS_I2C_MXC
+#ifdef CONFIG_SYS_I2C
 #define PC MUX_PAD_CTRL(I2C_PAD_CTRL)
 /* I2C1 for PMIC */
 struct i2c_pads_info i2c_pad_info1 = {
@@ -396,12 +396,15 @@ int board_mmc_init(bd_t *bis)
 		case 0:
 			imx_iomux_v3_setup_multiple_pads(
 				usdhc2_pads, ARRAY_SIZE(usdhc2_pads));
+			gpio_request(USDHC2_PWR_GPIO, "usdhc2 pwr");
 			gpio_direction_output(USDHC2_PWR_GPIO, 1);
 			usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC2_CLK);
 			break;
 		case 1:
 			imx_iomux_v3_setup_multiple_pads(
 				usdhc3_pads, ARRAY_SIZE(usdhc3_pads));
+			gpio_request(USDHC3_CD_GPIO, "usdhc3 cd");
+			gpio_request(USDHC3_PWR_GPIO, "usdhc3 pwr");
 			gpio_direction_input(USDHC3_CD_GPIO);
 			gpio_direction_output(USDHC3_PWR_GPIO, 1);
 			usdhc_cfg[1].sdhc_clk = mxc_get_clock(MXC_ESDHC3_CLK);
@@ -413,6 +416,7 @@ int board_mmc_init(bd_t *bis)
 #else
 			imx_iomux_v3_setup_multiple_pads(
 				usdhc4_pads, ARRAY_SIZE(usdhc4_pads));
+			gpio_request(USDHC4_CD_GPIO, "usdhc4 cd");
 			gpio_direction_input(USDHC4_CD_GPIO);
 #endif
 			usdhc_cfg[2].sdhc_clk = mxc_get_clock(MXC_ESDHC4_CLK);
@@ -527,7 +531,7 @@ void board_enable_lvds0(const struct display_info_t *di, int enable)
 {
 	static u32 base_addr = LCDIF2_BASE_ADDR;
 	if (enable) {
-		enable_lcdif_clock(base_addr);
+		enable_lcdif_clock(base_addr, 1);
 		enable_lvds_bridge(base_addr);
 		if (di->pixfmt == IPU_PIX_FMT_RGB24) {
 			/* enable_lvds() defaults to 18-bit data width */
@@ -542,12 +546,15 @@ void board_enable_lvds0(const struct display_info_t *di, int enable)
 		mdelay(100); /* let panel sync up before enabling backlight */
 
 		/* Enable CABC */
+		gpio_request(IMX_GPIO_NR(2, 1), "CABC enable");
 		gpio_direction_output(IMX_GPIO_NR(2, 1) , 1);
 
 		/* Set Brightness to high */
+		gpio_request(IMX_GPIO_NR(7, 11), "lvds backlight");
 		gpio_direction_output(IMX_GPIO_NR(7, 11) , 1);
 
 		/* Backlight power enable */
+		gpio_request(IMX_GPIO_NR(1, 0), "backlight pwr");
 		gpio_direction_output(IMX_GPIO_NR(1, 9) , 1);
 	}
 }
@@ -556,17 +563,20 @@ void board_enable_rgb(const struct display_info_t *di, int enable)
 {
 	static u32 base_addr = MX6SX_LCDIF1_BASE_ADDR;
 	if (enable) {
-		enable_lcdif_clock(base_addr);
+		enable_lcdif_clock(base_addr, 1);
 		imx_iomux_v3_setup_multiple_pads(lcd_pads, ARRAY_SIZE(lcd_pads));
 		mdelay(100); /* let panel sync up before enabling backlight */
 
 		/* Power up the LCD */
+		gpio_request(IMX_GPIO_NR(2, 1), "lcd pwr");
 		gpio_direction_output(IMX_GPIO_NR(2, 1) , 1);
 
 		/* Set Brightness to high */
+		gpio_request(IMX_GPIO_NR(7, 10), "lcd brightness");
 		gpio_direction_output(IMX_GPIO_NR(7, 10) , 1);
 
 		/* Backlight power enable */
+		gpio_request(IMX_GPIO_NR(1, 9), "backlight pwr");
 		gpio_direction_output(IMX_GPIO_NR(1, 9) , 1);
 	}
 }
@@ -589,7 +599,6 @@ static const struct display_info_t displays[] = {
 };
 
 #else /* CONFIG_CMD_EADISP */
-
 struct lcd_panel_info_t {
 	unsigned int lcdif_base_addr;
 	int depth;
@@ -599,19 +608,22 @@ struct lcd_panel_info_t {
 
 void do_enable_lvds(struct lcd_panel_info_t const *dev)
 {
-	enable_lcdif_clock(dev->lcdif_base_addr);
+	enable_lcdif_clock(dev->lcdif_base_addr, 1);
 	enable_lvds(dev->lcdif_base_addr);
 
 	imx_iomux_v3_setup_multiple_pads(lvds_ctrl_pads,
 							ARRAY_SIZE(lvds_ctrl_pads));
 
 	/* Enable CABC */
+	gpio_request(IMX_GPIO_NR(2, 1), "CABC enable");
 	gpio_direction_output(IMX_GPIO_NR(2, 1) , 1);
 
 	/* Set Brightness to high */
+	gpio_request(IMX_GPIO_NR(7, 11), "lvds backlight");
 	gpio_direction_output(IMX_GPIO_NR(7, 11) , 1);
 
 	/* Backlight power enable */
+	gpio_request(IMX_GPIO_NR(1, 9), "backlight pwr");
 	gpio_direction_output(IMX_GPIO_NR(1, 9) , 1);
 }
 
@@ -622,12 +634,15 @@ void do_enable_parallel_lcd(struct lcd_panel_info_t const *dev)
 	imx_iomux_v3_setup_multiple_pads(lcd_pads, ARRAY_SIZE(lcd_pads));
 
 	/* Power up the LCD */
+	gpio_request(IMX_GPIO_NR(2, 1), "LCD pwr");
 	gpio_direction_output(IMX_GPIO_NR(2, 1) , 1);
 
 	/* Set Brightness to high */
+	gpio_request(IMX_GPIO_NR(7, 10), "lcd brightness");
 	gpio_direction_output(IMX_GPIO_NR(7, 10) , 1);
 
 	/* Backlight power enable */
+	gpio_request(IMX_GPIO_NR(1, 9), "backlight pwr");
 	gpio_direction_output(IMX_GPIO_NR(1, 9) , 1);
 }
 
@@ -772,9 +787,11 @@ static int setup_fec(int fec_id)
 		ARRAY_SIZE(phy_control_pads));
 
 	/* Enable the ENET power, active low */
+	gpio_request(IMX_GPIO_NR(2, 0), "enet pwr");
 	gpio_direction_output(IMX_GPIO_NR(2, 0) , 0);
 
 	/* Reset AR8031 PHY */
+	gpio_request(IMX_GPIO_NR(2, 7), "ar8081 phy");
 	gpio_direction_output(IMX_GPIO_NR(2, 7) , 0);
 	udelay(500);
 	gpio_set_value(IMX_GPIO_NR(2, 7), 1);
@@ -853,7 +870,7 @@ void board_get_hwaddr(int dev_id, unsigned char *mac)
 
 #endif
 
-#ifdef CONFIG_SYS_I2C_MXC
+#ifdef CONFIG_SYS_I2C
 static int disable_ar1021(void)
 {
         unsigned char cmd[] = { 0x55, 0x01, 0x13 };
@@ -870,13 +887,14 @@ static int disable_ar1021(void)
 }
 #endif
 
+#define I2C_PMIC 0
 int power_init_board(void)
 {
 	struct pmic *pfuze;
 	unsigned int reg;
 	int ret;
 
-	pfuze = pfuze_common_init(CONFIG_PMIC_I2C_BUS);
+	pfuze = pfuze_common_init(I2C_PMIC);
 	if (!pfuze)
 		return -ENODEV;
 
@@ -907,84 +925,26 @@ void ldo_mode_set(int ldo_bypass)
 		return;
 	}
 
-	/* increase VDDARM/VDDSOC to support 1.2G chip */
-	if (check_1_2G()) {
-		ldo_bypass = 0;	/* ldo_enable on 1.2G chip */
-		printf("1.2G chip, increase VDDARM_IN/VDDSOC_IN\n");
-		if (is_mx6dqp()) {
-			/* increase VDDARM to 1.425V */
-			pmic_reg_read(p, PFUZE100_SW2VOL, &value);
-			value &= ~0x3f;
-			value |= 0x29;
-			pmic_reg_write(p, PFUZE100_SW2VOL, value);
-		} else {
-			/* increase VDDARM to 1.425V */
-			pmic_reg_read(p, PFUZE100_SW1ABVOL, &value);
-			value &= ~0x3f;
-			value |= 0x2d;
-			pmic_reg_write(p, PFUZE100_SW1ABVOL, value);
-		}
-		/* increase VDDSOC to 1.425V */
-		pmic_reg_read(p, PFUZE100_SW1CVOL, &value);
-		value &= ~0x3f;
-		value |= 0x2d;
-		pmic_reg_write(p, PFUZE100_SW1CVOL, value);
-	}
 	/* switch to ldo_bypass mode , boot on 800Mhz */
 	if (ldo_bypass) {
 		prep_anatop_bypass();
-		if (is_mx6dqp()) {
-			/* decrease VDDARM for 400Mhz DQP:1.1V*/
-			pmic_reg_read(p, PFUZE100_SW2VOL, &value);
-			value &= ~0x3f;
-			value |= 0x1c;
-			pmic_reg_write(p, PFUZE100_SW2VOL, value);
-		} else {
-			/* decrease VDDARM for 400Mhz DQ:1.1V, DL:1.275V */
-			pmic_reg_read(p, PFUZE100_SW1ABVOL, &value);
-			value &= ~0x3f;
-			if (is_cpu_type(MXC_CPU_MX6DL))
-				value |= 0x27;
-			else
-				value |= 0x20;
+		/* decrease VDDARM for 400Mhz DQ:1.1V, DL:1.275V */
+		pmic_reg_read(p, PFUZE100_SW1ABVOL, &value);
+		value &= ~0x3f;
+		value |= PFUZE100_SW1ABC_SETP(12750);
+		pmic_reg_write(p, PFUZE100_SW1ABVOL, value);
 
-			pmic_reg_write(p, PFUZE100_SW1ABVOL, value);
-		}
 		/* increase VDDSOC to 1.3V */
 		pmic_reg_read(p, PFUZE100_SW1CVOL, &value);
 		value &= ~0x3f;
-		value |= 0x28;
+		value |= PFUZE100_SW1ABC_SETP(13000);
 		pmic_reg_write(p, PFUZE100_SW1CVOL, value);
 
-		/*
-		 * MX6Q/DQP:
-		 * VDDARM:1.15V@800M; VDDSOC:1.175V@800M
-		 * VDDARM:0.975V@400M; VDDSOC:1.175V@400M
-		 * MX6DL:
-		 * VDDARM:1.175V@800M; VDDSOC:1.175V@800M
-		 * VDDARM:1.075V@400M; VDDSOC:1.175V@400M
-		 */
 		is_400M = set_anatop_bypass(2);
-		if (is_mx6dqp()) {
-			pmic_reg_read(p, PFUZE100_SW2VOL, &value);
-			value &= ~0x3f;
-			if (is_400M)
-				value |= 0x17;
-			else
-				value |= 0x1e;
-			pmic_reg_write(p, PFUZE100_SW2VOL, value);
-		}
-
 		if (is_400M) {
-			if (is_cpu_type(MXC_CPU_MX6DL))
-				vddarm = 0x1f;
-			else
-				vddarm = 0x1b;
+			vddarm = PFUZE100_SW1ABC_SETP(10750);
 		} else {
-			if (is_cpu_type(MXC_CPU_MX6DL))
-				vddarm = 0x23;
-			else
-				vddarm = 0x22;
+			vddarm = PFUZE100_SW1ABC_SETP(11750);
 		}
 		pmic_reg_read(p, PFUZE100_SW1ABVOL, &value);
 		value &= ~0x3f;
@@ -994,7 +954,7 @@ void ldo_mode_set(int ldo_bypass)
 		/* decrease VDDSOC to 1.175V */
 		pmic_reg_read(p, PFUZE100_SW1CVOL, &value);
 		value &= ~0x3f;
-		value |= 0x23;
+		value |= PFUZE100_SW1ABC_SETP(11750);
 		pmic_reg_write(p, PFUZE100_SW1CVOL, value);
 
 		finish_anatop_bypass();
@@ -1025,6 +985,7 @@ int board_early_init_f(void)
 
 	/* Enable PERI_3V3, which is used by SD2, ENET, LVDS, BT */
 	imx_iomux_v3_setup_multiple_pads(peri_3v3_pads, ARRAY_SIZE(peri_3v3_pads));
+	gpio_request(IMX_GPIO_NR(4, 26), "peri 3.3  pwr");
 	gpio_direction_output(IMX_GPIO_NR(4, 26) , 1);
 #ifndef CONFIG_EA_NO_UART_FLUSH
 	/* Empty UART RX FIFO 5ms after PERI_PWR_ENABLE goes high */
@@ -1039,7 +1000,7 @@ int board_early_init_f(void)
 // Configuration parameters are stored in I2C mapped eeprom and
 // must be initialized here since the configuration is accessed
 // early in the boot sequence
-#ifdef CONFIG_SYS_I2C_MXC
+#ifdef CONFIG_SYS_I2C
 	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
 	setup_i2c(1, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info2);
 #endif
@@ -1052,7 +1013,6 @@ int board_early_init_f(void)
 
 int board_init(void)
 {
-
 	/* Address of boot parameters */
 	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
 
@@ -1069,7 +1029,7 @@ int board_init(void)
 	board_qspi_init();
 #endif
 
-#ifdef CONFIG_CMD_EADISP
+#if defined(CONFIG_CMD_EADISP) && !defined(CONFIG_SPL_BUILD)
 	eadisp_setup_display(displays, ARRAY_SIZE(displays));
 #endif
 #ifdef CONFIG_EA_IMX_PTP
@@ -1110,7 +1070,7 @@ int board_late_init(void)
 #ifdef CONFIG_CMD_EADISP
 	eatouch_init();
 #endif
-#ifdef CONFIG_SYS_I2C_MXC
+#ifdef CONFIG_SYS_I2C
 	disable_ar1021();
 #endif
 	return 0;
@@ -1242,6 +1202,7 @@ int check_recovery_cmd_file(void)
 	imx_iomux_v3_setup_multiple_pads(recovery_key_pads,
 		ARRAY_SIZE(recovery_key_pads));
 
+	gpio_request(GPIO_VOL_DN_KEY, "vol dn key");
 	gpio_direction_input(GPIO_VOL_DN_KEY);
 
 	if (gpio_get_value(GPIO_VOL_DN_KEY) == 0) { /* VOL_DN key is low assert */

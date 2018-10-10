@@ -9,8 +9,8 @@
 
 #ifndef __MX7DEA_COM_H
 #define __MX7DEA_COM_H
+
 #include "mx7_common.h"
-#undef CONFIG_MX7_SEC
 
 #define CONFIG_DBG_MONITOR
 
@@ -26,16 +26,23 @@
 #endif
 #endif
 
+#define CONFIG_BOARD_LATE_INIT
+
+#define CONFIG_MXC_UART_BASE            UART1_IPS_BASE_ADDR
+
+/* Size of malloc() pool */
+#define CONFIG_SYS_MALLOC_LEN           (32 * SZ_1M)
+
 #ifdef CONFIG_IMX_BOOTAUX
 /* Set to QSPI1 A flash at default */
-#ifdef CONFIG_SYS_USE_QSPI
+#ifdef CONFIG_FSL_QSPI
 #define CONFIG_SYS_AUXCORE_BOOTDATA 0x60100000 /* Set to QSPI1 A flash, offset 1M */
 #else
 #define CONFIG_SYS_AUXCORE_BOOTDATA 0x7F8000 /* Set to TCML address */
 #endif
 
 
-#ifdef CONFIG_SYS_USE_QSPI
+#ifdef CONFIG_FSL_QSPI
 #define UPDATE_M4_ENV \
         "m4image=m4_qspi.bin\0" \
         "loadm4image=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${m4image}\0" \
@@ -154,7 +161,6 @@
 	   "else run netboot; fi"
 
 /* Miscellaneous configurable options */
-#define CONFIG_CMD_MEMTEST
 #define CONFIG_SYS_MEMTEST_START	0x80000000
 #define CONFIG_SYS_MEMTEST_END		(CONFIG_SYS_MEMTEST_START + 0x10000)
 
@@ -177,32 +183,25 @@
 #define CONFIG_SYS_INIT_SP_ADDR \
 	(CONFIG_SYS_INIT_RAM_ADDR + CONFIG_SYS_INIT_SP_OFFSET)
 
-#ifdef CONFIG_SYS_BOOT_QSPI
-#define CONFIG_SYS_USE_QSPI
+#ifdef CONFIG_BOOT_QSPI
+#define CONFIG_FSL_QSPI
 #define CONFIG_ENV_IS_IN_SPI_FLASH
-#elif defined CONFIG_SYS_BOOT_NAND
-#define CONFIG_SYS_USE_NAND
-#define CONFIG_ENV_IS_IN_NAND
 #else
-#define CONFIG_SYS_USE_QSPI    /* Enable the QSPI flash by default */
 #define CONFIG_ENV_IS_IN_MMC
 #endif
 
-#ifdef CONFIG_SYS_USE_QSPI
-#define CONFIG_FSL_QSPI
-#define CONFIG_CMD_SF
-#define CONFIG_SPI_FLASH
-#define CONFIG_SPI_FLASH_MACRONIX
-#define	CONFIG_SPI_FLASH_STMICRO
-#define	CONFIG_SPI_FLASH_ISSI
-#define CONFIG_SPI_FLASH_BAR
+#ifdef CONFIG_FSL_QSPI
+#define CONFIG_SYS_FSL_QSPI_AHB
 #define CONFIG_SF_DEFAULT_BUS           0
 #define CONFIG_SF_DEFAULT_CS            0
 #define CONFIG_SF_DEFAULT_SPEED         40000000
 #define CONFIG_SF_DEFAULT_MODE          SPI_MODE_0
-#define CONFIG_QSPI_BASE                QSPI1_IPS_BASE_ADDR
-#define CONFIG_QSPI_MEMMAP_BASE         QSPI0_ARB_BASE_ADDR
+#define FSL_QSPI_FLASH_NUM              1
+#define FSL_QSPI_FLASH_SIZE             SZ_32M
+#define QSPI0_BASE_ADDR                 QSPI1_IPS_BASE_ADDR
+#define QSPI0_AMBA_BASE                 QSPI0_ARB_BASE_ADDR
 #endif
+
 
 
 /* MMC Configuration */
@@ -214,11 +213,12 @@
 #define CONFIG_SYS_FSL_ESDHC_ADDR	0
 
 /* I2C Configs */
-#define CONFIG_CMD_I2C
 #define CONFIG_SYS_I2C
 #define CONFIG_SYS_I2C_MXC
 #define CONFIG_SYS_I2C_MXC_I2C1		/* enable I2C bus 1 */
 #define CONFIG_SYS_I2C_SPEED		  100000
+
+#define CONFIG_SUPPORT_EMMC_BOOT        /* eMMC specific */
 
 /* PMIC */
 #define CONFIG_POWER
@@ -227,7 +227,6 @@
 #define CONFIG_POWER_PFUZE3000_I2C_ADDR	0x08
 
 /* Network */
-#define CONFIG_CMD_MII
 #define CONFIG_FEC_MXC
 #define CONFIG_MII
 
@@ -235,16 +234,19 @@
 #define CONFIG_FEC_MXC_PHYADDR          0x1
 
 #define CONFIG_FEC_XCV_TYPE             RGMII
-#define CONFIG_ETHPRIME                 "FEC"
+#ifdef CONFIG_DM_ETH
+#define CONFIG_ETHPRIME                 "eth0"
+#else
+#define CONFIG_ETHPRIME                 "FEC0"
+#endif
+
 
 #define CONFIG_PHYLIB
 #define CONFIG_PHY_BROADCOM
 
 /* USB Configs */
-#define CONFIG_CMD_USB
 #define CONFIG_USB_EHCI
 #define CONFIG_USB_EHCI_MX7
-#define CONFIG_USB_STORAGE
 #define CONFIG_EHCI_HCD_INIT_AFTER_RESET
 #define CONFIG_USB_HOST_ETHER
 #define CONFIG_USB_ETHER_ASIX
@@ -254,18 +256,11 @@
 
 #define CONFIG_IMX_THERMAL
 
-#define CONFIG_CMD_TIME
-
 #define CONFIG_CMD_BMODE
 
-#define CONFIG_VIDEO
 #ifdef CONFIG_VIDEO
-#define CONFIG_CFB_CONSOLE
 #define CONFIG_VIDEO_MXS
 #define CONFIG_VIDEO_LOGO
-#define CONFIG_VIDEO_SW_CURSOR
-#define CONFIG_VGA_AS_SINGLE_DEVICE
-#define CONFIG_SYS_CONSOLE_IS_IN_ENV
 #define CONFIG_SPLASH_SCREEN
 #define CONFIG_SPLASH_SCREEN_ALIGN
 #define CONFIG_CMD_BMP
@@ -273,12 +268,8 @@
 #define CONFIG_VIDEO_BMP_RLE8
 #define CONFIG_VIDEO_BMP_LOGO
 /*#define CONFIG_IMX_VIDEO_SKIP*/
-
-/* EA: display commands */
-#define CONFIG_CMD_EADISP
 #endif
 
-#define CONFIG_SYS_NO_FLASH
 #define CONFIG_ENV_SIZE			SZ_8K
 #define CONFIG_ENV_OFFSET		(8 * SZ_64K)
 
@@ -287,13 +278,17 @@
 #define CONFIG_CMD_EEPROM
 #define CONFIG_SYS_I2C_EEPROM_ADDR_LEN 2
 #define CONFIG_ENV_EEPROM_IS_ON_I2C
-#define CONFIG_SYS_I2C_MULTI_EEPROMS
 /* the page boundary is 32 bytes (2^5 = 32) */
 #define CONFIG_SYS_EEPROM_PAGE_WRITE_BITS 5
 #define CONFIG_SYS_EEPROM_PAGE_WRITE_DELAY_MS 10
 
 #if defined(CONFIG_ANDROID_SUPPORT)
 #include "mx7dsabresdandroid.h"
+#elif defined(CONFIG_ANDROID_THINGS_SUPPORT)
+#include "mx7dsabresd_androidthings.h"
+#else
+#define CONFIG_USBD_HS
+#define CONFIG_USB_FUNCTION_MASS_STORAGE
 #endif
 
 #endif				/* __CONFIG_H */
