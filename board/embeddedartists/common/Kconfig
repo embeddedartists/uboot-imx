@@ -1,0 +1,3 @@
+config EA_NO_UART_FLUSH
+        bool
+
