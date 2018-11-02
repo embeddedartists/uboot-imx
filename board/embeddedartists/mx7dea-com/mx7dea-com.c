@@ -28,10 +28,6 @@
 #include <i2c.h>
 #include <asm/imx-common/mxc_i2c.h>
 #endif
-#if defined(CONFIG_MXC_EPDC)
-#include <lcd.h>
-#include <mxc_epdc_fb.h>
-#endif
 #include <asm/arch/crm_regs.h>
 #include <usb.h>
 #include <usb/ehci-ci.h>
@@ -71,15 +67,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define QSPI_PAD_CTRL	\
 	(PAD_CTL_DSE_3P3V_49OHM | PAD_CTL_PUE | PAD_CTL_PUS_PU47KOHM)
 
-#define SPI_PAD_CTRL (PAD_CTL_DSE_3P3V_49OHM | PAD_CTL_SRE_SLOW | PAD_CTL_HYS)
-
 #define BUTTON_PAD_CTRL    (PAD_CTL_PUS_PU5KOHM | PAD_CTL_DSE_3P3V_98OHM)
-
-#define NAND_PAD_CTRL (PAD_CTL_DSE_3P3V_49OHM | PAD_CTL_SRE_SLOW | PAD_CTL_HYS)
-
-#define NAND_PAD_READY0_CTRL (PAD_CTL_DSE_3P3V_49OHM | PAD_CTL_PUS_PU5KOHM)
-
-#define EPDC_PAD_CTRL	0x0
 
 #ifdef CONFIG_SYS_I2C_MXC
 #define PC MUX_PAD_CTRL(I2C_PAD_CTRL)
@@ -664,10 +652,6 @@ int board_init(void)
 
 #ifdef CONFIG_FEC_MXC
 	setup_fec();
-#endif
-
-#ifdef CONFIG_SYS_USE_NAND
-	setup_gpmi_nand();
 #endif
 
 #ifdef CONFIG_FSL_QSPI

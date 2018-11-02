@@ -805,7 +805,6 @@ static int setup_fec(int fec_id)
 
 int board_eth_init(bd_t *bis)
 {
-//	int ret;
 	ea_eeprom_config_t config;
 
 	setup_iomux_fec(CONFIG_FEC_ENET_DEV);
@@ -868,23 +867,6 @@ void board_get_hwaddr(int dev_id, unsigned char *mac)
 
 }
 
-#endif
-
-#ifdef CONFIG_SYS_I2C
-static int disable_ar1021(void)
-{
-        unsigned char cmd[] = { 0x55, 0x01, 0x13 };
-
-        i2c_set_bus_num(0);
-        if (!i2c_probe(0x4d)) {
-
-                if (i2c_write(0x4d, 0x00, 1, cmd, 3)) {
-                        printf("Failed to disable AR1021!\n");
-                        return -1;
-                }
-	}
-	return 0;
-}
 #endif
 
 #define I2C_PMIC 0
@@ -1070,9 +1052,6 @@ int board_late_init(void)
 #ifdef CONFIG_CMD_EADISP
 	eatouch_init();
 #endif
-#ifdef CONFIG_SYS_I2C
-	disable_ar1021();
-#endif
 	return 0;
 }
 
@@ -1248,14 +1227,3 @@ void board_recovery_setup(void)
 
 #endif /*CONFIG_FLS_FASTBOOT*/
 
-#ifdef CONFIG_IMX_UDC
-iomux_v3_cfg_t const otg_udc_pads[] = {
-	(MX6_PAD_GPIO1_IO10__ANATOP_OTG1_ID | MUX_PAD_CTRL(NO_PAD_CTRL)),
-};
-void udc_pins_setting(void)
-{
-	imx_iomux_v3_setup_multiple_pads(otg_udc_pads,
-		ARRAY_SIZE(otg_udc_pads));
-}
-
-#endif /*CONFIG_IMX_UDC*/

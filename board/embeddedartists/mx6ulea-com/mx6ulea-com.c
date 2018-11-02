@@ -79,19 +79,6 @@ DECLARE_GLOBAL_DATA_PTR;
 #define LCD_PAD_CTRL    (PAD_CTL_HYS | PAD_CTL_PUS_100K_UP | PAD_CTL_PUE | \
 	PAD_CTL_PKE | PAD_CTL_SPEED_MED | PAD_CTL_DSE_40ohm)
 
-#define GPMI_PAD_CTRL0 (PAD_CTL_PKE | PAD_CTL_PUE | PAD_CTL_PUS_100K_UP)
-#define GPMI_PAD_CTRL1 (PAD_CTL_DSE_40ohm | PAD_CTL_SPEED_MED | \
-			PAD_CTL_SRE_FAST)
-#define GPMI_PAD_CTRL2 (GPMI_PAD_CTRL0 | GPMI_PAD_CTRL1)
-
-#define WEIM_NOR_PAD_CTRL (PAD_CTL_PKE | PAD_CTL_PUE | \
-		PAD_CTL_PUS_100K_UP | PAD_CTL_SPEED_MED | \
-		PAD_CTL_DSE_40ohm   | PAD_CTL_SRE_FAST)
-
-#define SPI_PAD_CTRL (PAD_CTL_HYS |				\
-	PAD_CTL_SPEED_MED |		\
-	PAD_CTL_DSE_40ohm | PAD_CTL_SRE_FAST)
-
 #define OTG_ID_PAD_CTRL (PAD_CTL_PKE | PAD_CTL_PUE |		\
 	PAD_CTL_PUS_47K_UP  | PAD_CTL_SPEED_LOW |		\
 	PAD_CTL_DSE_80ohm   | PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
@@ -227,33 +214,6 @@ static void setup_iomux_uart(void)
 {
 	imx_iomux_v3_setup_multiple_pads(uart1_pads, ARRAY_SIZE(uart1_pads));
 }
-
-#ifdef CONFIG_FSL_QSPI
-
-#define QSPI_PAD_CTRL1	\
-	(PAD_CTL_SRE_FAST | PAD_CTL_SPEED_MED | \
-	 PAD_CTL_PKE | PAD_CTL_PUE | PAD_CTL_PUS_47K_UP | PAD_CTL_DSE_120ohm)
-
-static iomux_v3_cfg_t const quadspi_pads[] = {
-	MX6_PAD_NAND_WP_B__QSPI_A_SCLK	| MUX_PAD_CTRL(QSPI_PAD_CTRL1),
-	MX6_PAD_NAND_READY_B__QSPI_A_DATA00	| MUX_PAD_CTRL(QSPI_PAD_CTRL1),
-	MX6_PAD_NAND_CE0_B__QSPI_A_DATA01	| MUX_PAD_CTRL(QSPI_PAD_CTRL1),
-	MX6_PAD_NAND_CE1_B__QSPI_A_DATA02	| MUX_PAD_CTRL(QSPI_PAD_CTRL1),
-	MX6_PAD_NAND_CLE__QSPI_A_DATA03	| MUX_PAD_CTRL(QSPI_PAD_CTRL1),
-	MX6_PAD_NAND_DQS__QSPI_A_SS0_B	| MUX_PAD_CTRL(QSPI_PAD_CTRL1),
-};
-
-int board_qspi_init(void)
-{
-	/* Set the iomux */
-	imx_iomux_v3_setup_multiple_pads(quadspi_pads, ARRAY_SIZE(quadspi_pads));
-
-	/* Set the clock */
-	enable_qspi_clk(0);
-
-	return 0;
-}
-#endif
 
 #ifdef CONFIG_FSL_ESDHC
 static struct fsl_esdhc_cfg usdhc_cfg[2] = {
@@ -757,23 +717,6 @@ void ldo_mode_set(int ldo_bypass)
 #endif
 #endif
 
-#ifdef CONFIG_SYS_I2C
-static int disable_ar1021(void)
-{
-        unsigned char cmd[] = { 0x55, 0x01, 0x13 };
-
-        i2c_set_bus_num(0);
-        if (!i2c_probe(0x4d)) {
-
-                if (i2c_write(0x4d, 0x00, 1, cmd, 3)) {
-                        printf("Failed to disable AR1021!\n");
-                        return -1;
-                }
-        }
-        return 0;
-}
-#endif
-
 int board_early_init_f(void)
 {
 	/* configure and enable pwr on carrier board*/
@@ -848,10 +791,6 @@ int board_late_init(void)
 #ifdef CONFIG_CMD_EADISP
         eatouch_init();
 #endif
-#ifdef CONFIG_SYS_I2C
-	disable_ar1021();
-#endif
-
 	set_wdog_reset((struct wdog_regs *)WDOG1_BASE_ADDR);
 
 	return 0;
@@ -972,15 +911,3 @@ void board_recovery_setup(void)
 
 #endif /*CONFIG_FASTBOOT*/
 
-#ifdef CONFIG_IMX_UDC
-static iomux_v3_cfg_t const otg_udc_pads[] = {
-	MX6_PAD_GPIO1_IO00__ANATOP_OTG1_ID | MUX_PAD_CTRL(NO_PAD_CTRL),
-};
-
-void udc_pins_setting(void)
-{
-	imx_iomux_v3_setup_multiple_pads(otg_udc_pads,
-		ARRAY_SIZE(otg_udc_pads));
-}
-
-#endif /*CONFIG_IMX_UDC*/
