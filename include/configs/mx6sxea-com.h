@@ -9,13 +9,12 @@
 
 #ifndef __MX6SXEA_COM_H
 #define __MX6SXEA_COM_H
-/*#define DEBUG*/
+
 #include "mx6_common.h"
 
 #define CONFIG_DBG_MONITOR
 
 #ifdef CONFIG_SPL
-#define CONFIG_SPL_BOARD_INIT
 #include "imx6_spl.h"
 #endif
 
@@ -34,14 +33,9 @@
 /* Size of malloc() pool */
 #define CONFIG_SYS_MALLOC_LEN		(32 * SZ_1M)
 
-#define CONFIG_BOARD_EARLY_INIT_F
-#define CONFIG_BOARD_LATE_INIT
-
-#define CONFIG_MXC_UART
 #define CONFIG_MXC_UART_BASE		UART1_BASE
 
 #define CONFIG_SYS_AUXCORE_BOOTDATA 0x78000000 /* Set to QSPI2 B flash at default */
-#define CONFIG_IMX_BOOTAUX
 
 /* When using M4 fastup demo, no need these M4 env, since QSPI is used by M4 */
 #ifndef CONFIG_SYS_AUXCORE_FASTUP
@@ -196,12 +190,6 @@
 #define FSL_QSPI_FLASH_SIZE             SZ_16M
 
 
-#define CONFIG_CMD_SF
-#define CONFIG_SPI_FLASH
-#define CONFIG_SPI_FLASH_BAR
-#define CONFIG_SPI_FLASH_SPANSION
-#define CONFIG_SPI_FLASH_STMICRO
-#define CONFIG_SPI_FLASH_ISSI
 #define	CONFIG_SF_DEFAULT_BUS		0
 #define	CONFIG_SF_DEFAULT_CS		0
 #define	CONFIG_SF_DEFAULT_SPEED		40000000
@@ -273,35 +261,10 @@
 #define CONFIG_USB_EHCI
 #define CONFIG_USB_EHCI_MX6
 #define CONFIG_EHCI_HCD_INIT_AFTER_RESET
-#define CONFIG_USB_HOST_ETHER
-#define CONFIG_USB_ETHER_ASIX
 #define CONFIG_MXC_USB_PORTSC  (PORT_PTS_UTMI | PORT_PTS_PTW)
 #define CONFIG_MXC_USB_FLAGS   0
 #define CONFIG_USB_MAX_CONTROLLER_COUNT 2
 #endif
-
-/*
- * The PCIe support in uboot would bring failures in i.MX6SX PCIe
- * EP/RC validations. Disable PCIe support in uboot here.
- * RootCause: The bit10(ltssm_en) of GPR12 would be set in uboot,
- * thus the i.MX6SX PCIe EP would be cheated that the other i.MX6SX
- * PCIe RC had been configured and trying to setup PCIe link directly,
- * although the i.MX6SX RC is not properly configured at that time.
- * PCIe can be supported in uboot, if the i.MX6SX PCIe EP/RC validation
- * is not running.
- */
-/* #define CONFIG_CMD_PCI */
-#ifdef CONFIG_PCI
-#define CONFIG_CMD_PCI
-#define CONFIG_PCI_SCAN_SHOW
-#define CONFIG_PCIE_IMX
-#define CONFIG_PCIE_IMX_PERST_GPIO	IMX_GPIO_NR(2, 0)
-#define CONFIG_PCIE_IMX_POWER_GPIO	IMX_GPIO_NR(2, 1)
-#endif
-
-#define CONFIG_IMX_THERMAL
-
-#define CONFIG_CMD_TIME
 
 #define CONFIG_CMD_BMODE
 

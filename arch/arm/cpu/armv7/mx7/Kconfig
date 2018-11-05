@@ -85,16 +85,21 @@ config TARGET_COLIBRI_IMX7
 	select DM_THERMAL
 
 config TARGET_MX7DEA_UCOM
-        bool "Support mx7dea-ucom"
-        select MX7D
-        select DM
-        select DM_THERMAL
+	bool "Support mx7dea-ucom"
+	select MX7D
+	select DM
+	select DM_THERMAL
+	select BOARD_EARLY_INIT_F
+	select BOARD_LATE_INIT
 
 config TARGET_MX7DEA_COM
-        bool "Support mx7dea-com"
-        select MX7D
-        select DM
-        select DM_THERMAL
+	bool "Support mx7dea-com"
+	select MX7D
+	select DM
+	select DM_THERMAL
+	select BOARD_EARLY_INIT_F
+	select BOARD_LATE_INIT
+
 
 
 endchoice

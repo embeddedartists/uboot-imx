@@ -13,7 +13,6 @@
 #include "mx6_common.h"
 
 #ifdef CONFIG_SPL
-#define CONFIG_SPL_BOARD_INIT
 #include "imx6_spl.h"
 #endif
 
@@ -32,17 +31,7 @@
 /* Size of malloc() pool */
 #define CONFIG_SYS_MALLOC_LEN		(16 * SZ_1M)
 
-#define CONFIG_BOARD_EARLY_INIT_F
-#define CONFIG_BOARD_LATE_INIT
-
-#define CONFIG_MXC_UART
 #define CONFIG_MXC_UART_BASE		UART1_BASE
-
-#ifdef CONFIG_MX6S
-#define SYS_NOSMP "nosmp"
-#else
-#define SYS_NOSMP
-#endif
 
 #define CONFIG_MFG_ENV_SETTINGS \
 	"mfgtool_args=setenv bootargs console=${console},${baudrate} " \
@@ -86,7 +75,7 @@
 	"mmcpart=1\0" \
 	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
 	"mmcautodetect=yes\0" \
-	"smp=" SYS_NOSMP "\0"\
+	"smp=\0"\
 	"mmcargs=setenv bootargs console=${console},${baudrate} " \
 		"root=${mmcroot} ${args_from_script}\0" \
 	"loadbootscript=" \
@@ -227,20 +216,14 @@
 #define CONFIG_USB_EHCI
 #define CONFIG_USB_EHCI_MX6
 #define CONFIG_EHCI_HCD_INIT_AFTER_RESET
-#define CONFIG_USB_HOST_ETHER
-#define CONFIG_USB_ETHER_ASIX
 #define CONFIG_MXC_USB_PORTSC  (PORT_PTS_UTMI | PORT_PTS_PTW)
 #define CONFIG_MXC_USB_FLAGS   0
 #define CONFIG_USB_MAX_CONTROLLER_COUNT 2
 #endif
 
-
-#define CONFIG_IMX_THERMAL
-
 #define CONFIG_CMD_BMODE
 
 /* Framebuffer */
-#define CONFIG_VIDEO_IPUV3
 #define CONFIG_VIDEO_BMP_RLE8
 #define CONFIG_SPLASH_SCREEN
 #define CONFIG_SPLASH_SCREEN_ALIGN

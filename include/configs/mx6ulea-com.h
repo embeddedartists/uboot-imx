@@ -13,7 +13,6 @@
 #include "mx6_common.h"
 
 #ifdef CONFIG_SPL
-#define CONFIG_SPL_BOARD_INIT
 #include "imx6_spl.h"
 #endif
 
@@ -32,9 +31,6 @@
 /* Size of malloc() pool */
 #define CONFIG_SYS_MALLOC_LEN		(16 * SZ_1M)
 
-#define CONFIG_BOARD_LATE_INIT
-
-#define CONFIG_MXC_UART
 #define CONFIG_MXC_UART_BASE		UART1_BASE
 
 #define CONFIG_MFG_ENV_SETTINGS \
@@ -205,15 +201,10 @@
 #define CONFIG_USB_EHCI
 #define CONFIG_USB_EHCI_MX6
 #define CONFIG_EHCI_HCD_INIT_AFTER_RESET
-#define CONFIG_USB_HOST_ETHER
-#define CONFIG_USB_ETHER_ASIX
 #define CONFIG_MXC_USB_PORTSC  (PORT_PTS_UTMI | PORT_PTS_PTW)
 #define CONFIG_MXC_USB_FLAGS   0
 #define CONFIG_USB_MAX_CONTROLLER_COUNT 2
 #endif
-
-#define CONFIG_IMX_THERMAL
-
 
 #define CONFIG_CMD_BMODE
 
