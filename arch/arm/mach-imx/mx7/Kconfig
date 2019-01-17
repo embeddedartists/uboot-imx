@@ -97,6 +97,22 @@ config TARGET_COLIBRI_IMX7
 	select DM_SERIAL
 	select DM_THERMAL
 
+config TARGET_MX7DEA_UCOM
+	bool "Support mx7dea-ucom"
+	select MX7D
+	select DM
+	select DM_THERMAL
+	select BOARD_EARLY_INIT_F
+	select BOARD_LATE_INIT
+
+config TARGET_MX7DEA_COM
+	bool "Support mx7dea-com"
+	select MX7D
+	select DM
+	select DM_THERMAL
+	select BOARD_EARLY_INIT_F
+	select BOARD_LATE_INIT
+
 endchoice
 
 config SYS_SOC
@@ -112,5 +128,7 @@ source "board/freescale/multa-imx7d/Kconfig"
 source "board/technexion/pico-imx7d/Kconfig"
 source "board/toradex/colibri_imx7/Kconfig"
 source "board/warp7/Kconfig"
+source "board/embeddedartists/mx7dea-ucom/Kconfig"
+source "board/embeddedartists/mx7dea-com/Kconfig"
 
 endif
