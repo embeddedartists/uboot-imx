@@ -12,7 +12,7 @@
   #include <asm/arch/mxc_hdmi.h>
 #endif
 #include <asm/gpio.h>
-#include <asm/imx-common/eadisp.h>
+#include <asm/mach-imx/eadisp.h>
 #include <asm/io.h>
 #include <div64.h>
 #include <i2c.h>
@@ -330,9 +330,9 @@ static const struct display_info_t * parse_mode(
 static int is_fb_enabled(int fb)
 {
 	char buf[40];
-	if (getenv(fbnames[FB_LVDS0])) {
+	if (env_get(fbnames[FB_LVDS0])) {
 		sprintf(buf, "eadisp_%s_enabled", short_names[fb]);
-		if (!strcmp("yes", getenv(buf))) {
+		if (!strcmp("yes", env_get(buf))) {
 			return 1;
 		}
 	}
@@ -367,7 +367,7 @@ static void setup_cmd_fb(unsigned fb, const struct display_info_t *di, char *buf
 			}
 #endif
 		}
-		setenv(cmd_fbnames[fb], buf_start);
+		env_set(cmd_fbnames[fb], buf_start);
 		//printf("Disabling %s\n", short_names[fb]);
 		return;
 	} else {
@@ -429,7 +429,7 @@ static void setup_cmd_fb(unsigned fb, const struct display_info_t *di, char *buf
 
 	if (mode_str) {
 		snprintf(buf, size, "fdt set %s mode_str %s;", fbnames[fb], mode_str);
-		setenv(cmd_fbnames[fb], buf_start);
+		env_set(cmd_fbnames[fb], buf_start);
 		return;
 #ifdef CONFIG_MX6Q
 	} else if (fb == FB_RGB) {
@@ -470,13 +470,13 @@ static void setup_cmd_fb(unsigned fb, const struct display_info_t *di, char *buf
 	buf += sz;
 	size -= sz;
 
-	setenv(cmd_fbnames[fb], buf_start);
+	env_set(cmd_fbnames[fb], buf_start);
 }
 
 static const struct display_info_t *select_display(
 		const struct display_info_t *gdi, int cnt)
 {
-	const char* tmp = getenv("eadisp_prefer");
+	const char* tmp = env_get("eadisp_prefer");
 	const char* enabled;
 	const struct display_info_t* di = NULL;
 	const struct display_info_t* first = NULL;
@@ -498,8 +498,8 @@ static const struct display_info_t *select_display(
 	/* Enable/disable displays */
 	for (i = 0; i < NUM_FBS; i++) {
 		sprintf(buf, "eadisp_%s_enabled", short_names[i]);
-		enabled = getenv(buf);
-		tmp = getenv(fbnames[i]);
+		enabled = env_get(buf);
+		tmp = env_get(fbnames[i]);
 		if (tmp) {
 			di = parse_mode(g_displays, g_display_cnt, tmp, i);
 			if (di) {
@@ -522,10 +522,10 @@ static const struct display_info_t *select_display(
 	if (enmask & (1<<FB_LVDS0)) {
 		if (preferred_idx!=FB_LVDS1 || !(enmask & (1<<FB_LVDS1))) {
 			// LVDS0 is preferred over the default LVDS1
-			tmp = getenv(cmd_fbnames[FB_LVDS0]);
+			tmp = env_get(cmd_fbnames[FB_LVDS0]);
 			snprintf(buf, 4096, "fdt rm %s primary;fdt set %s primary;%s",
 					 ch_names[FB_LVDS1], ch_names[FB_LVDS0], tmp);
-			setenv(cmd_fbnames[FB_LVDS0], buf);
+			env_set(cmd_fbnames[FB_LVDS0], buf);
 		}
 	}
 #endif
@@ -630,7 +630,7 @@ static void load_own_configs(void)
 	found_own_displays = 0;
 	for (i = 0; i < MAX_OWN_DISPLAYS; i++) {
 		sprintf(key, "eadisp_own_%d", i);
-		existing = getenv(key);
+		existing = env_get(key);
 		if (existing) {
 			for (j = 0; j < NUM_FBS; j++) {
 				sprintf(val, "%s:", short_names[j]);
@@ -657,12 +657,12 @@ static void store_own_configs(void)
 			str_mode(buf+strlen(buf), 256, &g_di_own[i]);
 			sprintf(key, "eadisp_own_%d", saved);
 			saved++;
-			setenv(key, buf);
+			env_set(key, buf);
 		}
 	}
 	for (i = saved; i < MAX_OWN_DISPLAYS; i++) {
 		sprintf(key, "eadisp_own_%d", i);
-		setenv(key, NULL);
+		env_set(key, NULL);
 	}
 	free(buf);
 }
@@ -674,7 +674,7 @@ static void print_current_config(void)
 	const char* msg;
 	int preferred = -1;
 
-	msg = getenv("eadisp_prefer");
+	msg = env_get("eadisp_prefer");
 	if (msg) {
 		for (i = 0; i < NUM_FBS; i++) {
 			if (!strcmp(msg, short_names[i])) {
@@ -688,11 +688,11 @@ static void print_current_config(void)
 	for (i = 0; i < NUM_FBS; i++) {
 		int enabled = 0;
 		sprintf(buf, "eadisp_%s_enabled", short_names[i]);
-		msg = getenv(buf);
+		msg = env_get(buf);
 		if (msg && !strcmp(msg, "yes")) {
 			enabled = 1;
 		}
-		msg = getenv(fbnames[i]);
+		msg = env_get(fbnames[i]);
 		printf("\t%s:\t  %s\t  %s\t%s\n", short_names[i], enabled?"yes":"no ", preferred==i?"yes":"no ", msg?msg:"Not Configured");
 	}
 }
@@ -769,11 +769,11 @@ static void set_defaults(void)
 	char buf[256];
 	int i, j;
 	for (i = 0; i < NUM_FBS; i++) {
-		if (!getenv(fbnames[i])) {
+		if (!env_get(fbnames[i])) {
 			for (j = 0; j < g_display_cnt; j++) {
 				if (g_displays[j].fbtype == i) {
 					str_mode(buf, 256, &g_displays[j]);
-					setenv(fbnames[i], buf);
+					env_set(fbnames[i], buf);
 					break;
 				}
 			}
@@ -840,15 +840,15 @@ static int do_eadisp(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	}
 	do {
 		if (!strcmp("prefer", cmd)) {
-			setenv("eadisp_prefer", fbname);
+			env_set("eadisp_prefer", fbname);
 			break;
 		} else if (!strcmp("enable", cmd)) {
 			sprintf(buf, "eadisp_%s_enabled", fbname);
-			setenv(buf, "yes");
+			env_set(buf, "yes");
 			break;
 		} else if (!strcmp("disable", cmd)) {
 			sprintf(buf, "eadisp_%s_enabled", fbname);
-			setenv(buf, "no");
+			env_set(buf, "no");
 			break;
 		} else if (!strcmp("conf", cmd)) {
 			if (argc == 4) {
@@ -865,7 +865,7 @@ static int do_eadisp(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 				if (di->fbtype == fb) {
 					printf("selecting %s=%s\n", fbname, di->mode.name);
 					str_mode(buf, 256, di);
-					setenv(fbnames[fb], buf);
+					env_set(fbnames[fb], buf);
 					break;
 				} else {
 					printf("invalid index (%d) for %s (wrong type)\n", idx, fbname);

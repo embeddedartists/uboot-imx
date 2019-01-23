@@ -621,11 +621,22 @@ config TARGET_MX6SXEA_COM
 
 config TARGET_MX6QEA_COM
 	bool "Support mx6qea-com"
+	select MX6Q
 	select SUPPORT_SPL
 	select DM
 	select DM_THERMAL
 	select BOARD_EARLY_INIT_F
 	select BOARD_LATE_INIT
+
+config TARGET_MX6DLEA_COM
+	bool "Support mx6dlea-com"
+	select MX6DL
+	select SUPPORT_SPL
+	select DM
+	select DM_THERMAL
+	select BOARD_EARLY_INIT_F
+	select BOARD_LATE_INIT
+
 
 config TARGET_MX6ULEA_COM
 	bool "Support mx6ulea-com"

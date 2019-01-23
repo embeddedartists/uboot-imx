@@ -13,11 +13,11 @@
 #include <asm/arch/mx6-pins.h>
 #include <linux/errno.h>
 #include <asm/gpio.h>
-#include <asm/imx-common/iomux-v3.h>
-#include <asm/imx-common/boot_mode.h>
+#include <asm/mach-imx/iomux-v3.h>
+#include <asm/mach-imx/boot_mode.h>
 #if defined(CONFIG_CMD_EADISP)
-#include <asm/imx-common/eadisp.h>
-#include <asm/imx-common/eatouch.h>
+#include <asm/mach-imx/eadisp.h>
+#include <asm/mach-imx/eatouch.h>
 #endif
 #include <mmc.h>
 #include <fsl_esdhc.h>
@@ -32,7 +32,7 @@
 #include <asm/arch/sys_proto.h>
 #ifdef CONFIG_SYS_I2C_MXC
 #include <i2c.h>
-#include <asm/imx-common/mxc_i2c.h>
+#include <asm/mach-imx/mxc_i2c.h>
 #endif
 #include <usb.h>
 #ifdef CONFIG_FSL_FASTBOOT
@@ -607,7 +607,7 @@ int board_mmc_init(bd_t *bis)
 
 int check_mmc_autodetect(void)
 {
-	char *autodetect_str = getenv("mmcautodetect");
+	char *autodetect_str = env_get("mmcautodetect");
 
 	if ((autodetect_str != NULL) &&
 		(strcmp(autodetect_str, "yes") == 0)) {
@@ -626,12 +626,12 @@ void board_late_mmc_env_init(void)
 	if (!check_mmc_autodetect())
 		return;
 
-	setenv_ulong("mmcdev", dev_no);
+	env_set_ulong("mmcdev", dev_no);
 
 	/* Set mmcblk env */
 	sprintf(mmcblk, "/dev/mmcblk%dp2 rootwait rw",
 		mmc_map_to_kernel_blk(dev_no));
-	setenv("mmcroot", mmcblk);
+	env_set("mmcroot", mmcblk);
 
 	sprintf(cmd, "mmc dev %d", dev_no);
 	run_command(cmd, 0);
@@ -986,7 +986,7 @@ int board_video_skip(void)
 {
 	int i;
 	int ret;
-	char const *panel = getenv("panel");
+	char const *panel = env_get("panel");
 	if (!panel) {
 		for (i = 0; i < ARRAY_SIZE(displays); i++) {
 			struct display_info_t const *dev = displays+i;
@@ -1150,20 +1150,20 @@ int board_eth_init(bd_t *bis)
 	/* stored MAC addresses to env variables */
 	if (ea_eeprom_get_config(&config) == 0) {
 
-		if (is_valid_ethaddr(config.mac1) && !getenv("ethaddr")) {
-			eth_setenv_enetaddr("ethaddr", config.mac1);
+		if (is_valid_ethaddr(config.mac1) && !env_get("ethaddr")) {
+			eth_env_set_enetaddr("ethaddr", config.mac1);
 		}
 
-		if (is_valid_ethaddr(config.mac2) && !getenv("eth1addr")) {
-			eth_setenv_enetaddr("eth1addr", config.mac2);
+		if (is_valid_ethaddr(config.mac2) && !env_get("eth1addr")) {
+			eth_env_set_enetaddr("eth1addr", config.mac2);
 		}
 
-		if (is_valid_ethaddr(config.mac3) && !getenv("eth2addr")) {
-			eth_setenv_enetaddr("eth2addr", config.mac3);
+		if (is_valid_ethaddr(config.mac3) && !env_get("eth2addr")) {
+			eth_env_set_enetaddr("eth2addr", config.mac3);
 		}
 
-		if (is_valid_ethaddr(config.mac4) && !getenv("eth3addr")) {
-			eth_setenv_enetaddr("eth3addr", config.mac4);
+		if (is_valid_ethaddr(config.mac4) && !env_get("eth3addr")) {
+			eth_env_set_enetaddr("eth3addr", config.mac4);
 		}
 
 	}
@@ -1190,9 +1190,6 @@ int board_early_init_f(void)
 #endif
 
 	setup_iomux_uart();
-#if defined(CONFIG_VIDEO_IPUV3)
-	setup_display();
-#endif
 
 // Configuration parameters are stored in I2C mapped eeprom and
 // must be initialized here since the configuration is accessed
@@ -1210,6 +1207,10 @@ int board_init(void)
 {
 	/* address of boot parameters */
 	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
+
+#if defined(CONFIG_VIDEO_IPUV3)
+	setup_display();
+#endif
 
 #ifdef CONFIG_CMD_EADISP
 	eadisp_setup_display(displays, ARRAY_SIZE(displays));
@@ -1280,32 +1281,32 @@ void board_fastboot_setup(void)
 	switch (get_boot_device()) {
 #if defined(CONFIG_FASTBOOT_STORAGE_SATA)
 	case SATA_BOOT:
-		if (!getenv("fastboot_dev"))
-			setenv("fastboot_dev", "sata");
-		if (!getenv("bootcmd"))
-			setenv("bootcmd", "boota sata");
+		if (!env_get("fastboot_dev"))
+			env_set("fastboot_dev", "sata");
+		if (!env_get("bootcmd"))
+			env_set("bootcmd", "boota sata");
 		break;
 #endif /*CONFIG_FASTBOOT_STORAGE_SATA*/
 #if defined(CONFIG_FASTBOOT_STORAGE_MMC)
 	case SD2_BOOT:
 	case MMC2_BOOT:
-	    if (!getenv("fastboot_dev"))
-			setenv("fastboot_dev", "mmc0");
-	    if (!getenv("bootcmd"))
-			setenv("bootcmd", "boota mmc0");
+	    if (!env_get("fastboot_dev"))
+			env_set("fastboot_dev", "mmc0");
+	    if (!env_get("bootcmd"))
+			env_set("bootcmd", "boota mmc0");
 	    break;
 	case SD3_BOOT:
 	case MMC3_BOOT:
-	    if (!getenv("fastboot_dev"))
-			setenv("fastboot_dev", "mmc1");
-	    if (!getenv("bootcmd"))
-			setenv("bootcmd", "boota mmc1");
+	    if (!env_get("fastboot_dev"))
+			env_set("fastboot_dev", "mmc1");
+	    if (!env_get("bootcmd"))
+			env_set("bootcmd", "boota mmc1");
 	    break;
 	case MMC4_BOOT:
-	    if (!getenv("fastboot_dev"))
-			setenv("fastboot_dev", "mmc2");
-	    if (!getenv("bootcmd"))
-			setenv("bootcmd", "boota mmc2");
+	    if (!env_get("fastboot_dev"))
+			env_set("fastboot_dev", "mmc2");
+	    if (!env_get("bootcmd"))
+			env_set("bootcmd", "boota mmc2");
 	    break;
 #endif /*CONFIG_FASTBOOT_STORAGE_MMC*/
 	default:
@@ -1350,27 +1351,27 @@ void board_recovery_setup(void)
 	switch (bootdev) {
 #if defined(CONFIG_FASTBOOT_STORAGE_SATA)
 	case SATA_BOOT:
-		if (!getenv("bootcmd_android_recovery"))
-			setenv("bootcmd_android_recovery",
+		if (!env_get("bootcmd_android_recovery"))
+			env_set("bootcmd_android_recovery",
 				"boota sata recovery");
 		break;
 #endif /*CONFIG_FASTBOOT_STORAGE_SATA*/
 #if defined(CONFIG_FASTBOOT_STORAGE_MMC)
 	case SD2_BOOT:
 	case MMC2_BOOT:
-		if (!getenv("bootcmd_android_recovery"))
-			setenv("bootcmd_android_recovery",
+		if (!env_get("bootcmd_android_recovery"))
+			env_set("bootcmd_android_recovery",
 				"boota mmc0 recovery");
 		break;
 	case SD3_BOOT:
 	case MMC3_BOOT:
-		if (!getenv("bootcmd_android_recovery"))
-			setenv("bootcmd_android_recovery",
+		if (!env_get("bootcmd_android_recovery"))
+			env_set("bootcmd_android_recovery",
 				"boota mmc1 recovery");
 		break;
 	case MMC4_BOOT:
-		if (!getenv("bootcmd_android_recovery"))
-			setenv("bootcmd_android_recovery",
+		if (!env_get("bootcmd_android_recovery"))
+			env_set("bootcmd_android_recovery",
 				"boota mmc2 recovery");
 		break;
 #endif /*CONFIG_FASTBOOT_STORAGE_MMC*/

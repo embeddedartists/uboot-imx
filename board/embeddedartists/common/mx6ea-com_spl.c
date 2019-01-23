@@ -18,9 +18,11 @@
 
 void spl_board_init(void)
 {
-
 	// must be called to get correct clock for MMC/SD
 	get_clocks();
+
+	/* setup GP timer */
+	timer_init();
 
 	// called to setup I2C mux
 	board_early_init_f();

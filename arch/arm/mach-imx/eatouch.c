@@ -5,7 +5,7 @@
 #include <common.h>
 #include <linux/errno.h>
 #include <asm/gpio.h>
-#include <asm/imx-common/eatouch.h>
+#include <asm/mach-imx/eatouch.h>
 #include <asm/io.h>
 #include <div64.h>
 #include <i2c.h>
@@ -126,7 +126,7 @@ static void load_selection(void)
 {
 	int i, j;
 	int valid = 0;
-	const char* env = getenv(TOUCH_ENV_SEL);
+	const char* env = env_get(TOUCH_ENV_SEL);
 	if (env) {
 		valid = 1;
 		for (i = 0; i < NUM_CONNECTORS; i++) {
@@ -139,7 +139,7 @@ static void load_selection(void)
 					env++;
 				} else {
 					printf("Illegal touch configuration, turning all off\n");
-					setenv(TOUCH_ENV_SEL, NULL);
+					env_set(TOUCH_ENV_SEL, NULL);
 					valid = 0;
 					break;
 				}
@@ -175,7 +175,7 @@ static void save_selection(void)
 		}
 	}
 	*p = '\0';
-	setenv(TOUCH_ENV_SEL, buf);
+	env_set(TOUCH_ENV_SEL, buf);
 }
 
 static void update_commands(void)
@@ -201,7 +201,7 @@ static void update_commands(void)
 			p += count;
 			size -= count;
 		}
-		setenv(cmd_names[i], buf);
+		env_set(cmd_names[i], buf);
 	}
 	p = buf;
 	size = 4096;
@@ -210,7 +210,7 @@ static void update_commands(void)
 		p += count;
 		size -= count;
 	}
-	setenv(TOUCH_ENV_CMD, buf);
+	env_set(TOUCH_ENV_CMD, buf);
 
 	free(buf);
 }

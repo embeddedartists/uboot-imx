@@ -12,12 +12,12 @@
 #include <asm/arch/mx6-pins.h>
 #include <asm/arch/sys_proto.h>
 #include <asm/gpio.h>
-#include <asm/imx-common/iomux-v3.h>
-#include <asm/imx-common/boot_mode.h>
-#include <asm/imx-common/mxc_i2c.h>
+#include <asm/mach-imx/iomux-v3.h>
+#include <asm/mach-imx/boot_mode.h>
+#include <asm/mach-imx/mxc_i2c.h>
 #if defined(CONFIG_CMD_EADISP)
-#include <asm/imx-common/eadisp.h>
-#include <asm/imx-common/eatouch.h>
+#include <asm/mach-imx/eadisp.h>
+#include <asm/mach-imx/eatouch.h>
 #endif
 #include <asm/io.h>
 #include <common.h>
@@ -322,7 +322,7 @@ int board_mmc_init(bd_t *bis)
 
 int check_mmc_autodetect(void)
 {
-	char *autodetect_str = getenv("mmcautodetect");
+	char *autodetect_str = env_get("mmcautodetect");
 
 	if ((autodetect_str != NULL) &&
 		(strcmp(autodetect_str, "yes") == 0)) {
@@ -341,12 +341,12 @@ void board_late_mmc_init(void)
 	if (!check_mmc_autodetect())
 		return;
 
-	setenv_ulong("mmcdev", dev_no);
+	env_set_ulong("mmcdev", dev_no);
 
 	/* Set mmcblk env */
 	sprintf(mmcblk, "/dev/mmcblk%dp2 rootwait rw",
 		mmc_map_to_kernel_blk(dev_no));
-	setenv("mmcroot", mmcblk);
+	env_set("mmcroot", mmcblk);
 
 	sprintf(cmd, "mmc dev %d", dev_no);
 	run_command(cmd, 0);
@@ -475,7 +475,7 @@ int board_video_skip(void)
 {
 	int i;
 	int ret;
-	char const *panel = getenv("panel");
+	char const *panel = env_get("panel");
 	if (!panel) {
 		panel = displays[0].mode.name;
 		printf("No panel detected: default to %s\n", panel);
@@ -559,20 +559,20 @@ int board_eth_init(bd_t *bis)
 	/* stored MAC addresses to env variables */
 	if (ea_eeprom_get_config(&config) == 0) {
 
-		if (is_valid_ethaddr(config.mac1) && !getenv("ethaddr")) {
-			eth_setenv_enetaddr("ethaddr", config.mac1);
+		if (is_valid_ethaddr(config.mac1) && !env_get("ethaddr")) {
+			eth_env_set_enetaddr("ethaddr", config.mac1);
 		}
 
-		if (is_valid_ethaddr(config.mac2) && !getenv("eth1addr")) {
-			eth_setenv_enetaddr("eth1addr", config.mac2);
+		if (is_valid_ethaddr(config.mac2) && !env_get("eth1addr")) {
+			eth_env_set_enetaddr("eth1addr", config.mac2);
 		}
 
-		if (is_valid_ethaddr(config.mac3) && !getenv("eth2addr")) {
-			eth_setenv_enetaddr("eth2addr", config.mac3);
+		if (is_valid_ethaddr(config.mac3) && !env_get("eth2addr")) {
+			eth_env_set_enetaddr("eth2addr", config.mac3);
 		}
 
-		if (is_valid_ethaddr(config.mac4) && !getenv("eth3addr")) {
-			eth_setenv_enetaddr("eth3addr", config.mac4);
+		if (is_valid_ethaddr(config.mac4) && !env_get("eth3addr")) {
+			eth_env_set_enetaddr("eth3addr", config.mac4);
 		}
 
 	}
@@ -830,27 +830,27 @@ void board_fastboot_setup(void)
 #if defined(CONFIG_FASTBOOT_STORAGE_MMC)
 	case SD1_BOOT:
 	case MMC1_BOOT:
-		if (!getenv("fastboot_dev"))
-			setenv("fastboot_dev", "mmc0");
-		if (!getenv("bootcmd"))
-			setenv("bootcmd", "boota mmc0");
+		if (!env_get("fastboot_dev"))
+			env_set("fastboot_dev", "mmc0");
+		if (!env_get("bootcmd"))
+			env_set("bootcmd", "boota mmc0");
 		break;
 	case SD2_BOOT:
 	case MMC2_BOOT:
-		if (!getenv("fastboot_dev"))
-			setenv("fastboot_dev", "mmc1");
-		if (!getenv("bootcmd"))
-			setenv("bootcmd", "boota mmc1");
+		if (!env_get("fastboot_dev"))
+			env_set("fastboot_dev", "mmc1");
+		if (!env_get("bootcmd"))
+			env_set("bootcmd", "boota mmc1");
 		break;
 #endif /*CONFIG_FASTBOOT_STORAGE_MMC*/
 #if defined(CONFIG_FASTBOOT_STORAGE_NAND)
 	case NAND_BOOT:
-		if (!getenv("fastboot_dev"))
-			setenv("fastboot_dev", "nand");
-		if (!getenv("fbparts"))
-			setenv("fbparts", ANDROID_FASTBOOT_NAND_PARTS);
-		if (!getenv("bootcmd"))
-			setenv("bootcmd",
+		if (!env_get("fastboot_dev"))
+			env_set("fastboot_dev", "nand");
+		if (!env_get("fbparts"))
+			env_set("fbparts", ANDROID_FASTBOOT_NAND_PARTS);
+		if (!env_get("bootcmd"))
+			env_set("bootcmd",
 				"nand read ${loadaddr} ${boot_nand_offset} "
 				"${boot_nand_size};boota ${loadaddr}");
 		break;
@@ -880,19 +880,19 @@ void board_recovery_setup(void)
 #if defined(CONFIG_FASTBOOT_STORAGE_MMC)
 	case SD1_BOOT:
 	case MMC1_BOOT:
-		if (!getenv("bootcmd_android_recovery"))
-			setenv("bootcmd_android_recovery", "boota mmc0 recovery");
+		if (!env_get("bootcmd_android_recovery"))
+			env_set("bootcmd_android_recovery", "boota mmc0 recovery");
 		break;
 	case SD2_BOOT:
 	case MMC2_BOOT:
-		if (!getenv("bootcmd_android_recovery"))
-			setenv("bootcmd_android_recovery", "boota mmc1 recovery");
+		if (!env_get("bootcmd_android_recovery"))
+			env_set("bootcmd_android_recovery", "boota mmc1 recovery");
 		break;
 #endif /*CONFIG_FASTBOOT_STORAGE_MMC*/
 #if defined(CONFIG_FASTBOOT_STORAGE_NAND)
 	case NAND_BOOT:
-		if (!getenv("bootcmd_android_recovery"))
-			setenv("bootcmd_android_recovery",
+		if (!env_get("bootcmd_android_recovery"))
+			env_set("bootcmd_android_recovery",
 				"nand read ${loadaddr} ${recovery_nand_offset} "
 				"${recovery_nand_size};boota ${loadaddr}");
 		break;
@@ -905,7 +905,7 @@ void board_recovery_setup(void)
 	}
 
 	printf("setup env for recovery..\n");
-	setenv("bootcmd", "run bootcmd_android_recovery");
+	env_set("bootcmd", "run bootcmd_android_recovery");
 }
 #endif /*CONFIG_ANDROID_RECOVERY*/
 
