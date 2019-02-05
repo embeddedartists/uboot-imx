@@ -104,6 +104,19 @@ struct i2c_pads_info i2c_pad_info1 = {
 		.gp = IMX_GPIO_NR(1, 29),
 	},
 };
+
+struct i2c_pads_info i2c_pad_info2 = {
+	.scl = {
+		.i2c_mode =  MX6_PAD_UART5_TX_DATA__I2C2_SCL | PC,
+		.gpio_mode = MX6_PAD_UART5_TX_DATA__GPIO1_IO30 | PC,
+		.gp = IMX_GPIO_NR(1, 30),
+	},
+	.sda = {
+		.i2c_mode = MX6_PAD_UART5_RX_DATA__I2C2_SDA | PC,
+		.gpio_mode = MX6_PAD_UART5_RX_DATA__GPIO1_IO31 | PC,
+		.gp = IMX_GPIO_NR(1, 31),
+	},
+};
 #endif
 
 int dram_init(void)
@@ -126,6 +139,7 @@ static iomux_v3_cfg_t const uart1_pads[] = {
 	MX6_PAD_UART1_RX_DATA__UART1_DCE_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
 };
 
+/* USDHC1: v1:uSD Card, v2: wifi */
 static iomux_v3_cfg_t const usdhc1_pads[] = {
 	MX6_PAD_SD1_CLK__USDHC1_CLK | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_SD1_CMD__USDHC1_CMD | MUX_PAD_CTRL(USDHC_PAD_CTRL),
@@ -140,6 +154,7 @@ static iomux_v3_cfg_t const usdhc1_pads[] = {
 	MX6_PAD_GPIO1_IO09__GPIO1_IO09 | MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
+/* USDHC2 / eMMC */
 static iomux_v3_cfg_t const usdhc2_emmc_pads[] = {
 	MX6_PAD_NAND_RE_B__USDHC2_CLK | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_NAND_WE_B__USDHC2_CMD | MUX_PAD_CTRL(USDHC_PAD_CTRL),
@@ -215,10 +230,22 @@ static void setup_iomux_uart(void)
 	imx_iomux_v3_setup_multiple_pads(uart1_pads, ARRAY_SIZE(uart1_pads));
 }
 
+#define PCA6416_ADDR 0x20
+static bool is_rev_v2(void)
+{
+	setup_i2c(1, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info2);
+	i2c_set_bus_num(1);
+	if (!i2c_probe(PCA6416_ADDR)) {
+		// Found PCA6416 => it is a rev v2 board
+		return true;
+	}
+	return false;
+}
+
 #ifdef CONFIG_FSL_ESDHC
 static struct fsl_esdhc_cfg usdhc_cfg[2] = {
-	{USDHC1_BASE_ADDR, 0, 4},
 	{USDHC2_BASE_ADDR, 0, 8},
+	{USDHC1_BASE_ADDR, 0, 4},
 };
 
 #define USDHC1_CD_GPIO	IMX_GPIO_NR(1, 3)
@@ -240,12 +267,36 @@ int mmc_get_env_devno(void)
 	/* BOOT_CFG2[3] and BOOT_CFG2[4] */
 	dev_no = (soc_sbmr & 0x00001800) >> 11;
 
+	if (is_rev_v2()) {
+		/* need to subtract 1 to map to the mmc device id
+		 * see the comments in board_mmc_init function
+		 */
+		dev_no -= 1;
+	} else {
+		/* need to map to the mmc device id
+		 * see the comments in board_mmc_init function
+		 */
+		if (dev_no == 1) {
+			dev_no = 0;
+		} else {
+			dev_no = 1;
+		}
+	}
+
 	return dev_no;
 }
 
 int mmc_map_to_kernel_blk(int dev_no)
 {
-	return dev_no;
+	if (is_rev_v2()) {
+		return dev_no + 1;
+	} else {
+		if (dev_no == 0) {
+			return 1;
+		} else {
+			return 0;
+		}
+	}
 }
 
 int board_mmc_getcd(struct mmc *mmc)
@@ -255,10 +306,14 @@ int board_mmc_getcd(struct mmc *mmc)
 
 	switch (cfg->esdhc_base) {
 	case USDHC1_BASE_ADDR:
-		ret = !gpio_get_value(USDHC1_CD_GPIO);
+		if (is_rev_v2()) {
+			ret = 1; /* Assume wifi/uSDHC1 is always present */
+		} else {
+			ret = !gpio_get_value(USDHC1_CD_GPIO);
+		}
 		break;
 	case USDHC2_BASE_ADDR:
-		ret = 1;
+		ret = 1;  /* eMMC/uSDHC2 is always present */
 		break;
 	}
 
@@ -273,36 +328,39 @@ int board_mmc_init(bd_t *bis)
 	/*
 	 * According to the board_mmc_init() the following map is done:
 	 * (U-boot device node)    (Physical Port)
-	 * mmc0                    USDHC1
-	 * mmc1                    USDHC2
+	 * mmc0                    USDHC2 (eMMC)
+	 * mmc1                    v1: USDHC1 (uSD Card), v2: N/A
 	 */
 	for (i = 0; i < CONFIG_SYS_FSL_USDHC_NUM; i++) {
 #if defined(CONFIG_SPL_BUILD)
 
 		// The SPL framework expects there to be only one MMC device
 		// and we always loads u-boot from eMMC which is mapped to mmc1
-		if (i != 1) continue;
+		if (i != 0) continue;
 #endif
 
 		switch (i) {
 		case 0:
-			imx_iomux_v3_setup_multiple_pads(
-				usdhc1_pads, ARRAY_SIZE(usdhc1_pads));
-			gpio_direction_input(USDHC1_CD_GPIO);
-			usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC_CLK);
-
-			gpio_direction_output(USDHC1_PWR_GPIO, 0);
-			udelay(500);
-			gpio_direction_output(USDHC1_PWR_GPIO, 1);
-			break;
-		case 1:
 			imx_iomux_v3_setup_multiple_pads(
 				usdhc2_emmc_pads, ARRAY_SIZE(usdhc2_emmc_pads));
 
 			gpio_direction_output(USDHC2_PWR_GPIO, 0);
 			udelay(500);
 			gpio_direction_output(USDHC2_PWR_GPIO, 1);
-			usdhc_cfg[1].sdhc_clk = mxc_get_clock(MXC_ESDHC2_CLK);
+			usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC2_CLK);
+			break;
+		case 1:
+			if (is_rev_v2()) {
+				continue; /* USDHC1 used for wifi */
+			}
+			imx_iomux_v3_setup_multiple_pads(
+				usdhc1_pads, ARRAY_SIZE(usdhc1_pads));
+			gpio_direction_input(USDHC1_CD_GPIO);
+			usdhc_cfg[1].sdhc_clk = mxc_get_clock(MXC_ESDHC_CLK);
+
+			gpio_direction_output(USDHC1_PWR_GPIO, 0);
+			udelay(500);
+			gpio_direction_output(USDHC1_PWR_GPIO, 1);
 			break;
 		default:
 			printf("Warning: you configured more USDHC controllers"
@@ -717,6 +775,39 @@ void ldo_mode_set(int ldo_bypass)
 #endif
 #endif
 
+#ifdef CONFIG_SYS_I2C_MXC
+
+/* Configure the GPIO Expander on COM Carrier Boards rev PE9 and later */
+static int configure_gpio_expander(void)
+{
+        unsigned char val = 0x00;
+
+        i2c_set_bus_num(1);
+        if (!i2c_probe(PCA6416_ADDR)) {
+                if (i2c_write(PCA6416_ADDR, 0x02, 1, &val, 1)) {
+                        printf("Failed to configure PCA6416 GPIO Expander!\n");
+                        return -1;
+                }
+                if (i2c_write(PCA6416_ADDR, 0x03, 1, &val, 1)) {
+                        printf("Failed to configure PCA6416 GPIO Expander!\n");
+                        return -1;
+                }
+                if (i2c_write(PCA6416_ADDR, 0x06, 1, &val, 1)) {
+                        printf("Failed to configure PCA6416 GPIO Expander!\n");
+                        return -1;
+                }
+                if (i2c_write(PCA6416_ADDR, 0x07, 1, &val, 1)) {
+                        printf("Failed to configure PCA6416 GPIO Expander!\n");
+                        return -1;
+                }
+	} else {
+                //printf("COM Carrier Board pre rev PE9!\n");
+                return -1;
+	}
+	return 0;
+}
+#endif
+
 int board_early_init_f(void)
 {
 	/* configure and enable pwr on carrier board*/
@@ -739,6 +830,7 @@ int board_early_init_f(void)
 // early in the boot sequence
 #ifdef CONFIG_SYS_I2C
 	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
+	setup_i2c(1, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info2);
 #endif
 
 	ea_eeprom_init();
@@ -790,6 +882,10 @@ int board_late_init(void)
 
 #ifdef CONFIG_CMD_EADISP
         eatouch_init();
+#endif
+
+#ifdef CONFIG_SYS_I2C_MXC
+	configure_gpio_expander();
 #endif
 	set_wdog_reset((struct wdog_regs *)WDOG1_BASE_ADDR);
 

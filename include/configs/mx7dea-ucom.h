@@ -95,7 +95,7 @@
 	"console=ttymxc0\0" \
 	"fdt_high=0xffffffff\0" \
 	"initrd_high=0xffffffff\0" \
-	"fdt_file=imx7dea-ucom-kit.dtb\0" \
+	"fdt_file=imx7dea-ucom-kit_v2.dtb\0" \
 	"fdt_addr=0x83000000\0" \
 	"boot_fdt=try\0" \
 	"ip_dyn=yes\0" \
@@ -201,9 +201,9 @@
 
 /* MMC Configuration */
 #define CONFIG_SYS_FSL_USDHC_NUM	2
-#define CONFIG_SYS_MMC_ENV_DEV		0  /*USDHC1*/
+#define CONFIG_SYS_MMC_ENV_DEV		1  /* USDHC3/eMMC */
 #define CONFIG_SYS_MMC_ENV_PART		0  /* user area */
-#define CONFIG_MMCROOT			"/dev/mmcblk0p2"  /* USDHC1 */
+#define CONFIG_MMCROOT			"/dev/mmcblk2p2"  /* USDHC3/eMMC */
 
 #define CONFIG_SYS_FSL_ESDHC_ADDR	0
 
@@ -211,6 +211,8 @@
 #define CONFIG_SYS_I2C
 #define CONFIG_SYS_I2C_MXC
 #define CONFIG_SYS_I2C_MXC_I2C1		/* enable I2C bus 1 */
+#define CONFIG_SYS_I2C_MXC_I2C2		/* enable I2C bus 2 */
+#define CONFIG_SYS_I2C_MXC_I2C3		/* enable I2C bus 3 */
 #define CONFIG_SYS_I2C_SPEED		  100000
 
 #define CONFIG_SUPPORT_EMMC_BOOT        /* eMMC specific */

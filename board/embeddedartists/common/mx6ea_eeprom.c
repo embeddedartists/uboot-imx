@@ -488,6 +488,7 @@ int ea_eeprom_init(void)
 
 int ea_eeprom_get_config(ea_eeprom_config_t* config)
 {
+	i2c_set_bus_num(EA_EEPROM_I2C_BUS);
 
 	if (i2c_probe(EA_EEPROM_I2C_SLAVE)) {
 		return -1;

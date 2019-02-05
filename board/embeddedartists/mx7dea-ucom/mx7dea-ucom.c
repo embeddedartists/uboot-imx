@@ -52,6 +52,9 @@ DECLARE_GLOBAL_DATA_PTR;
 #define USDHC_PAD_CTRL (PAD_CTL_DSE_3P3V_32OHM | PAD_CTL_SRE_SLOW | \
 	PAD_CTL_HYS | PAD_CTL_PUE | PAD_CTL_PUS_PU47KOHM)
 
+#define USDHC2_PAD_CTRL (PAD_CTL_DSE_3P3V_49OHM | PAD_CTL_SRE_FAST | \
+	PAD_CTL_HYS | PAD_CTL_PUE | PAD_CTL_PUS_PU47KOHM)
+
 #define ENET_PAD_CTRL  (PAD_CTL_PUS_PU100KOHM | PAD_CTL_DSE_3P3V_49OHM)
 #define ENET_PAD_CTRL_MII  (PAD_CTL_DSE_3P3V_32OHM)
 
@@ -82,6 +85,20 @@ struct i2c_pads_info i2c_pad_info1 = {
 		.i2c_mode = MX7D_PAD_I2C1_SDA__I2C1_SDA | PC,
 		.gpio_mode = MX7D_PAD_I2C1_SDA__GPIO4_IO9 | PC,
 		.gp = IMX_GPIO_NR(4, 9),
+	},
+};
+
+/* I2C2 */
+struct i2c_pads_info i2c_pad_info2 = {
+	.scl = {
+		.i2c_mode = MX7D_PAD_I2C2_SCL__I2C2_SCL | PC,
+		.gpio_mode = MX7D_PAD_I2C2_SCL__GPIO4_IO10 | PC,
+		.gp = IMX_GPIO_NR(4, 10),
+	},
+	.sda = {
+		.i2c_mode = MX7D_PAD_I2C2_SDA__I2C2_SDA | PC,
+		.gpio_mode = MX7D_PAD_I2C2_SDA__GPIO4_IO11 | PC,
+		.gp = IMX_GPIO_NR(4, 11),
 	},
 };
 
@@ -128,6 +145,7 @@ static iomux_v3_cfg_t const uart1_pads[] = {
 	MX7D_PAD_UART1_RX_DATA__UART1_DCE_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
 };
 
+/* USDHC1: v1:uSD Card, v2:wifi */
 static iomux_v3_cfg_t const usdhc1_pads[] = {
 	MX7D_PAD_SD1_CLK__SD1_CLK | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX7D_PAD_SD1_CMD__SD1_CMD | MUX_PAD_CTRL(USDHC_PAD_CTRL),
@@ -140,6 +158,20 @@ static iomux_v3_cfg_t const usdhc1_pads[] = {
 	MX7D_PAD_SD1_RESET_B__GPIO5_IO2 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 };
 
+/* USDHC2: v1:N/A, v2:uSD Card */
+static iomux_v3_cfg_t const usdhc2_pads[] = {
+	MX7D_PAD_SD2_CLK__SD2_CLK | MUX_PAD_CTRL(USDHC2_PAD_CTRL),
+	MX7D_PAD_SD2_CMD__SD2_CMD | MUX_PAD_CTRL(USDHC2_PAD_CTRL),
+	MX7D_PAD_SD2_DATA0__SD2_DATA0 | MUX_PAD_CTRL(USDHC2_PAD_CTRL),
+	MX7D_PAD_SD2_DATA1__SD2_DATA1 | MUX_PAD_CTRL(USDHC2_PAD_CTRL),
+	MX7D_PAD_SD2_DATA2__SD2_DATA2 | MUX_PAD_CTRL(USDHC2_PAD_CTRL),
+	MX7D_PAD_SD2_DATA3__SD2_DATA3 | MUX_PAD_CTRL(USDHC2_PAD_CTRL),
+
+	MX7D_PAD_SD1_CD_B__GPIO5_IO0 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	MX7D_PAD_SD1_RESET_B__GPIO5_IO2 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+};
+
+/* USDHC3 / eMMC */
 static iomux_v3_cfg_t const usdhc3_emmc_pads[] = {
 	MX7D_PAD_SD3_CLK__SD3_CLK | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX7D_PAD_SD3_CMD__SD3_CMD | MUX_PAD_CTRL(USDHC_PAD_CTRL),
@@ -412,31 +444,38 @@ int board_qspi_init(void)
 }
 #endif
 
+#define PCA6416_ADDR 0x20
+static bool is_rev_v2(void)
+{
+	setup_i2c(1, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info2);
+	i2c_set_bus_num(1);
+	i2c_init(CONFIG_SYS_I2C_SPEED, PCA6416_ADDR);
+	if (!i2c_probe(PCA6416_ADDR)) {
+		// Found PCA6416 => it is a rev v2 board
+		return true;
+	}
+	return false;
+}
+
 #ifdef CONFIG_FSL_ESDHC
 
-#define USDHC1_CD_GPIO	IMX_GPIO_NR(5, 0)
-#define USDHC1_PWR_GPIO	IMX_GPIO_NR(5, 2)
+#define USDHC_CD_GPIO	IMX_GPIO_NR(5, 0)
+#define USDHC_PWR_GPIO	IMX_GPIO_NR(5, 2)
 #define USDHC3_PWR_GPIO IMX_GPIO_NR(6, 11)
 
 static struct fsl_esdhc_cfg usdhc_cfg[3] = {
-	{USDHC1_BASE_ADDR, 0, 4},
+	{USDHC2_BASE_ADDR, 0, 4},/* changed in board_mmc_init() if rev v1 */
 	{USDHC3_BASE_ADDR},
 };
 
 int board_mmc_get_env_dev(int devno)
 {
-        if (devno == 2)
-                devno--;
-
-        return devno;
+        return devno - 1;
 }
 
 int mmc_map_to_kernel_blk(int dev_no)
 {
-	if (1 == dev_no)
-		dev_no++;
-
-	return dev_no;
+	return dev_no + 1;
 }
 
 int board_mmc_getcd(struct mmc *mmc)
@@ -446,7 +485,14 @@ int board_mmc_getcd(struct mmc *mmc)
 
 	switch (cfg->esdhc_base) {
 	case USDHC1_BASE_ADDR:
-		ret = !gpio_get_value(USDHC1_CD_GPIO);
+		if (!is_rev_v2()) {
+			ret = !gpio_get_value(USDHC_CD_GPIO);
+		}
+		break;
+	case USDHC2_BASE_ADDR:
+		if (is_rev_v2()) {
+			ret = !gpio_get_value(USDHC_CD_GPIO);
+		}
 		break;
 	case USDHC3_BASE_ADDR:
 		ret = 1; /* Assume uSDHC3 emmc is always present */
@@ -462,8 +508,8 @@ int board_mmc_init(bd_t *bis)
 	/*
 	 * According to the board_mmc_init() the following map is done:
 	 * (U-boot device node)    (Physical Port)
-	 * mmc0                    USDHC1
-	 * mmc2                    USDHC3 (eMMC)
+	 * mmc0                    v1: USHC1 v2: USDHC2 (uSD Card)
+	 * mmc1                    USDHC3 (eMMC)
 	 */
 	for (i = 0; i < CONFIG_SYS_FSL_USDHC_NUM; i++) {
 #if defined(CONFIG_SPL_BUILD)
@@ -474,15 +520,28 @@ int board_mmc_init(bd_t *bis)
 
 		switch (i) {
 		case 0:
-			imx_iomux_v3_setup_multiple_pads(
-				usdhc1_pads, ARRAY_SIZE(usdhc1_pads));
-			gpio_request(USDHC1_CD_GPIO, "usdhc1_cd");
-			gpio_direction_input(USDHC1_CD_GPIO);
-			gpio_request(USDHC1_PWR_GPIO, "usdhc1_pwr");
-			gpio_direction_output(USDHC1_PWR_GPIO, 0);
-			udelay(500);
-			gpio_direction_output(USDHC1_PWR_GPIO, 1);
-			usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC_CLK);
+			if (is_rev_v2()) {
+				imx_iomux_v3_setup_multiple_pads(
+					usdhc2_pads, ARRAY_SIZE(usdhc2_pads));
+				gpio_request(USDHC_CD_GPIO, "usdhc2_cd");
+				gpio_direction_input(USDHC_CD_GPIO);
+				gpio_request(USDHC_PWR_GPIO, "usdhc2_pwr");
+				gpio_direction_output(USDHC_PWR_GPIO, 0);
+				udelay(500);
+				gpio_direction_output(USDHC_PWR_GPIO, 1);
+				usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC2_CLK);
+			} else {
+				imx_iomux_v3_setup_multiple_pads(
+					usdhc1_pads, ARRAY_SIZE(usdhc1_pads));
+				gpio_request(USDHC_CD_GPIO, "usdhc1_cd");
+				gpio_direction_input(USDHC_CD_GPIO);
+				gpio_request(USDHC_PWR_GPIO, "usdhc1_pwr");
+				gpio_direction_output(USDHC_PWR_GPIO, 0);
+				udelay(500);
+				gpio_direction_output(USDHC_PWR_GPIO, 1);
+				usdhc_cfg[0].esdhc_base = USDHC1_BASE_ADDR;
+				usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC_CLK);
+			}
 			break;
 		case 1:
 			imx_iomux_v3_setup_multiple_pads(
@@ -668,6 +727,38 @@ int board_usb_phy_mode(int port)
 
 #endif
 
+#ifdef CONFIG_SYS_I2C_MXC
+
+/* Configure the GPIO Expander on COM Carrier Boards rev PE9 and later */
+static int configure_gpio_expander(void)
+{
+        unsigned char val = 0x00;
+
+        i2c_set_bus_num(1);
+        if (!i2c_probe(PCA6416_ADDR)) {
+                if (i2c_write(PCA6416_ADDR, 0x02, 1, &val, 1)) {
+                        printf("Failed to configure PCA6416 GPIO Expander!\n");
+                        return -1;
+                }
+                if (i2c_write(PCA6416_ADDR, 0x03, 1, &val, 1)) {
+                        printf("Failed to configure PCA6416 GPIO Expander!\n");
+                        return -1;
+                }
+                if (i2c_write(PCA6416_ADDR, 0x06, 1, &val, 1)) {
+                        printf("Failed to configure PCA6416 GPIO Expander!\n");
+                        return -1;
+                }
+                if (i2c_write(PCA6416_ADDR, 0x07, 1, &val, 1)) {
+                        printf("Failed to configure PCA6416 GPIO Expander!\n");
+                        return -1;
+                }
+	} else {
+                //printf("COM Carrier Board pre rev PE9!\n");
+                return -1;
+	}
+	return 0;
+}
+#endif
 
 int board_early_init_f(void)
 {
@@ -675,6 +766,7 @@ int board_early_init_f(void)
 
 #ifdef CONFIG_SYS_I2C_MXC
 	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
+	setup_i2c(1, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info2);
 	setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info3);
 #endif
 
@@ -776,6 +868,10 @@ int board_late_init(void)
 
 #ifdef CONFIG_CMD_EADISP
 	eatouch_init();
+#endif
+
+#ifdef CONFIG_SYS_I2C_MXC
+	configure_gpio_expander();
 #endif
 
 	imx_iomux_v3_setup_multiple_pads(wdog_pads, ARRAY_SIZE(wdog_pads));

@@ -31,7 +31,7 @@
 /* Size of malloc() pool */
 #define CONFIG_SYS_MALLOC_LEN		(16 * SZ_1M)
 
-#define CONFIG_MXC_UART_BASE		UART1_BASE
+#define CONFIG_MXC_UART_BASE		UART4_BASE
 
 #define CONFIG_MFG_ENV_SETTINGS \
 	"mfgtool_args=setenv bootargs console=${console},${baudrate} " \
@@ -47,9 +47,9 @@
 	"bootcmd_mfg=run mfgtool_args;bootz ${loadaddr} ${initrd_addr} ${fdt_addr};\0"
 
 #ifdef CONFIG_MX6DL
-#define FDT_FILE "imx6dlea-com-kit.dtb"
+#define FDT_FILE "imx6dlea-com-kit_v2.dtb"
 #else
-#define FDT_FILE "imx6qea-com-kit.dtb"
+#define FDT_FILE "imx6qea-com-kit_v2.dtb"
 #endif
 
 #ifdef EA_IMX_PTP
@@ -63,7 +63,7 @@
 	EA_IMX_PTP_ENV_SETTINGS \
 	"script=boot.scr\0" \
 	"image=zImage\0" \
-	"console=ttymxc0\0" \
+	"console=ttymxc3\0" \
 	"fdt_high=0xffffffff\0" \
 	"initrd_high=0xffffffff\0" \
 	"fdt_file=" FDT_FILE "\0" \
@@ -162,10 +162,10 @@
 	(CONFIG_SYS_INIT_RAM_ADDR + CONFIG_SYS_INIT_SP_OFFSET)
 
 /* MMC Configuration */
-#define CONFIG_SYS_FSL_USDHC_NUM	3
-#define CONFIG_SYS_MMC_ENV_DEV		2  /*USDHC4*/
+#define CONFIG_SYS_FSL_USDHC_NUM	2
+#define CONFIG_SYS_MMC_ENV_DEV		1  /* USDHC4/eMMC */
 #define CONFIG_SYS_MMC_ENV_PART		0  /* user area */
-#define CONFIG_MMCROOT			"/dev/mmcblk2p2"  /* SDHC3 */
+#define CONFIG_MMCROOT			"/dev/mmcblk3p2"  /* USDHC4/eMMC */
 
 #define CONFIG_SYS_FSL_ESDHC_ADDR	0
 

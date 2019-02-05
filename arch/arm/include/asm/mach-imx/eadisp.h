@@ -122,6 +122,32 @@ void eadisp_setup_display(const struct display_info_t *displays, int cnt);
 	}\
 }
 
+#define EADISP_NHD_1024600AF(_mode, _detect, _bus) \
+{\
+	.bus	= _bus,\
+	.addr	= 0x4,\
+	.pixfmt	= IPU_PIX_FMT_RGB24,\
+	.detect	= _detect ? eadisp_detect_i2c : NULL,\
+	.enable	= eadisp_enable_fb,\
+	.fbtype = FB_##_mode,\
+	.misc   = MISC_DE_ACTIVE_HIGH,\
+	.mode	= {\
+		.name           = "nhd-10.1-1024600af",\
+		.refresh        = 60,\
+		.xres           = 1024,\
+		.yres           = 600,\
+		.pixclock       = 1000000000000ULL/((1024+160+160+0)*(600+23+12+0)*60),\
+		.left_margin    = 160,\
+		.right_margin   = 160,\
+		.upper_margin   = 23,\
+		.lower_margin   = 12,\
+		.hsync_len      = 0,\
+		.vsync_len      = 0,\
+		.sync           = FB_SYNC_EXT,\
+		.vmode          = FB_VMODE_NONINTERLACED\
+	}\
+}
+
 /* RGB settings */
 #define EADISP_INNOLUX_AT070TN(_mode, _detect, _bus) \
 {\

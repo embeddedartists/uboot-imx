@@ -52,7 +52,7 @@
 	"console=ttymxc0\0" \
 	"fdt_high=0xffffffff\0" \
 	"initrd_high=0xffffffff\0" \
-	"fdt_file=imx6ulea-com-kit.dtb\0" \
+	"fdt_file=imx6ulea-com-kit_v2.dtb\0" \
 	"fdt_addr=0x83000000\0" \
 	"boot_fdt=try\0" \
 	"ip_dyn=yes\0" \
@@ -142,9 +142,9 @@
 
 /* MMC Configuration */
 #define CONFIG_SYS_FSL_USDHC_NUM	2
-#define CONFIG_SYS_MMC_ENV_DEV		1  /*USDHC2*/
+#define CONFIG_SYS_MMC_ENV_DEV		0  /* USDHC2/eMMC */
 #define CONFIG_SYS_MMC_ENV_PART		0  /* user area */
-#define CONFIG_MMCROOT			"/dev/mmcblk1p2"  /* USDHC2 */
+#define CONFIG_MMCROOT			"/dev/mmcblk1p2"  /* USDHC2/eMMC */
 
 #define CONFIG_SYS_FSL_ESDHC_ADDR	USDHC2_BASE_ADDR
 

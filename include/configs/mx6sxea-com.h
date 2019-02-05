@@ -85,7 +85,7 @@
 	"console=ttymxc0\0" \
 	"fdt_high=0xffffffff\0" \
 	"initrd_high=0xffffffff\0" \
-	"fdt_file=imx6sxea-com-kit.dtb\0" \
+	"fdt_file=imx6sxea-com-kit_v2.dtb\0" \
 	"fdt_addr=0x83000000\0" \
 	"boot_fdt=try\0" \
 	"ip_dyn=yes\0" \
@@ -186,12 +186,12 @@
 #endif
 
 /* MMC Configuration */
-#define CONFIG_SYS_FSL_USDHC_NUM	3
-#define CONFIG_SYS_MMC_ENV_DEV		2  /*USDHC4*/
-#define CONFIG_SYS_MMC_ENV_PART		0	/* user area */
-#define CONFIG_MMCROOT			"/dev/mmcblk3p2"  /* USDHC4 */
+#define CONFIG_SYS_FSL_USDHC_NUM	2
+#define CONFIG_SYS_MMC_ENV_DEV		0  /* USDHC3 / eMMC */
+#define CONFIG_SYS_MMC_ENV_PART		0  /* user area */
+#define CONFIG_MMCROOT			"/dev/mmcblk2p2"  /* USDHC3 / eMMC */
 
-#define CONFIG_SYS_FSL_ESDHC_ADDR	USDHC4_BASE_ADDR
+#define CONFIG_SYS_FSL_ESDHC_ADDR	USDHC3_BASE_ADDR
 
 /* I2C Configs */
 #ifndef CONFIG_DM_I2C
@@ -280,8 +280,6 @@
 #define CONFIG_ENV_SPI_MODE		CONFIG_SF_DEFAULT_MODE
 #define CONFIG_ENV_SPI_MAX_HZ		CONFIG_SF_DEFAULT_SPEED
 #endif
-
-#define CONFIG_SYS_FSL_USDHC_NUM	3
 
 /* EA: EEPROM */
 #define CONFIG_CMD_EEPROM

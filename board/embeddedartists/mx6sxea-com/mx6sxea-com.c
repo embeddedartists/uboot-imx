@@ -64,6 +64,10 @@ DECLARE_GLOBAL_DATA_PTR;
 	PAD_CTL_PUS_22K_UP  | PAD_CTL_SPEED_LOW |		\
 	PAD_CTL_DSE_80ohm   | PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
 
+#define USDHC4_PAD_CTRL (PAD_CTL_PKE | PAD_CTL_PUE |		\
+	PAD_CTL_PUS_47K_UP  | PAD_CTL_SPEED_LOW |		\
+	PAD_CTL_DSE_60ohm   | PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
+
 #define ENET_PAD_CTRL  (PAD_CTL_PUS_100K_UP | PAD_CTL_PUE |     \
 	PAD_CTL_SPEED_HIGH   |                                   \
 	PAD_CTL_DSE_48ohm   | PAD_CTL_SRE_FAST)
@@ -140,6 +144,7 @@ static iomux_v3_cfg_t const uart1_pads[] = {
 	MX6_PAD_GPIO1_IO05__UART1_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
 };
 
+/* USDHC2: v1:uSD Card, v2:wifi */
 static iomux_v3_cfg_t const usdhc2_pads[] = {
 	MX6_PAD_SD2_CLK__USDHC2_CLK | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_SD2_CMD__USDHC2_CMD | MUX_PAD_CTRL(USDHC_PAD_CTRL),
@@ -147,8 +152,15 @@ static iomux_v3_cfg_t const usdhc2_pads[] = {
 	MX6_PAD_SD2_DATA1__USDHC2_DATA1 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_SD2_DATA2__USDHC2_DATA2 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_SD2_DATA3__USDHC2_DATA3 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+
+	/* CD pin */
+	MX6_PAD_KEY_ROW1__GPIO2_IO_16 | MUX_PAD_CTRL(NO_PAD_CTRL),
+
+	/* RST_B, used for power reset cycle */
+	MX6_PAD_SD4_RESET_B__GPIO6_IO_22 | MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
+/* USDHC3: eMMC */
 static iomux_v3_cfg_t const usdhc3_pads[] = {
 	MX6_PAD_SD3_CLK__USDHC3_CLK | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_SD3_CMD__USDHC3_CMD | MUX_PAD_CTRL(USDHC_PAD_CTRL),
@@ -160,26 +172,25 @@ static iomux_v3_cfg_t const usdhc3_pads[] = {
 	MX6_PAD_SD3_DATA5__USDHC3_DATA5 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_SD3_DATA6__USDHC3_DATA6 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_SD3_DATA7__USDHC3_DATA7 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+};
+
+/* USDHC4: v1:N/A, v2:uSD Card */
+static iomux_v3_cfg_t const usdhc4_pads[] = {
+	MX6_PAD_SD4_CLK__USDHC4_CLK | MUX_PAD_CTRL(USDHC4_PAD_CTRL),
+	MX6_PAD_SD4_CMD__USDHC4_CMD | MUX_PAD_CTRL(USDHC4_PAD_CTRL),
+	MX6_PAD_SD4_DATA0__USDHC4_DATA0 | MUX_PAD_CTRL(USDHC4_PAD_CTRL),
+	MX6_PAD_SD4_DATA1__USDHC4_DATA1 | MUX_PAD_CTRL(USDHC4_PAD_CTRL),
+	MX6_PAD_SD4_DATA2__USDHC4_DATA2 | MUX_PAD_CTRL(USDHC4_PAD_CTRL),
+	MX6_PAD_SD4_DATA3__USDHC4_DATA3 | MUX_PAD_CTRL(USDHC4_PAD_CTRL),
 
 	/* CD pin */
-	MX6_PAD_KEY_COL0__GPIO2_IO_10 | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_KEY_ROW1__GPIO2_IO_16 | MUX_PAD_CTRL(NO_PAD_CTRL),
 
 	/* RST_B, used for power reset cycle */
-	MX6_PAD_KEY_COL1__GPIO2_IO_11 | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_SD4_RESET_B__GPIO6_IO_22 | MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
-static iomux_v3_cfg_t const usdhc4_pads[] = {
-	MX6_PAD_SD4_CLK__USDHC4_CLK | MUX_PAD_CTRL(USDHC_PAD_CTRL),
-	MX6_PAD_SD4_CMD__USDHC4_CMD | MUX_PAD_CTRL(USDHC_PAD_CTRL),
-	MX6_PAD_SD4_DATA0__USDHC4_DATA0 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
-	MX6_PAD_SD4_DATA1__USDHC4_DATA1 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
-	MX6_PAD_SD4_DATA2__USDHC4_DATA2 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
-	MX6_PAD_SD4_DATA3__USDHC4_DATA3 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
-
-	/* CD pin */
-	MX6_PAD_SD4_DATA7__GPIO6_IO_21 | MUX_PAD_CTRL(NO_PAD_CTRL),
-};
-
+#ifdef CONFIG_MX6SXSABRESD_EMMC_REWORK
 static iomux_v3_cfg_t const usdhc4_emmc_pads[] = {
 	MX6_PAD_SD4_CLK__USDHC4_CLK | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_SD4_CMD__USDHC4_CMD | MUX_PAD_CTRL(USDHC_PAD_CTRL),
@@ -193,7 +204,7 @@ static iomux_v3_cfg_t const usdhc4_emmc_pads[] = {
 	MX6_PAD_SD4_DATA7__USDHC4_DATA7 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_SD4_RESET_B__USDHC4_RESET_B | MUX_PAD_CTRL(NO_PAD_CTRL),
 };
-
+#endif
 
 static iomux_v3_cfg_t const peri_3v3_pads[] = {
 	MX6_PAD_QSPI1B_DATA2__GPIO4_IO_26 | MUX_PAD_CTRL(NO_PAD_CTRL),
@@ -298,21 +309,32 @@ int board_qspi_init(void)
 }
 #endif
 
+#define PCA6416_ADDR 0x20
+static bool is_rev_v2(void)
+{
+	setup_i2c(1, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info2);
+	i2c_set_bus_num(1);
+	i2c_init(CONFIG_SYS_I2C_SPEED, PCA6416_ADDR);
+	if (!i2c_probe(PCA6416_ADDR)) {
+		// Found PCA6416 => it is a rev v2 board
+		return true;
+	}
+	return false;
+}
+
 #ifdef CONFIG_FSL_ESDHC
 static struct fsl_esdhc_cfg usdhc_cfg[3] = {
-	{USDHC2_BASE_ADDR, 0, 4},
 	{USDHC3_BASE_ADDR},
 #ifdef CONFIG_MX6SXSABRESD_EMMC_REWORK
 	{USDHC4_BASE_ADDR, 0, 8},
 #else
-	{USDHC4_BASE_ADDR, 0, 4},
+	{USDHC4_BASE_ADDR, 0, 4},/* changed in board_mmc_init() if rev v1 */
 #endif
 };
 
-#define USDHC2_PWR_GPIO	IMX_GPIO_NR(6, 22)
-#define USDHC3_CD_GPIO	IMX_GPIO_NR(2, 10)
-#define USDHC3_PWR_GPIO	IMX_GPIO_NR(2, 11)
-#define USDHC4_CD_GPIO	IMX_GPIO_NR(6, 21)
+//#define USDHC3_PWR_GPIO	IMX_GPIO_NR(2, 11)
+#define USDHC_CD_GPIO	IMX_GPIO_NR(2, 16)
+#define USDHC_PWR_GPIO	IMX_GPIO_NR(6, 22)
 
 int mmc_get_env_devno(void)
 {
@@ -329,23 +351,36 @@ int mmc_get_env_devno(void)
 	/* BOOT_CFG2[3] and BOOT_CFG2[4] */
 	dev_no = (soc_sbmr & 0x00001800) >> 11;
 
-	/* need ubstract 1 to map to the mmc device id
-	 * see the comments in board_mmc_init function
-	 */
-
-	dev_no--;
+	if (is_rev_v2()) {
+		/* need to subtract 2 to map to the mmc device id
+		 * see the comments in board_mmc_init function
+		 */
+		dev_no -= 2;
+	} else {
+		/* need to map to the mmc device id
+		 * see the comments in board_mmc_init function
+		 */
+		if (dev_no == 2) {
+			dev_no = 0;
+		} else {
+			dev_no = 1;
+		}
+	}
 
 	return dev_no;
 }
 
-int board_mmc_get_env_dev(int devno)
-{
-        return devno - 1;
-}
-
 int mmc_map_to_kernel_blk(int dev_no)
 {
-	return dev_no + 1;
+	if (is_rev_v2()) {
+		return dev_no + 2;
+	} else {
+		if (dev_no == 0) {
+			return 2;
+		} else {
+			return 1;
+		}
+	}
 }
 
 int board_mmc_getcd(struct mmc *mmc)
@@ -355,22 +390,27 @@ int board_mmc_getcd(struct mmc *mmc)
 
 	switch (cfg->esdhc_base) {
 	case USDHC2_BASE_ADDR:
-		ret = 1; /* Assume uSDHC2 is always present */
+		if (is_rev_v2()) {
+			ret = 1; /* Assume uSDHC2 is always present */
+		} else {
+			ret = !gpio_get_value(USDHC_CD_GPIO);
+		}
 		break;
 	case USDHC3_BASE_ADDR:
-		ret = !gpio_get_value(USDHC3_CD_GPIO);
+		ret = 1; /* Assume uSDHC3/eMMC is always present */
 		break;
 	case USDHC4_BASE_ADDR:
 #ifdef CONFIG_MX6SXSABRESD_EMMC_REWORK
 		ret = 1;
 #else
-		ret = !gpio_get_value(USDHC4_CD_GPIO);
+		if (is_rev_v2()) {
+			ret = !gpio_get_value(USDHC_CD_GPIO);
+		}
 #endif
 		break;
 	}
 
 	return ret;
-
 }
 
 int board_mmc_init(bd_t *bis)
@@ -380,52 +420,51 @@ int board_mmc_init(bd_t *bis)
 	/*
 	 * According to the board_mmc_init() the following map is done:
 	 * (U-boot device node)    (Physical Port)
-	 * mmc0                    USDHC2
-	 * mmc1                    USDHC3
-	 * mmc2                    USDHC4
+	 * mmc0                    USDHC3 (eMMC)
+	 * mmc1                    v1: USHC2 v2: USDHC4 (uSD Card)
 	 */
 	for (i = 0; i < CONFIG_SYS_FSL_USDHC_NUM; i++) {
 #if defined(CONFIG_SPL_BUILD)
 
 		// The SPL framework expects there to be only one MMC device
-		// and we always loads u-boot from eMMC which is mapped to mmc1
-		if (i != 1) continue;
+		// and we always loads u-boot from eMMC which is mapped to mmc0
+		if (i != 0) continue;
 #endif
 
 		switch (i) {
 		case 0:
 			imx_iomux_v3_setup_multiple_pads(
-				usdhc2_pads, ARRAY_SIZE(usdhc2_pads));
-			gpio_request(USDHC2_PWR_GPIO, "usdhc2 pwr");
-			gpio_direction_output(USDHC2_PWR_GPIO, 1);
-			usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC2_CLK);
+				usdhc3_pads, ARRAY_SIZE(usdhc3_pads));
+			usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC3_CLK);
 			break;
 		case 1:
-			imx_iomux_v3_setup_multiple_pads(
-				usdhc3_pads, ARRAY_SIZE(usdhc3_pads));
-			gpio_request(USDHC3_CD_GPIO, "usdhc3 cd");
-			gpio_request(USDHC3_PWR_GPIO, "usdhc3 pwr");
-			gpio_direction_input(USDHC3_CD_GPIO);
-			gpio_direction_output(USDHC3_PWR_GPIO, 1);
-			usdhc_cfg[1].sdhc_clk = mxc_get_clock(MXC_ESDHC3_CLK);
-			break;
-		case 2:
 #ifdef CONFIG_MX6SXSABRESD_EMMC_REWORK
 			imx_iomux_v3_setup_multiple_pads(
 				usdhc4_emmc_pads, ARRAY_SIZE(usdhc4_emmc_pads));
 #else
-			imx_iomux_v3_setup_multiple_pads(
-				usdhc4_pads, ARRAY_SIZE(usdhc4_pads));
-			gpio_request(USDHC4_CD_GPIO, "usdhc4 cd");
-			gpio_direction_input(USDHC4_CD_GPIO);
+			if (is_rev_v2()) {
+				imx_iomux_v3_setup_multiple_pads(
+					usdhc4_pads, ARRAY_SIZE(usdhc4_pads));
+				gpio_request(USDHC_CD_GPIO, "usdhc4 cd");
+				gpio_request(USDHC_PWR_GPIO, "usdhc4 pwr");
+				usdhc_cfg[1].sdhc_clk = mxc_get_clock(MXC_ESDHC4_CLK);
+			} else {
+				imx_iomux_v3_setup_multiple_pads(
+					usdhc2_pads, ARRAY_SIZE(usdhc2_pads));
+				gpio_request(USDHC_CD_GPIO, "usdhc2 cd");
+				gpio_request(USDHC_PWR_GPIO, "usdhc2 pwr");
+				usdhc_cfg[1].esdhc_base = USDHC2_BASE_ADDR;
+				usdhc_cfg[1].sdhc_clk = mxc_get_clock(MXC_ESDHC2_CLK);
+			}
+			gpio_direction_input(USDHC_CD_GPIO);
+			gpio_direction_output(USDHC_PWR_GPIO, 1);
 #endif
-			usdhc_cfg[2].sdhc_clk = mxc_get_clock(MXC_ESDHC4_CLK);
 			break;
 		default:
 			printf("Warning: you configured more USDHC controllers"
 				"(%d) than supported by the board\n", i + 1);
 			return -EINVAL;
-			}
+		}
 
                         ret = fsl_esdhc_initialize(bis, &usdhc_cfg[i]);
                         if (ret) {
@@ -586,6 +625,7 @@ static const struct display_info_t displays[] = {
 	EADISP_HANNSTAR10(LVDS0, 0, 0),
 	EADISP_LP101WH4_X11(LVDS0, 0, 0),
 	EADISP_LP101WH4(LVDS0, 0, 0),
+	EADISP_NHD_1024600AF(LVDS0, 0, 0),
 
 	/* RGB */
 	EADISP_INNOLUX_AT070TN(RGB, 0, 0),
@@ -827,7 +867,6 @@ int board_eth_init(bd_t *bis)
 		if (is_valid_ethaddr(config.mac4) && !env_get("eth3addr")) {
 			eth_env_set_enetaddr("eth3addr", config.mac4);
 		}
-
 	}
 
 	setup_fec(CONFIG_FEC_ENET_DEV);
@@ -864,9 +903,41 @@ void board_get_hwaddr(int dev_id, unsigned char *mac)
 			memcpy(mac, config.mac2, 6);
 		}
 	}
-
 }
 
+#endif
+
+#ifdef CONFIG_SYS_I2C_MXC
+
+/* Configure the GPIO Expander on COM Carrier Boards rev PE9 and later */
+static int configure_gpio_expander(void)
+{
+        unsigned char val = 0x00;
+
+        i2c_set_bus_num(1);
+        if (!i2c_probe(PCA6416_ADDR)) {
+                if (i2c_write(PCA6416_ADDR, 0x02, 1, &val, 1)) {
+                        printf("Failed to configure PCA6416 GPIO Expander!\n");
+                        return -1;
+                }
+                if (i2c_write(PCA6416_ADDR, 0x03, 1, &val, 1)) {
+                        printf("Failed to configure PCA6416 GPIO Expander!\n");
+                        return -1;
+                }
+                if (i2c_write(PCA6416_ADDR, 0x06, 1, &val, 1)) {
+                        printf("Failed to configure PCA6416 GPIO Expander!\n");
+                        return -1;
+                }
+                if (i2c_write(PCA6416_ADDR, 0x07, 1, &val, 1)) {
+                        printf("Failed to configure PCA6416 GPIO Expander!\n");
+                        return -1;
+                }
+	} else {
+                // printf("COM Carrier Board pre rev PE9!\n");
+                return -1;
+	}
+	return 0;
+}
 #endif
 
 #define I2C_PMIC 0
@@ -979,6 +1050,7 @@ int board_early_init_f(void)
 
 	setup_iomux_uart();
 
+
 // Configuration parameters are stored in I2C mapped eeprom and
 // must be initialized here since the configuration is accessed
 // early in the boot sequence
@@ -1032,7 +1104,6 @@ static const struct boot_mode board_boot_modes[] = {
 
 int board_late_init(void)
 {
-
 #ifdef CONFIG_CMD_BMODE
 	add_board_boot_modes(board_boot_modes);
 #endif
@@ -1051,6 +1122,10 @@ int board_late_init(void)
 
 #ifdef CONFIG_CMD_EADISP
 	eatouch_init();
+#endif
+
+#ifdef CONFIG_SYS_I2C_MXC
+	configure_gpio_expander();
 #endif
 	return 0;
 }
@@ -1072,7 +1147,6 @@ int checkboard(void)
 			config.board_part_nr,
 			config.board_rev,
 			config.batch);
-
 	}
 	else {
 		puts(" [Unknown board due to invalid configuration data]\n");
