@@ -60,6 +60,13 @@ config TARGET_IMX8MM_DDR4_EVK
 	select SUPPORT_SPL
 	select IMX8M_DDR4
 
+config TARGET_MX8MQEA_COM
+	bool "mx8mqea_com"
+	select IMX8MQ
+	select SUPPORT_SPL
+	select IMX8M_LPDDR4
+
+
 endchoice
 
 config SYS_SOC
@@ -70,5 +77,6 @@ source "board/freescale/imx8mq_arm2/Kconfig"
 source "board/freescale/imx8mq_phanbell/Kconfig"
 source "board/freescale/imx8mm_evk/Kconfig"
 source "board/freescale/imx8mm_val/Kconfig"
+source "board/embeddedartists/mx8mqea-com/Kconfig"
 
 endif

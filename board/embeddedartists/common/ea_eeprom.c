@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2015 Embedded Artists AB
  *
- * Configuration parameters stored in EEPROM for the Embedded Artists 
+ * Configuration parameters stored in EEPROM for the Embedded Artists
  * i.MX COM Board.
  *
  * SPDX-License-Identifier:	GPL-2.0+
@@ -11,8 +11,9 @@
 #include <asm/io.h>
 #include <asm/arch/sys_proto.h>
 #include <i2c.h>
+#include <dm.h>
 
-#include "mx6ea_eeprom.h"
+#include "ea_eeprom.h"
 struct ea_ddr_cfg
 {
 	u32 addr;
@@ -24,7 +25,7 @@ struct ea_ddr_cfg
 //static struct ea_ddr_cfg ddr_list_buf[EA_DDR_LIST_BUF_SZ];
 
 /*
- * Default values for DDR initialization in case eeprom data 
+ * Default values for DDR initialization in case eeprom data
  * couldn't be read
  */
 static struct ea_ddr_cfg ddr_init_default[] = {
@@ -469,6 +470,8 @@ static struct ea_ddr_cfg ddr_init_default[] = {
 	{0x30384130, 0x00000002},
 	{0x30790018, 0x0000000f},
 
+#elif defined(CONFIG_TARGET_MX8MQEA_COM)
+	// TODO
 #else
 
 #error "Unknown SOC"
@@ -477,17 +480,44 @@ static struct ea_ddr_cfg ddr_init_default[] = {
 };
 
 
+#ifdef CONFIG_DM_I2C
+static int ea_dm_i2c_init(struct udevice **i2c_dev)
+{
+	struct udevice *bus;
+        int ret;
+
+        ret = uclass_get_device_by_seq(UCLASS_I2C, EA_EEPROM_I2C_BUS, &bus);
+        if (ret) {
+                printf("%s: Can't find bus\n", __func__);
+                return -EINVAL;
+        }
+
+        ret = dm_i2c_probe(bus, EA_EEPROM_I2C_SLAVE, 0, i2c_dev);
+        if (ret) {
+                printf("%s: Can't find device id=0x%x\n",
+                        __func__, EA_EEPROM_I2C_SLAVE);
+                return -ENODEV;
+        }
+
+	return 0;
+}
+#endif
+
 
 int ea_eeprom_init(void)
 {
+#if !defined(CONFIG_DM_I2C)
 	i2c_set_bus_num(EA_EEPROM_I2C_BUS);
 	i2c_init(CONFIG_SYS_I2C_SPEED, EA_EEPROM_I2C_SLAVE);
+#endif
 
 	return 0;
 }
 
 int ea_eeprom_get_config(ea_eeprom_config_t* config)
 {
+#if !defined(CONFIG_DM_I2C)
+
 	i2c_set_bus_num(EA_EEPROM_I2C_BUS);
 
 	if (i2c_probe(EA_EEPROM_I2C_SLAVE)) {
@@ -502,6 +532,22 @@ int ea_eeprom_get_config(ea_eeprom_config_t* config)
 	{
 		return -2;
 	}
+#else
+	struct udevice *i2c_dev = NULL;
+	int ret;
+
+	ret = ea_dm_i2c_init(&i2c_dev);
+	if (ret) {
+		return ret;
+	}
+
+        ret = dm_i2c_read(i2c_dev, 0, (uint8_t *)config, sizeof(ea_eeprom_config_t));
+        if (ret) {
+                printf("%s dm_i2c_read failed, err %d\n", __func__, ret);
+                return -EIO;
+        }
+
+#endif
 
 	if (config->magic != EA_EEPROM_MAGIC) {
 		return -3;
@@ -512,44 +558,65 @@ int ea_eeprom_get_config(ea_eeprom_config_t* config)
 
 static int intern_dram_init(void)
 {
-	ea_eeprom_config_t config;
+	ea_eeprom_config_t config = {0};
 	int toRead = 0;
 	int haveRead = 0;
-	int i;
-	volatile u32 *reg_ptr;
+	int i, ret;
 	struct ea_ddr_cfg ddr_list_buf[EA_DDR_LIST_BUF_SZ];
 
-	if (ea_eeprom_get_config(&config) != 0) {
-		return -1;
+#ifdef CONFIG_DM_I2C
+	struct udevice *i2c_dev = NULL;
+
+        ret = ea_dm_i2c_init(&i2c_dev);
+        if (ret) {
+                return ret;
+        }
+
+#endif
+
+	ret = ea_eeprom_get_config(&config);
+	if (ret) {
+		return ret;
 	}
 
 	do {
+#if !defined(CONFIG_DM_I2C)
 		/*
-		 * Have seen issues with i2c access after some  register 
+		 * Have seen issues with i2c access after some  register
 		 * updates/accesses (eg.g for iMX6 Quad). Re-initializing
 		 * i2c just in case.
 		 */
 		i2c_set_bus_num(EA_EEPROM_I2C_BUS);
 	        i2c_init(CONFIG_SYS_I2C_SPEED, EA_EEPROM_I2C_SLAVE);
+#endif
 
 		toRead = config.num_reg_value_pairs;
 		if (toRead > EA_DDR_LIST_BUF_SZ)
 			toRead = EA_DDR_LIST_BUF_SZ;
 
-		if (i2c_read(EA_EEPROM_I2C_SLAVE, 
-			sizeof(ea_eeprom_config_t)+haveRead*sizeof(struct ea_ddr_cfg), 
-			2, 
-			(uint8_t *)ddr_list_buf, 
-			toRead*sizeof(struct ea_ddr_cfg))) 
+#if !defined(CONFIG_DM_I2C)
+		if (i2c_read(EA_EEPROM_I2C_SLAVE,
+			sizeof(ea_eeprom_config_t)+haveRead*sizeof(struct ea_ddr_cfg),
+			2,
+			(uint8_t *)ddr_list_buf,
+			toRead*sizeof(struct ea_ddr_cfg)))
 		{
 			return -2;
 		}
-
+#else
+		ret = dm_i2c_read(i2c_dev,
+			sizeof(ea_eeprom_config_t)+haveRead*sizeof(struct ea_ddr_cfg),
+			(uint8_t *)ddr_list_buf,
+			toRead*sizeof(struct ea_ddr_cfg));
+		if (ret) {
+			printf("%s dm_i2c_read failed, err %d\n", __func__, ret);
+			return -EIO;
+		}
+#endif
 		config.num_reg_value_pairs -= toRead;
 		haveRead += toRead;
 		for (i = 0; i < toRead; i++) {
-			reg_ptr = (volatile u32 *)ddr_list_buf[i].addr;
-			*reg_ptr = ddr_list_buf[i].val;
+			writel(ddr_list_buf[i].val, (unsigned long)ddr_list_buf[i].addr);
 		}
 
 
@@ -562,14 +629,12 @@ static int intern_dram_init(void)
 int ea_eeprom_dram_init(void)
 {
 	int i = 0;
-	volatile u32 *reg_ptr;
 
 	if (intern_dram_init() != 0) {
 		// try with default values if we failed with eeprom data
 		for(i = 0; i < sizeof(ddr_init_default)/sizeof(struct ea_ddr_cfg); i++)
 		{
-			reg_ptr = (volatile u32 *)ddr_init_default[i].addr;
-			*reg_ptr = ddr_init_default[i].val;
+			writel(ddr_init_default[i].val, (unsigned long)ddr_init_default[i].addr);
 		}
 	}
 

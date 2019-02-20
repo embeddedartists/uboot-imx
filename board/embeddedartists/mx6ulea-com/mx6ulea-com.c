@@ -41,7 +41,9 @@
 #endif
 #endif /*CONFIG_FSL_FASTBOOT*/
 
-#include "../common/mx6ea_eeprom.h"
+#include "../common/ea_eeprom.h"
+#include "../common/ea_mac.h"
+#include "../common/ea_gpio_expander.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -230,18 +232,6 @@ static void setup_iomux_uart(void)
 	imx_iomux_v3_setup_multiple_pads(uart1_pads, ARRAY_SIZE(uart1_pads));
 }
 
-#define PCA6416_ADDR 0x20
-static bool is_rev_v2(void)
-{
-	setup_i2c(1, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info2);
-	i2c_set_bus_num(1);
-	if (!i2c_probe(PCA6416_ADDR)) {
-		// Found PCA6416 => it is a rev v2 board
-		return true;
-	}
-	return false;
-}
-
 #ifdef CONFIG_FSL_ESDHC
 static struct fsl_esdhc_cfg usdhc_cfg[2] = {
 	{USDHC2_BASE_ADDR, 0, 8},
@@ -252,43 +242,9 @@ static struct fsl_esdhc_cfg usdhc_cfg[2] = {
 #define USDHC1_PWR_GPIO	IMX_GPIO_NR(1, 9)
 #define USDHC2_PWR_GPIO	IMX_GPIO_NR(4, 10)
 
-int mmc_get_env_devno(void)
-{
-	u32 soc_sbmr = readl(SRC_BASE_ADDR + 0x4);
-	int dev_no;
-	u32 bootsel;
-
-	bootsel = (soc_sbmr & 0x000000FF) >> 6 ;
-
-	/* If not boot from sd/mmc, use default value */
-	if (bootsel != 1)
-		return CONFIG_SYS_MMC_ENV_DEV;
-
-	/* BOOT_CFG2[3] and BOOT_CFG2[4] */
-	dev_no = (soc_sbmr & 0x00001800) >> 11;
-
-	if (is_rev_v2()) {
-		/* need to subtract 1 to map to the mmc device id
-		 * see the comments in board_mmc_init function
-		 */
-		dev_no -= 1;
-	} else {
-		/* need to map to the mmc device id
-		 * see the comments in board_mmc_init function
-		 */
-		if (dev_no == 1) {
-			dev_no = 0;
-		} else {
-			dev_no = 1;
-		}
-	}
-
-	return dev_no;
-}
-
 int mmc_map_to_kernel_blk(int dev_no)
 {
-	if (is_rev_v2()) {
+	if (ea_is_carrier_v2(1)) {
 		return dev_no + 1;
 	} else {
 		if (dev_no == 0) {
@@ -306,7 +262,7 @@ int board_mmc_getcd(struct mmc *mmc)
 
 	switch (cfg->esdhc_base) {
 	case USDHC1_BASE_ADDR:
-		if (is_rev_v2()) {
+		if (ea_is_carrier_v2(1)) {
 			ret = 1; /* Assume wifi/uSDHC1 is always present */
 		} else {
 			ret = !gpio_get_value(USDHC1_CD_GPIO);
@@ -350,7 +306,7 @@ int board_mmc_init(bd_t *bis)
 			usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC2_CLK);
 			break;
 		case 1:
-			if (is_rev_v2()) {
+			if (ea_is_carrier_v2(1)) {
 				continue; /* USDHC1 used for wifi */
 			}
 			imx_iomux_v3_setup_multiple_pads(
@@ -378,37 +334,29 @@ int board_mmc_init(bd_t *bis)
 	return 0;
 }
 
-int check_mmc_autodetect(void)
+int board_mmc_get_env_dev(int devno)
 {
-	char *autodetect_str = env_get("mmcautodetect");
+	int no = devno;
 
-	if ((autodetect_str != NULL) &&
-		(strcmp(autodetect_str, "yes") == 0)) {
-		return 1;
+	if (ea_is_carrier_v2(1)) {
+		/* need to subtract 1 to map to the mmc device id
+		 * see the comments in board_mmc_init function
+		 */
+		no -= 1;
+	} else {
+		/* need to map to the mmc device id
+		 * see the comments in board_mmc_init function
+		 */
+		if (no == 1) {
+			no = 0;
+		} else {
+			no = 1;
+		}
 	}
 
-	return 0;
+	return no;
 }
 
-void board_late_mmc_init(void)
-{
-	char cmd[32];
-	char mmcblk[32];
-	u32 dev_no = mmc_get_env_devno();
-
-	if (!check_mmc_autodetect())
-		return;
-
-	env_set_ulong("mmcdev", dev_no);
-
-	/* Set mmcblk env */
-	sprintf(mmcblk, "/dev/mmcblk%dp2 rootwait rw",
-		mmc_map_to_kernel_blk(dev_no));
-	env_set("mmcroot", mmcblk);
-
-	sprintf(cmd, "mmc dev %d", dev_no);
-	run_command(cmd, 0);
-}
 #endif
 
 #ifdef CONFIG_VIDEO_MXS
@@ -607,32 +555,13 @@ static int setup_fec(int fec_id)
 
 int board_eth_init(bd_t *bis)
 {
-	ea_eeprom_config_t config;
-
 	setup_iomux_fec(CONFIG_FEC_ENET_DEV);
 
 	/* enet pwr en */
 	gpio_direction_output(IMX_GPIO_NR(5, 3) , 0);
 
-	/* stored MAC addresses to env variables */
-	if (ea_eeprom_get_config(&config) == 0) {
-
-		if (is_valid_ethaddr(config.mac1) && !env_get("ethaddr")) {
-			eth_env_set_enetaddr("ethaddr", config.mac1);
-		}
-
-		if (is_valid_ethaddr(config.mac2) && !env_get("eth1addr")) {
-			eth_env_set_enetaddr("eth1addr", config.mac2);
-		}
-
-		if (is_valid_ethaddr(config.mac3) && !env_get("eth2addr")) {
-			eth_env_set_enetaddr("eth2addr", config.mac3);
-		}
-
-		if (is_valid_ethaddr(config.mac4) && !env_get("eth3addr")) {
-			eth_env_set_enetaddr("eth3addr", config.mac4);
-		}
-
+	if (ea_load_ethaddr()) {
+		printf("Failed to load MAC addresses\n");
 	}
 
 	return fecmxc_initialize_multi(bis, CONFIG_FEC_ENET_DEV,
@@ -650,22 +579,6 @@ int board_phy_config(struct phy_device *phydev)
 		phydev->drv->config(phydev);
 
 	return 0;
-}
-
-
-void board_get_hwaddr(int dev_id, unsigned char *mac)
-{
-	ea_eeprom_config_t config;
-
-	if (ea_eeprom_get_config(&config) == 0) {
-		if (dev_id == 0) {
-			memcpy(mac, config.mac1, 6);
-		}
-		else {
-			memcpy(mac, config.mac2, 6);
-		}
-	}
-
 }
 
 #endif
@@ -775,39 +688,6 @@ void ldo_mode_set(int ldo_bypass)
 #endif
 #endif
 
-#ifdef CONFIG_SYS_I2C_MXC
-
-/* Configure the GPIO Expander on COM Carrier Boards rev PE9 and later */
-static int configure_gpio_expander(void)
-{
-        unsigned char val = 0x00;
-
-        i2c_set_bus_num(1);
-        if (!i2c_probe(PCA6416_ADDR)) {
-                if (i2c_write(PCA6416_ADDR, 0x02, 1, &val, 1)) {
-                        printf("Failed to configure PCA6416 GPIO Expander!\n");
-                        return -1;
-                }
-                if (i2c_write(PCA6416_ADDR, 0x03, 1, &val, 1)) {
-                        printf("Failed to configure PCA6416 GPIO Expander!\n");
-                        return -1;
-                }
-                if (i2c_write(PCA6416_ADDR, 0x06, 1, &val, 1)) {
-                        printf("Failed to configure PCA6416 GPIO Expander!\n");
-                        return -1;
-                }
-                if (i2c_write(PCA6416_ADDR, 0x07, 1, &val, 1)) {
-                        printf("Failed to configure PCA6416 GPIO Expander!\n");
-                        return -1;
-                }
-	} else {
-                //printf("COM Carrier Board pre rev PE9!\n");
-                return -1;
-	}
-	return 0;
-}
-#endif
-
 int board_early_init_f(void)
 {
 	/* configure and enable pwr on carrier board*/
@@ -856,7 +736,6 @@ int board_init(void)
 	setup_usb();
 #endif
 
-
 	return 0;
 }
 
@@ -877,7 +756,7 @@ int board_late_init(void)
 #endif
 
 #ifdef CONFIG_ENV_IS_IN_MMC
-	board_late_mmc_init();
+	board_late_mmc_env_init();
 #endif
 
 #ifdef CONFIG_CMD_EADISP
@@ -885,35 +764,9 @@ int board_late_init(void)
 #endif
 
 #ifdef CONFIG_SYS_I2C_MXC
-	configure_gpio_expander();
+	ea_gpio_exp_configure(1);
 #endif
 	set_wdog_reset((struct wdog_regs *)WDOG1_BASE_ADDR);
-
-	return 0;
-}
-
-u32 get_board_rev(void)
-{
-	return get_cpu_rev();
-}
-
-int checkboard(void)
-{
-	ea_eeprom_config_t config;
-
-	puts ("Board: Embedded Artists ");
-	if (ea_eeprom_get_config(&config) == 0) {
-
-		printf("%s\n", config.name);
-		printf("       %05d, %s, WO%d\n",
-			config.board_part_nr,
-			config.board_rev,
-			config.batch);
-
-	}
-	else {
-		puts(" [Unknown board due to invalid configuration data]\n");
-	}
 
 	return 0;
 }

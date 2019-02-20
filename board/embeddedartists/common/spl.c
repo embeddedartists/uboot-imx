@@ -13,7 +13,7 @@
 
 #if defined(CONFIG_SPL_BUILD)
 
-#include "mx6ea_eeprom.h"
+#include "ea_eeprom.h"
 
 
 void spl_board_init(void)
