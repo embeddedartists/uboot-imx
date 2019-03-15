@@ -732,32 +732,6 @@ int board_late_init(void)
 }
 
 #ifdef CONFIG_FSL_FASTBOOT
-
-void board_fastboot_setup(void)
-{
-	switch (get_boot_device()) {
-#if defined(CONFIG_FASTBOOT_STORAGE_MMC)
-	case SD1_BOOT:
-	case MMC1_BOOT:
-		if (!env_get("fastboot_dev"))
-			env_set("fastboot_dev", "mmc0");
-		if (!env_get("bootcmd"))
-			env_set("bootcmd", "boota mmc0");
-		break;
-	case SD3_BOOT:
-	case MMC3_BOOT:
-		if (!env_get("fastboot_dev"))
-			env_set("fastboot_dev", "mmc1");
-		if (!env_get("bootcmd"))
-			env_set("bootcmd", "boota mmc1");
-		break;
-#endif /*CONFIG_FASTBOOT_STORAGE_MMC*/
-	default:
-		printf("unsupported boot devices\n");
-		break;
-	}
-}
-
 #ifdef CONFIG_ANDROID_RECOVERY
 
 /* Use S3 button for recovery key */

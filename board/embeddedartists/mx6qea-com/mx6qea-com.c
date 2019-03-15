@@ -1173,8 +1173,21 @@ int board_early_init_f(void)
 	/* enable USB 5V. Doesn't seem to work to do this in Linux/DTS?? */
 	gpio_direction_output(IMX_GPIO_NR(1, 0), 1);
 
+	/*
+	 * Must initialize timer early since delay functions are used.
+	 * Without timer_init a delay function will hang.
+	 */
+	timer_init();
+
 #ifndef CONFIG_EA_NO_UART_FLUSH
-        /* Empty UART RX FIFO 5ms after PERI_PWR_ENABLE goes high */
+        /*
+	 * Empty UART RX FIFO 5ms after PERI_PWR_ENABLE goes high.
+	 *
+	 * Needed to avoid u-boot to stop booting (boot delay) due to
+	 * data being available in the uart buffer. This problem is
+	 * available on COM Carrier board rev A to rev D. The problem
+	 * doesn't exist on rev E (also known as COM Carrier Board V2)
+ 	 */
         udelay(5000);
         while (tstc()) {
                 (void)getc();
@@ -1253,47 +1266,6 @@ int board_late_init(void)
 }
 
 #ifdef CONFIG_FSL_FASTBOOT
-
-void board_fastboot_setup(void)
-{
-	switch (get_boot_device()) {
-#if defined(CONFIG_FASTBOOT_STORAGE_SATA)
-	case SATA_BOOT:
-		if (!env_get("fastboot_dev"))
-			env_set("fastboot_dev", "sata");
-		if (!env_get("bootcmd"))
-			env_set("bootcmd", "boota sata");
-		break;
-#endif /*CONFIG_FASTBOOT_STORAGE_SATA*/
-#if defined(CONFIG_FASTBOOT_STORAGE_MMC)
-	case SD2_BOOT:
-	case MMC2_BOOT:
-	    if (!env_get("fastboot_dev"))
-			env_set("fastboot_dev", "mmc0");
-	    if (!env_get("bootcmd"))
-			env_set("bootcmd", "boota mmc0");
-	    break;
-	case SD3_BOOT:
-	case MMC3_BOOT:
-	    if (!env_get("fastboot_dev"))
-			env_set("fastboot_dev", "mmc1");
-	    if (!env_get("bootcmd"))
-			env_set("bootcmd", "boota mmc1");
-	    break;
-	case MMC4_BOOT:
-	    if (!env_get("fastboot_dev"))
-			env_set("fastboot_dev", "mmc2");
-	    if (!env_get("bootcmd"))
-			env_set("bootcmd", "boota mmc2");
-	    break;
-#endif /*CONFIG_FASTBOOT_STORAGE_MMC*/
-	default:
-		printf("unsupported boot devices\n");
-		break;
-	}
-
-}
-
 #ifdef CONFIG_ANDROID_RECOVERY
 
 #define GPIO_VOL_DN_KEY IMX_GPIO_NR(1, 5)

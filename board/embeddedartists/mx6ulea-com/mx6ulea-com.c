@@ -695,8 +695,22 @@ int board_early_init_f(void)
 			ARRAY_SIZE(peri_pwr_pads));
 	gpio_direction_output(IMX_GPIO_NR(5, 2), 1);
 
+	/*
+	 * Must initialize timer early since delay functions are used.
+	 * Without timer_init a delay function will hang or cause undefined
+	 * behaviour.
+	 */
+	timer_init();
+
 #ifndef CONFIG_EA_NO_UART_FLUSH
-        /* Empty UART RX FIFO 5ms after PERI_PWR_ENABLE goes high */
+	/*
+	 * Empty UART RX FIFO 5ms after PERI_PWR_ENABLE goes high.
+	 *
+	 * Needed to avoid u-boot to stop booting (boot delay) due to
+	 * data being available in the uart buffer. This problem is
+	 * available on COM Carrier board rev A to rev D. The problem
+	 * doesn't exist on rev E (also known as COM Carrier Board V2)
+	 */
         udelay(5000);
         while (tstc()) {
                 (void)getc();
@@ -772,45 +786,6 @@ int board_late_init(void)
 }
 
 #ifdef CONFIG_FSL_FASTBOOT
-
-void board_fastboot_setup(void)
-{
-	switch (get_boot_device()) {
-#if defined(CONFIG_FASTBOOT_STORAGE_MMC)
-	case SD1_BOOT:
-	case MMC1_BOOT:
-		if (!env_get("fastboot_dev"))
-			env_set("fastboot_dev", "mmc0");
-		if (!env_get("bootcmd"))
-			env_set("bootcmd", "boota mmc0");
-		break;
-	case SD2_BOOT:
-	case MMC2_BOOT:
-		if (!env_get("fastboot_dev"))
-			env_set("fastboot_dev", "mmc1");
-		if (!env_get("bootcmd"))
-			env_set("bootcmd", "boota mmc1");
-		break;
-#endif /*CONFIG_FASTBOOT_STORAGE_MMC*/
-#if defined(CONFIG_FASTBOOT_STORAGE_NAND)
-	case NAND_BOOT:
-		if (!env_get("fastboot_dev"))
-			env_set("fastboot_dev", "nand");
-		if (!env_get("fbparts"))
-			env_set("fbparts", ANDROID_FASTBOOT_NAND_PARTS);
-		if (!env_get("bootcmd"))
-			env_set("bootcmd",
-				"nand read ${loadaddr} ${boot_nand_offset} "
-				"${boot_nand_size};boota ${loadaddr}");
-		break;
-#endif /*CONFIG_FASTBOOT_STORAGE_NAND*/
-
-	default:
-		printf("unsupported boot devices\n");
-		break;
-	}
-}
-
 #ifdef CONFIG_ANDROID_RECOVERY
 int check_recovery_cmd_file(void)
 {

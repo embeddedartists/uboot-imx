@@ -922,8 +922,24 @@ int board_early_init_f(void)
 	imx_iomux_v3_setup_multiple_pads(peri_3v3_pads, ARRAY_SIZE(peri_3v3_pads));
 	gpio_request(IMX_GPIO_NR(4, 26), "peri 3.3  pwr");
 	gpio_direction_output(IMX_GPIO_NR(4, 26) , 1);
+
+
+	/*
+	 * Must initialize timer early since delay functions are used.
+	 * Without timer_init a delay function will hang.
+	 */
+	timer_init();
+
+
 #ifndef CONFIG_EA_NO_UART_FLUSH
-	/* Empty UART RX FIFO 5ms after PERI_PWR_ENABLE goes high */
+	/*
+	 * Empty UART RX FIFO 5ms after PERI_PWR_ENABLE goes high.
+	 *
+	 * Needed to avoid u-boot to stop booting (boot delay) due to
+	 * data being available in the uart buffer. This problem is
+	 * available on COM Carrier board rev A to rev D. The problem
+	 * doesn't exist on rev E (also known as COM Carrier Board V2)
+	 */
 	udelay(5000);
 	while (tstc()) {
 		(void)getc();
@@ -1036,64 +1052,22 @@ int board_usb_phy_mode(int port)
 
 int board_ehci_hcd_init(int port)
 {
-	u32 *usbnc_usb_ctrl;
+        u32 *usbnc_usb_ctrl;
 
-	switch (port) {
-	case 0:
-		imx_iomux_v3_setup_multiple_pads(usb_otg1_pads,
-			ARRAY_SIZE(usb_otg1_pads));
-		break;
-	case 1:
-		imx_iomux_v3_setup_multiple_pads(usb_otg2_pads,
-			ARRAY_SIZE(usb_otg2_pads));
-		break;
-	default:
-		printf("MXC USB port %d not yet supported\n", port);
-		return 1;
-	}
+        if (port > 1)
+                return -EINVAL;
 
-	usbnc_usb_ctrl = (u32 *)(USB_BASE_ADDR + USB_OTHERREGS_OFFSET +
-		port * 4);
+        usbnc_usb_ctrl = (u32 *)(USB_BASE_ADDR + USB_OTHERREGS_OFFSET +
+                                 port * 4);
 
-	setbits_le32(usbnc_usb_ctrl, UCTRL_PWR_POL);
-	return 0;
+        /* Set Power polarity */
+        setbits_le32(usbnc_usb_ctrl, UCTRL_PWR_POL);
+
+        return 0;
 }
 #endif
 
 #ifdef CONFIG_FSL_FASTBOOT
-
-void board_fastboot_setup(void)
-{
-	switch (get_boot_device()) {
-#if defined(CONFIG_FASTBOOT_STORAGE_MMC)
-	case SD2_BOOT:
-	case MMC2_BOOT:
-		if (!env_get("fastboot_dev"))
-			env_set("fastboot_dev", "mmc0");
-		if (!env_get("bootcmd"))
-			env_set("bootcmd", "boota mmc0");
-		break;
-	case SD3_BOOT:
-	case MMC3_BOOT:
-		if (!env_get("fastboot_dev"))
-			env_set("fastboot_dev", "mmc1");
-		if (!env_get("bootcmd"))
-			env_set("bootcmd", "boota mmc1");
-		break;
-	case SD4_BOOT:
-	case MMC4_BOOT:
-		if (!env_get("fastboot_dev"))
-			env_set("fastboot_dev", "mmc2");
-		if (!env_get("bootcmd"))
-			env_set("bootcmd", "boota mmc2");
-		break;
-#endif /*CONFIG_FASTBOOT_STORAGE_MMC*/
-	default:
-		printf("unsupported boot devices\n");
-		break;
-	}
-}
-
 #ifdef CONFIG_ANDROID_RECOVERY
 
 #define GPIO_VOL_DN_KEY IMX_GPIO_NR(1, 19)
