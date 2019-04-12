@@ -6,11 +6,11 @@
 #include <common.h>
 #include "ea_eeprom.h"
 
-int checkboard(void)
+int ea_print_board(void)
 {
 	ea_eeprom_config_t config;
 
-	puts ("Board: Embedded Artists ");
+	printf("Board: Embedded Artists ");
 	if (ea_eeprom_get_config(&config) == 0) {
 
 		printf("%s\n", config.name);
@@ -20,8 +20,9 @@ int checkboard(void)
 			config.batch);
 	}
 	else {
-		puts(" [Unknown board due to invalid configuration data]\n");
+		printf(" [Unknown board due to invalid configuration data]\n");
 	}
 
 	return 0;
 }
+

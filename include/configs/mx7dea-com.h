@@ -12,6 +12,10 @@
 
 #include "mx7_common.h"
 
+#ifdef CONFIG_SPL
+#include "imx7_spl.h"
+#endif
+
 #define CONFIG_DBG_MONITOR
 
 /* uncomment for PLUGIN mode support */
@@ -197,7 +201,7 @@
 
 #ifdef CONFIG_FSL_QSPI
 #define CONFIG_SYS_FSL_QSPI_AHB
-#define CONFIG_SF_DEFAULT_BUS           0
+#define CONFIG_SF_DEFAULT_BUS           1
 #define CONFIG_SF_DEFAULT_CS            0
 #define CONFIG_SF_DEFAULT_SPEED         40000000
 #define CONFIG_SF_DEFAULT_MODE          SPI_MODE_0
@@ -218,22 +222,20 @@
 #define CONFIG_SYS_FSL_ESDHC_ADDR	0
 
 /* I2C Configs */
+#ifndef CONFIG_DM_I2C
 #define CONFIG_SYS_I2C
-#define CONFIG_SYS_I2C_MXC
 #define CONFIG_SYS_I2C_MXC_I2C1		/* enable I2C bus 1 */
 #define CONFIG_SYS_I2C_MXC_I2C2		/* enable I2C bus 2 */
-#define CONFIG_SYS_I2C_MXC_I2C3		/* enable I2C bus 3 */
+#endif
+#define CONFIG_SYS_I2C_MXC
 #define CONFIG_SYS_I2C_SPEED		  100000
 
 #define CONFIG_SUPPORT_EMMC_BOOT        /* eMMC specific */
 
-/* PMIC */
-#define CONFIG_POWER
-#define CONFIG_POWER_I2C
-#define CONFIG_POWER_PFUZE3000
-#define CONFIG_POWER_PFUZE3000_I2C_ADDR	0x08
-
 /* Network */
+
+#if CONFIG_DM_ETH
+
 #define CONFIG_FEC_MXC
 #define CONFIG_MII
 
@@ -241,21 +243,14 @@
 #define CONFIG_FEC_MXC_PHYADDR          0x1
 
 #define CONFIG_FEC_XCV_TYPE             RGMII
-#ifdef CONFIG_DM_ETH
 #define CONFIG_ETHPRIME                 "eth0"
-#else
-#define CONFIG_ETHPRIME                 "FEC0"
-#endif
 
-
-#define CONFIG_PHYLIB
 #define CONFIG_PHY_BROADCOM
 
+#endif
+
 /* USB Configs */
-#define CONFIG_EHCI_HCD_INIT_AFTER_RESET
 #define CONFIG_MXC_USB_PORTSC  (PORT_PTS_UTMI | PORT_PTS_PTW)
-#define CONFIG_MXC_USB_FLAGS   0
-#define CONFIG_USB_MAX_CONTROLLER_COUNT 2
 
 #ifdef CONFIG_VIDEO
 #define CONFIG_VIDEO_MXS
@@ -272,22 +267,15 @@
 #define CONFIG_ENV_SIZE			SZ_8K
 #define CONFIG_ENV_OFFSET		(8 * SZ_64K)
 
-
-/* EA: EEPROM */
-#define CONFIG_CMD_EEPROM
-#define CONFIG_SYS_I2C_EEPROM_ADDR_LEN 2
-#define CONFIG_ENV_EEPROM_IS_ON_I2C
-/* the page boundary is 32 bytes (2^5 = 32) */
-#define CONFIG_SYS_EEPROM_PAGE_WRITE_BITS 5
-#define CONFIG_SYS_EEPROM_PAGE_WRITE_DELAY_MS 10
-
 #if defined(CONFIG_ANDROID_SUPPORT)
 #include "mx7dsabresdandroid.h"
 #elif defined(CONFIG_ANDROID_THINGS_SUPPORT)
 #include "mx7dsabresd_androidthings.h"
 #else
 #define CONFIG_USBD_HS
-#define CONFIG_USB_FUNCTION_MASS_STORAGE
 #endif
+
+#define EA_SHARED_CONFIG_MEM (CONFIG_SYS_SPL_MALLOC_START + CONFIG_SYS_SPL_MALLOC_SIZE)
+
 
 #endif				/* __CONFIG_H */

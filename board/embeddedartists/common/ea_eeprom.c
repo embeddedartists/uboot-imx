@@ -14,7 +14,9 @@
 #include <dm.h>
 
 #include "ea_eeprom.h"
-struct ea_ddr_cfg
+
+#ifndef CONFIG_TARGET_MX7DEA_COM
+struct _ea_ddr_cfg
 {
 	u32 addr;
 	u32 val;
@@ -28,7 +30,7 @@ struct ea_ddr_cfg
  * Default values for DDR initialization in case eeprom data
  * couldn't be read
  */
-static struct ea_ddr_cfg ddr_init_default[] = {
+static struct _ea_ddr_cfg ddr_init_default[] = {
 #if defined(CONFIG_MX6SX)
 	{0x020e0618, 0x000c0000},
 	{0x020e05fc, 0x00000000},
@@ -479,6 +481,8 @@ static struct ea_ddr_cfg ddr_init_default[] = {
 #endif
 };
 
+#endif
+
 
 #ifdef CONFIG_DM_I2C
 static int ea_dm_i2c_init(struct udevice **i2c_dev)
@@ -499,7 +503,8 @@ static int ea_dm_i2c_init(struct udevice **i2c_dev)
                 return -ENODEV;
         }
 
-	return 0;
+	return i2c_set_chip_offset_len(*i2c_dev, 2);
+
 }
 #endif
 
@@ -521,7 +526,7 @@ int ea_eeprom_get_config(ea_eeprom_config_t* config)
 	i2c_set_bus_num(EA_EEPROM_I2C_BUS);
 
 	if (i2c_probe(EA_EEPROM_I2C_SLAVE)) {
-		return -1;
+		return -ENODEV;
 	}
 
 	if (i2c_read(EA_EEPROM_I2C_SLAVE,
@@ -530,7 +535,7 @@ int ea_eeprom_get_config(ea_eeprom_config_t* config)
 		(uint8_t *)config,
 		sizeof(ea_eeprom_config_t)))
 	{
-		return -2;
+		return -EIO;
 	}
 #else
 	struct udevice *i2c_dev = NULL;
@@ -550,19 +555,20 @@ int ea_eeprom_get_config(ea_eeprom_config_t* config)
 #endif
 
 	if (config->magic != EA_EEPROM_MAGIC) {
-		return -3;
+		return -EINVAL;
 	}
 
 	return 0;
 }
 
+#ifndef CONFIG_TARGET_MX7DEA_COM
 static int intern_dram_init(void)
 {
 	ea_eeprom_config_t config = {0};
 	int toRead = 0;
 	int haveRead = 0;
 	int i, ret;
-	struct ea_ddr_cfg ddr_list_buf[EA_DDR_LIST_BUF_SZ];
+	struct _ea_ddr_cfg ddr_list_buf[EA_DDR_LIST_BUF_SZ];
 
 #ifdef CONFIG_DM_I2C
 	struct udevice *i2c_dev = NULL;
@@ -596,18 +602,18 @@ static int intern_dram_init(void)
 
 #if !defined(CONFIG_DM_I2C)
 		if (i2c_read(EA_EEPROM_I2C_SLAVE,
-			sizeof(ea_eeprom_config_t)+haveRead*sizeof(struct ea_ddr_cfg),
+			sizeof(ea_eeprom_config_t)+haveRead*sizeof(struct _ea_ddr_cfg),
 			2,
 			(uint8_t *)ddr_list_buf,
-			toRead*sizeof(struct ea_ddr_cfg)))
+			toRead*sizeof(struct _ea_ddr_cfg)))
 		{
-			return -2;
+			return -EIO;
 		}
 #else
 		ret = dm_i2c_read(i2c_dev,
-			sizeof(ea_eeprom_config_t)+haveRead*sizeof(struct ea_ddr_cfg),
+			sizeof(ea_eeprom_config_t)+haveRead*sizeof(struct _ea_ddr_cfg),
 			(uint8_t *)ddr_list_buf,
-			toRead*sizeof(struct ea_ddr_cfg));
+			toRead*sizeof(struct _ea_ddr_cfg));
 		if (ret) {
 			printf("%s dm_i2c_read failed, err %d\n", __func__, ret);
 			return -EIO;
@@ -632,11 +638,83 @@ int ea_eeprom_dram_init(void)
 
 	if (intern_dram_init() != 0) {
 		// try with default values if we failed with eeprom data
-		for(i = 0; i < sizeof(ddr_init_default)/sizeof(struct ea_ddr_cfg); i++)
+		for(i = 0; i < sizeof(ddr_init_default)/sizeof(struct _ea_ddr_cfg); i++)
 		{
 			writel(ddr_init_default[i].val, (unsigned long)ddr_init_default[i].addr);
 		}
 	}
+
+	return 0;
+}
+#endif
+
+
+int ea_eeprom_ddr_cfg_init(ea_ddr_cfg_t *cfg)
+{
+	ea_eeprom_config_t config;
+	int ret = 0;
+
+	ea_eeprom_init();
+	ret = ea_eeprom_get_config(&config);
+	if (!ret) {
+		cfg->num_pairs = config.num_reg_value_pairs;
+		cfg->next = 0;
+		cfg->ddr_size_mb = config.ddr_size;
+	}
+
+	return ret;
+}
+
+int ea_eeprom_ddr_cfg_read(ea_ddr_cfg_t *cfg, ea_ddr_cfg_pair_t* pairs,
+	int num, int *num_read)
+{
+	int to_read;
+
+#ifdef CONFIG_DM_I2C
+	int ret;
+	struct udevice *i2c_dev = NULL;
+
+        ret = ea_dm_i2c_init(&i2c_dev);
+        if (ret) {
+                return ret;
+        }
+
+#endif
+
+	*num_read = 0;
+
+	/* max to read */
+	to_read = cfg->num_pairs - cfg->next;
+
+	/* no more to read */
+	if (to_read <= 0) return 0;
+
+	/* fewer requested */
+	if (num < to_read) to_read = num;
+
+
+#if !defined(CONFIG_DM_I2C)
+	if (i2c_read(EA_EEPROM_I2C_SLAVE,
+		sizeof(ea_eeprom_config_t)+cfg->next*sizeof(ea_ddr_cfg_pair_t),
+		2,
+		(uint8_t *)pairs,
+		to_read*sizeof(ea_ddr_cfg_pair_t)))
+	{
+		return -EIO;
+	}
+#else
+	ret = dm_i2c_read(i2c_dev,
+		sizeof(ea_eeprom_config_t)+cfg->next*sizeof(ea_ddr_cfg_pair_t),
+		(uint8_t *)pairs,
+		to_read*sizeof(ea_ddr_cfg_pair_t));
+	if (ret) {
+		printf("%s dm_i2c_read failed, err %d\n", __func__, ret);
+		return -EIO;
+	}
+#endif
+
+	*num_read = to_read;
+	cfg->next += to_read;
 
 	return 0;
 }

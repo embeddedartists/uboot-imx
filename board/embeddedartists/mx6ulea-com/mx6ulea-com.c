@@ -42,7 +42,7 @@
 #endif /*CONFIG_FSL_FASTBOOT*/
 
 #include "../common/ea_eeprom.h"
-#include "../common/ea_mac.h"
+#include "../common/ea_common.h"
 #include "../common/ea_gpio_expander.h"
 
 DECLARE_GLOBAL_DATA_PTR;

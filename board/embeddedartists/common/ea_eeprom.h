@@ -28,13 +28,28 @@ typedef struct {
 	uint8_t  mac3[6];
 	uint8_t  mac4[6];
 	uint32_t ddr_size;
-	uint32_t num_reg_value_pairs;	
+	uint32_t num_reg_value_pairs;
 	uint8_t  reserved[3];
 } __attribute__((__packed__)) ea_eeprom_config_t;
+
+typedef struct {
+	u32 num_pairs;
+	u32 next;
+	u32 ddr_size_mb;
+} ea_ddr_cfg_t;
+
+typedef struct {
+	u32 reg;
+	u32 val;
+} ea_ddr_cfg_pair_t;
 
 int ea_eeprom_init(void);
 int ea_eeprom_get_config(ea_eeprom_config_t* config);
 int ea_eeprom_dram_init(void);
+int ea_eeprom_ddr_cfg_init(ea_ddr_cfg_t *cfg);
+int ea_eeprom_ddr_cfg_read(ea_ddr_cfg_t *cfg, ea_ddr_cfg_pair_t* pairs,
+        int num, int *num_read);
+
 
 #endif
 

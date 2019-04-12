@@ -5,7 +5,7 @@
  * SPDX-License-Identifier:	GPL-2.0+
  */
 #include <common.h>
-#include "ea_mac.h"
+#include "ea_common.h"
 #include "ea_eeprom.h"
 
 int ea_load_ethaddr(void)

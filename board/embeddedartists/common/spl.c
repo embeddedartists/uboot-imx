@@ -15,7 +15,7 @@
 
 #include "ea_eeprom.h"
 
-
+#ifndef CONFIG_TARGET_MX7DEA_COM
 void spl_board_init(void)
 {
 	// must be called to get correct clock for MMC/SD
@@ -35,6 +35,7 @@ void spl_board_init(void)
 	}
 
 }
+#endif
 
 
 
