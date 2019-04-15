@@ -113,9 +113,9 @@
 	"mmcpart=1\0" \
 	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
 	"mmcautodetect=yes\0" \
-  "brcm_opt=brcmfmac.sdio_wq_highpri=1\0" \
+  "fmac_txrx_opt=brcmfmac.sdio_wq_highpri=1\0" \
 	"mmcargs=setenv bootargs console=${console},${baudrate} " \
-		"root=${mmcroot} ${brcm_opt} ${args_from_script}\0" \
+		"root=${mmcroot} ${fmac_txrx_opt} ${args_from_script}\0" \
 	"loadbootscript=" \
 		"fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${script};\0" \
 	"bootscript=echo Running bootscript from mmc ...; " \
