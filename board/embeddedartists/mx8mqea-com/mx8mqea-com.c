@@ -27,7 +27,7 @@
 #include <usb.h>
 #include <dwc3-uboot.h>
 #include "../common/ea_eeprom.h"
-#include "../common/ea_mac.h"
+#include "../common/ea_common.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -57,29 +57,21 @@ int board_early_init_f(void)
 	return 0;
 }
 
-#ifdef CONFIG_BOARD_POSTCLK_INIT
-int board_postclk_init(void)
-{
-	/* TODO */
-	return 0;
-}
-#endif
-
 int dram_init(void)
 {
-	ea_eeprom_config_t config;
+	ea_config_t *ea_conf = (ea_config_t *)EA_SHARED_CONFIG_MEM;
 
 	// default size from configuration file
 	gd->ram_size = PHYS_SDRAM_SIZE;
 
-	// getting actual size from eeprom configuration
-	if (ea_eeprom_get_config(&config) == 0) {
-		gd->ram_size = (config.ddr_size << 20);
+	if (ea_conf->magic == EA_CONFIG_MAGIC) {
+		gd->ram_size = (ea_conf->ddr_size << 20);
 	}
 
 	/* rom_pointer[1] contains the size of TEE occupies */
 	if (rom_pointer[1])
 		gd->ram_size = gd->ram_size - rom_pointer[1];
+
 
 	return 0;
 }
@@ -234,14 +226,13 @@ int board_init(void)
 	init_usb_clk();
 #endif
 
+	ea_print_board();
+
 	return 0;
 }
 
 int board_mmc_get_env_dev(int devno)
 {
-	// TODO: Do we need to remap for iMX8 like we do for
-	// other boards?
-	printf("EA: %s: devno=%d\n", __FUNCTION__, devno);
 	return devno;
 }
 
@@ -252,10 +243,19 @@ int board_late_init(void)
 	board_late_mmc_env_init();
 #endif
 
+#ifdef CONFIG_FEC_MXC
+	/*
+	 * Loading ethernet addresses must be done in late_init
+	 * since they update the environment (env_set). The
+	 * environment isn't loaded and ready at board_init.
+	 */
+	if (ea_load_ethaddr()) {
+		printf("Failed to load MAC addresses\n");
+	}
+#endif
+
 	return 0;
 }
-
-// TODO: How is this related to eadisp???
 
 #if defined(CONFIG_VIDEO_IMXDCSS)
 

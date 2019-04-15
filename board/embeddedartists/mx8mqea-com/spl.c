@@ -22,22 +22,11 @@
 #include <mmc.h>
 #include <asm/arch/imx8m_ddr.h>
 
+#include "../common/ea_common.h"
+#include "../common/ea_eeprom.h"
+#include "../common/ea_gpio_expander.h"
+
 DECLARE_GLOBAL_DATA_PTR;
-
-void spl_dram_init(void)
-{
-	// TODO:
-	//   calibration data should be read from eeprom
-
-	/* ddr init */
-	if ((get_cpu_rev() & 0xfff) == CHIP_REV_2_1)
-		ddr_init(&dram_timing);
-	else {
-		//TODO: is this needed: ddr_init(&dram_timing_b0);
-		debug("spl_dram_init() unkown chip revision: %x\n", (get_cpu_rev()));
-		hang();
-	}
-}
 
 #define I2C_PAD_CTRL	(PAD_CTL_DSE6 | PAD_CTL_HYS | PAD_CTL_PUE)
 #define PC MUX_PAD_CTRL(I2C_PAD_CTRL)
@@ -54,13 +43,18 @@ struct i2c_pads_info i2c_pad_info1 = {
 	},
 };
 
-#define USDHC1_PWR_GPIO IMX_GPIO_NR(2, 10)
-
-int board_mmc_getcd(struct mmc *mmc)
-{
-	/* we always boot from eMMC, which is always connected */
-	return 1;
-}
+struct i2c_pads_info i2c_pad_info2 = {
+        .scl = {
+                .i2c_mode = IMX8MQ_PAD_I2C2_SCL__I2C2_SCL | PC,
+                .gpio_mode = IMX8MQ_PAD_I2C2_SCL__GPIO5_IO16 | PC,
+                .gp = IMX_GPIO_NR(5, 16),
+        },
+        .sda = {
+                .i2c_mode = IMX8MQ_PAD_I2C2_SDA__I2C2_SDA | PC,
+                .gpio_mode = IMX8MQ_PAD_I2C2_SDA__GPIO5_IO17 | PC,
+                .gp = IMX_GPIO_NR(5, 17),
+        },
+};
 
 #define USDHC_PAD_CTRL	(PAD_CTL_DSE6 | PAD_CTL_HYS | PAD_CTL_PUE | \
 			 PAD_CTL_FSEL2)
@@ -79,9 +73,54 @@ static iomux_v3_cfg_t const usdhc1_pads[] = {
 	IMX8MQ_PAD_SD1_RESET_B__GPIO2_IO10 | MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
+static void spl_dram_init(uint32_t *size)
+{
+	ea_ddr_cfg_t cfg;
+	int ret;
+
+        /* set default value, will be replaced if  eeprom cfg is valid */
+        *size = PHYS_SDRAM_SIZE;
+
+        ret = ea_eeprom_ddr_cfg_init(&cfg);
+
+        /* If eeprom is valid read ddr config; otherwise use default */
+        if (!ret) {
+                *size = cfg.ddr_size_mb;
+
+		/*
+		 * No DDR config data stored in eeprom. Using generated xxx_timing.c
+		 */
+        }
+
+	ddr_init(&dram_timing);
+}
+
+void spl_board_init(void)
+{
+#ifndef CONFIG_SPL_USB_SDP_SUPPORT
+	/* Serial download mode */
+	if (is_usb_boot()) {
+		puts("Back to ROM, SDP\n");
+		restore_boot_params();
+	}
+#endif
+
+	init_usb_clk();
+
+	puts("Normal Boot\n");
+}
+
+#define USDHC1_PWR_GPIO IMX_GPIO_NR(2, 10)
+
 static struct fsl_esdhc_cfg usdhc_cfg[1] = {
 	{USDHC1_BASE_ADDR, 0, 8},
 };
+
+int board_mmc_getcd(struct mmc *mmc)
+{
+	/* we always boot from eMMC, which is always connected */
+	return 1;
+}
 
 int board_mmc_init(bd_t *bis)
 {
@@ -134,21 +173,6 @@ int power_init_board(void)
 }
 #endif
 
-void spl_board_init(void)
-{
-#ifndef CONFIG_SPL_USB_SDP_SUPPORT
-	/* Serial download mode */
-	if (is_usb_boot()) {
-		puts("Back to ROM, SDP\n");
-		restore_boot_params();
-	}
-#endif
-
-	init_usb_clk();
-
-	puts("Normal Boot\n");
-}
-
 #ifdef CONFIG_SPL_LOAD_FIT
 int board_fit_config_name_match(const char *name)
 {
@@ -161,6 +185,8 @@ int board_fit_config_name_match(const char *name)
 
 void board_init_f(ulong dummy)
 {
+	uint32_t size;
+	ea_config_t *ea_conf = (ea_config_t *)EA_SHARED_CONFIG_MEM;
 	int ret;
 
 	/* Clear global data */
@@ -170,9 +196,9 @@ void board_init_f(ulong dummy)
 
 	init_uart_clk(0); /* Init UART0 clock */
 
-	board_early_init_f();
-
 	timer_init();
+
+	board_early_init_f();
 
 	preloader_console_init();
 
@@ -187,14 +213,26 @@ void board_init_f(ulong dummy)
 
 	enable_tzc380();
 
-	/* Setup I2C for PMIC */
+	/* Setup I2C for PMIC/eeprom amd gpio expander */
 	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
+	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info2);
 
 	/* Adjust pmic voltage to 1.0V for 800M */
 	power_init_board();
 
 	/* DDR initialization */
-	spl_dram_init();
+	spl_dram_init(&size);
+
+	/*
+	 * Setting configuration data that will be shared with u-boot.
+	 *
+	 * SPL is able to use i2c to detect gpio expander or read data
+	 * from eeprom. U-boot is not able to do this before relocation
+	 * when the device model (CONFIG_DM) is enabled.
+	 */
+        ea_conf->magic = EA_CONFIG_MAGIC;
+        ea_conf->is_carrier_v2 = ea_is_carrier_v2(1);
+        ea_conf->ddr_size = size;
 
 	board_init_r(NULL, 0);
 }
