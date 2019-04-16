@@ -28,6 +28,7 @@
 #include <dwc3-uboot.h>
 #include "../common/ea_eeprom.h"
 #include "../common/ea_common.h"
+#include "../common/ea_gpio_expander.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -253,6 +254,8 @@ int board_late_init(void)
 		printf("Failed to load MAC addresses\n");
 	}
 #endif
+
+	ea_gpio_exp_configure(1);
 
 	return 0;
 }

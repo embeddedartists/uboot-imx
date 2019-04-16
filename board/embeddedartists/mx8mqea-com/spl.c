@@ -79,7 +79,7 @@ static void spl_dram_init(uint32_t *size)
 	int ret;
 
         /* set default value, will be replaced if  eeprom cfg is valid */
-        *size = PHYS_SDRAM_SIZE;
+        *size = (PHYS_SDRAM_SIZE >> 20);
 
         ret = ea_eeprom_ddr_cfg_init(&cfg);
 
