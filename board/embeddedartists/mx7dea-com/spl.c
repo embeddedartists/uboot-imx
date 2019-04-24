@@ -87,6 +87,8 @@ static iomux_v3_cfg_t const usdhc3_emmc_pads[] = {
 #define DDRC_ADDRMAP6 (DDRC_IPS_BASE_ADDR+0x0218)
 #define DDRPHY_ZQ_CON0 (DDRPHY_IPS_BASE_ADDR+0x00c0)
 
+#ifdef CONFIG_TARGET_MX7DEA_COM
+
 static struct ddrc ea_spl_ddrc = {
         .mstr           = 0x01040001,
 	.rfshtmg	= 0x0040005e,
@@ -106,9 +108,9 @@ static struct ddrc ea_spl_ddrc = {
 	.zqctl0		= 0x00800020,
 	.dfitmg0	= 0x02098204,
 	.dfitmg1	= 0x00030303,
-	.dfiupd0	= 0x00100020,
-	.dfiupd1	= 0x80100004,
-	.dfiupd2	= 0x0040005e,
+	.dfiupd0	= 0x80400003,
+	.dfiupd1	= 0x00100020,
+	.dfiupd2	= 0x80100004,
 	.addrmap0	= 0x00000016,
 	.addrmap1	= 0x00171717,
 	.addrmap2	= 0x0,
@@ -147,6 +149,71 @@ static struct mx7_calibration ea_spl_calib = {
 		0x0e407304,
 	},
 };
+
+#else /* CONFIG_TARGET_MX7DEA_UCOM */
+
+static struct ddrc ea_spl_ddrc = {
+        .mstr           = 0x01040008,
+        .rfshtmg        = 0x00200038,
+        .init0          = 0x00350001,
+        .init1          = 0x0,
+        .init3          = 0x00C3000A,
+        .init4          = 0x00010000,
+        .init5          = 0x00110006,
+        .rankctl        = 0x0000033f,
+        .dramtmg0       = 0x0A0E110B,
+        .dramtmg1       = 0x00020211,
+        .dramtmg2       = 0x03060708,
+        .dramtmg3       = 0x00A0500C,
+        .dramtmg4       = 0x05020307,
+        .dramtmg5       = 0x02020404,
+        .dramtmg8       = 0x00000202,
+        .zqctl0         = 0x00600018,
+        .dfitmg0        = 0x02098205,
+        .dfitmg1        = 0x00060303,
+        .dfiupd0        = 0x80400003,
+        .dfiupd1        = 0x00100020,
+        .dfiupd2        = 0x80100004,
+        .addrmap0       = 0x00000016,
+        .addrmap1       = 0x00171717,
+        .addrmap2       = 0x0,
+        .addrmap3       = 0x0,
+        .addrmap4       = 0x00000F0F,
+        .addrmap5       = 0x04040404,
+        .addrmap6       = 0x0F040404,
+        .odtcfg         = 0x06000601,
+        .odtmap         = 0x00000000,
+};
+
+static struct ddrc_mp ea_spl_ddrc_mp = {
+        .pctrl_0        = 0x00000001
+};
+
+static struct ddr_phy ea_spl_ddr_phy = {
+        .phy_con0       = 0x17421e40,
+        .phy_con1       = 0x10210100,
+        .phy_con4       = 0x0007080C,
+        .offset_lp_con0 = 0x0000000f,
+        .offset_rd_con0 = 0x0A0A0A0A,
+        .offset_wr_con0 = 0x06060606,
+        .cmd_sdll_con0  = 0x00000008,
+        .drvds_con0     = 0x00000b24,
+        .mdll_con0      = 0x1010007e,
+        .zq_con0        = 0x0C487304,
+};
+
+static struct mx7_calibration ea_spl_calib = {
+        .num_val        = 4,
+        .values         = {
+                0x0C487304,
+                0x0C4C7304,
+                0x0C4C7306,
+                0x0C4C7304,
+        },
+};
+
+
+#endif
 
 static void set_ddrc_val(ea_ddr_cfg_t* cfg, u32 reg, u32 val)
 {

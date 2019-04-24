@@ -1,4 +1,4 @@
-if TARGET_MX7DEA_COM
+if TARGET_MX7DEA_COM || TARGET_MX7DEA_UCOM
 
 config SYS_BOARD
 	default "mx7dea-com"

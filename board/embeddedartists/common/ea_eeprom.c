@@ -15,7 +15,7 @@
 
 #include "ea_eeprom.h"
 
-#ifndef CONFIG_TARGET_MX7DEA_COM
+#if !(defined(CONFIG_TARGET_MX7DEA_COM) || defined(CONFIG_TARGET_MX7DEA_UCOM))
 struct _ea_ddr_cfg
 {
 	u32 addr;
@@ -561,7 +561,7 @@ int ea_eeprom_get_config(ea_eeprom_config_t* config)
 	return 0;
 }
 
-#ifndef CONFIG_TARGET_MX7DEA_COM
+#if !(defined(CONFIG_TARGET_MX7DEA_COM) || defined(CONFIG_TARGET_MX7DEA_UCOM))
 static int intern_dram_init(void)
 {
 	ea_eeprom_config_t config = {0};

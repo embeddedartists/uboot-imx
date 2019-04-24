@@ -93,13 +93,26 @@
 	"initrd_high=0xffffffff\0" \
 	"emmc_dev=1\0"\
 
+#ifdef EA_IMX_PTP
+#define EA_IMX_PTP_ENV_SETTINGS "eadisp_rgb_enabled=yes\0"
+#else
+#define EA_IMX_PTP_ENV_SETTINGS ""
+#endif
+
 #define CONFIG_DFU_ENV_SETTINGS \
 	"dfu_alt_info=image raw 0 0x800000;"\
 		"u-boot raw 0 0x4000;"\
 		"bootimg part 0 1;"\
-		"rootfs part 0 2\0" \
+		"rootfs part 0 2\0"\
+
+#ifdef CONFIG_TARGET_MX7DEA_COM
+#define FDT_FILE "imx7dea-com-kit_v2.dtb"
+#else
+#define FDT_FILE "imx7dea-ucom-kit_v2.dtb"
+#endif
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
+	EA_IMX_PTP_ENV_SETTINGS \
 	UPDATE_M4_ENV \
 	CONFIG_MFG_ENV_SETTINGS \
 	CONFIG_DFU_ENV_SETTINGS \
@@ -108,7 +121,7 @@
 	"console=ttymxc0\0" \
 	"fdt_high=0xffffffff\0" \
 	"initrd_high=0xffffffff\0" \
-	"fdt_file=imx7dea-com-kit_v2.dtb\0" \
+	"fdt_file=" FDT_FILE "\0" \
 	"fdt_addr=0x83000000\0" \
 	"boot_fdt=try\0" \
 	"ip_dyn=yes\0" \

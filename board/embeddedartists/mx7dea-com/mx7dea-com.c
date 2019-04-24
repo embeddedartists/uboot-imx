@@ -40,6 +40,7 @@
 #include <fsl_fastboot.h>
 #endif /*CONFIG_FSL_FASTBOOT*/
 
+#include <dm.h>
 #include <fdt_support.h>
 
 #include "../common/ea_eeprom.h"
@@ -231,6 +232,74 @@ int board_video_skip(void)
 #endif /* CONFIG_CMD_EADISP */
 #endif /* CONFIG_VIDEO_MXS */
 
+#ifdef CONFIG_EA_IMX_PTP
+#define TFP410_ADDR 0x3A
+/*
+ * Configure the TFP410 chip on the iMX PTP board.
+ */
+static int configure_tfp410(void)
+{
+	int ret;
+	struct udevice *bus;
+	struct udevice *i2c_dev;
+	uint8_t buff[15] = {0};
+
+	printf("Override for mfgtool\n");
+
+	ret = uclass_get_device_by_seq(UCLASS_I2C, 0, &bus);
+	if (ret) {
+		printf("%s: Can't find bus\n", __func__);
+		return -EINVAL;
+	}
+
+	ret = dm_i2c_probe(bus, TFP410_ADDR, 0, &i2c_dev);
+	if (ret) {
+		printf("%s: Can't find device id=0x%x\n",
+			__func__, TFP410_ADDR);
+		return -ENODEV;
+	}
+
+	ret = dm_i2c_read(i2c_dev, 0, buff, 5);
+	if (ret) {
+		printf("%s dm_i2c_read failed, err %d\n", __func__, ret);
+		return -EIO;
+	}
+
+	printf("TFP410: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x\n",
+		buff[0], buff[1], buff[2], buff[3], buff[4]);
+
+	buff[0] = 0x35;
+	buff[1] = 0x3d;
+	buff[2] = 0x80;
+
+	ret = dm_i2c_write(i2c_dev, 0x08, buff, 3);
+	if (ret) {
+		printf("%s failed to write to 0x08-0x0a, err %d\n", __func__, ret);
+		return -EIO;
+	}
+
+	buff[0] = 0x16;
+	buff[1] = 0x40;
+	buff[2] = 0x50;
+	buff[3] = 0x00;
+	buff[4] = 0x80;
+	buff[5] = 0x02;
+	buff[6] = 0xe0;
+	buff[7] = 0x01;
+//        ret = dm_i2c_write(i2c_dev, 0x32, buff, 8);
+//        if (ret) {
+//                printf("%s failed to write to 0x32-0x39, err %d\n", __func__, ret);
+//                return -EIO;
+//        }
+
+	printf("TFP410: DE generator disabled\n");
+	printf("Successfully initialized TFP410!\n");
+
+	return 0;
+}
+#endif
+
+
 static void setup_iomux_uart(void)
 {
 	imx_iomux_v3_setup_multiple_pads(uart1_pads, ARRAY_SIZE(uart1_pads));
@@ -344,11 +413,17 @@ int board_init(void)
 	eadisp_setup_display(displays, ARRAY_SIZE(displays));
 #endif
 
+#ifdef CONFIG_EA_IMX_PTP
+	configure_tfp410();
+#endif
+
 	ea_print_board();
 
 	return 0;
 }
 #ifdef CONFIG_DM_PMIC
+
+#ifdef CONFIG_TARGET_MX7DEA_COM
 int power_init_board(void)
 {
 	struct udevice *dev;
@@ -374,7 +449,64 @@ int power_init_board(void)
 
 	return 0;
 }
+
+#else /* TARGET_MX7DEA_UCOM */
+
+#define I2C_PMIC	0
+#define POWER_PMIC_BD71815_I2C_ADDR (0x4B)
+#define BD71815_REG_LDO_MODE1 (0x10)
+#define BD71815_REG_LDO3_VOLT (0x16)
+int power_init_board(void)
+{
+	struct udevice *bus;
+	struct udevice *i2c_dev;
+	int ret;
+	uint8_t value;
+
+	ret = uclass_get_device_by_seq(UCLASS_I2C, I2C_PMIC, &bus);
+	if (ret) {
+		printf("%s: Can't find bus\n", __func__);
+		return -EINVAL;
+	}
+
+        ret = dm_i2c_probe(bus, POWER_PMIC_BD71815_I2C_ADDR, 0, &i2c_dev);
+        if (ret) {
+                printf("%s: Can't find device id=0x%x\n",
+                        __func__, POWER_PMIC_BD71815_I2C_ADDR);
+                return -ENODEV;
+        }
+
+	/*
+	 * Fix for LDO3 when DCIN is not supplied.
+	 */
+
+        ret = dm_i2c_read(i2c_dev, BD71815_REG_LDO_MODE1, &value, 1);
+        if (ret) {
+                printf("%s dm_i2c_read failed, err %d\n", __func__, ret);
+                return -EIO;
+        }
+
+	/* Bit 2: LDO3_REG_MODE_0. When set to 1 LDO3 is controlled via register */
+	value |= (1<<2);
+	ret = dm_i2c_write(i2c_dev, BD71815_REG_LDO_MODE1, &value, 1);
+	if (ret) {
+		printf("%s failed to write to %x, err %d\n", __func__, BD71815_REG_LDO_MODE1, ret);
+		return -EIO;
+	}
+
+	/* 3.15V */
+	value = 0x2f;
+	ret = dm_i2c_write(i2c_dev, BD71815_REG_LDO3_VOLT, &value, 1);
+	if (ret) {
+		printf("%s failed to write to %x, err %d\n", __func__, BD71815_REG_LDO3_VOLT, ret);
+		return -EIO;
+	}
+
+	return 0;
+}
+
 #endif
+#endif /* CONFIG_DM_PMI */
 
 int board_late_init(void)
 {

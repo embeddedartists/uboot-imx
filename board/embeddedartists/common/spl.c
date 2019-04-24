@@ -15,7 +15,7 @@
 
 #include "ea_eeprom.h"
 
-#if !(defined(CONFIG_TARGET_MX7DEA_COM) || defined(CONFIG_TARGET_MX8MQEA_COM))
+#if !(defined(CONFIG_TARGET_MX7DEA_COM) || defined(CONFIG_TARGET_MX7DEA_UCOM) ||defined(CONFIG_TARGET_MX8MQEA_COM))
 void spl_board_init(void)
 {
 	// must be called to get correct clock for MMC/SD
