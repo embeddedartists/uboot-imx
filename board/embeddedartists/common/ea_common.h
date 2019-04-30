@@ -30,5 +30,10 @@ int ea_print_board(void);
  */
 int ea_load_ethaddr(void);
 
+/*
+ * Configure TFP410
+ */
+int ea_configure_tfp410(void);
+
 #endif
 

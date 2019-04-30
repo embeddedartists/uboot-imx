@@ -415,6 +415,7 @@ dtb-$(CONFIG_MX6) += imx6ul-14x14-ddr3-arm2.dtb \
 	imx6dl-sabreauto-ecspi.dtb \
 	imx6dl-sabreauto-gpmi-weim.dtb \
 	imx6dl-sabresd.dtb \
+	imx6dlea-com-kit.dtb \
 	imx6q-arm2.dtb \
 	imx6q-pop-arm2.dtb \
 	imx6q-cm-fx6.dtb \
@@ -425,6 +426,7 @@ dtb-$(CONFIG_MX6) += imx6ul-14x14-ddr3-arm2.dtb \
 	imx6q-sabreauto.dtb \
 	imx6q-sabreauto-ecspi.dtb \
 	imx6q-sabreauto-gpmi-weim.dtb \
+	imx6qea-com-kit.dtb \
 	imx6qp-sabreauto.dtb \
 	imx6qp-sabreauto-ecspi.dtb \
 	imx6qp-sabreauto-gpmi-weim.dtb \

@@ -15,7 +15,7 @@
 
 #include "ea_eeprom.h"
 
-#if !(defined(CONFIG_TARGET_MX7DEA_COM) || defined(CONFIG_TARGET_MX7DEA_UCOM))
+#if !(defined(CONFIG_TARGET_MX7DEA_COM) || defined(CONFIG_TARGET_MX7DEA_UCOM) || defined(CONFIG_TARGET_MX6QEA_COM) || defined(CONFIG_TARGET_MX6DLEA_COM))
 struct _ea_ddr_cfg
 {
 	u32 addr;
@@ -561,7 +561,7 @@ int ea_eeprom_get_config(ea_eeprom_config_t* config)
 	return 0;
 }
 
-#if !(defined(CONFIG_TARGET_MX7DEA_COM) || defined(CONFIG_TARGET_MX7DEA_UCOM))
+#if !(defined(CONFIG_TARGET_MX7DEA_COM) || defined(CONFIG_TARGET_MX7DEA_UCOM) || defined(CONFIG_TARGET_MX6QEA_COM) || defined(CONFIG_TARGET_MX6DLEA_COM) )
 static int intern_dram_init(void)
 {
 	ea_eeprom_config_t config = {0};
@@ -694,6 +694,7 @@ int ea_eeprom_ddr_cfg_read(ea_ddr_cfg_t *cfg, ea_ddr_cfg_pair_t* pairs,
 
 
 #if !defined(CONFIG_DM_I2C)
+	ea_eeprom_init();
 	if (i2c_read(EA_EEPROM_I2C_SLAVE,
 		sizeof(ea_eeprom_config_t)+cfg->next*sizeof(ea_ddr_cfg_pair_t),
 		2,
