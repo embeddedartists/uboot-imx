@@ -208,22 +208,11 @@
 /* I2C Configs */
 #ifndef CONFIG_DM_I2C
 #define CONFIG_SYS_I2C
-#endif
-#ifdef CONFIG_CMD_I2C
-#define CONFIG_SYS_I2C_MXC
 #define CONFIG_SYS_I2C_MXC_I2C1		/* enable I2C bus 1 */
 #define CONFIG_SYS_I2C_MXC_I2C2		/* enable I2C bus 2 */
-#define CONFIG_SYS_I2C_MXC_I2C3		/* enable I2C bus 3 */
+#endif
+#define CONFIG_SYS_I2C_MXC
 #define CONFIG_SYS_I2C_SPEED		  100000
-#endif
-
-/* PMIC */
-#ifndef CONFIG_DM_POWER
-#define CONFIG_POWER
-#define CONFIG_POWER_I2C
-#define CONFIG_POWER_PFUZE100
-#define CONFIG_POWER_PFUZE100_I2C_ADDR	0x08
-#endif
 
 /* Network */
 #define CONFIG_FEC_MXC
@@ -234,27 +223,18 @@
 #if (CONFIG_FEC_ENET_DEV == 0)
 #define IMX_FEC_BASE			ENET_BASE_ADDR
 #define CONFIG_FEC_MXC_PHYADDR          0x1
-#ifdef CONFIG_DM_ETH
 #define CONFIG_ETHPRIME                 "eth0"
-#else
-#define CONFIG_ETHPRIME                 "FEC0"
-#endif
 
 #elif (CONFIG_FEC_ENET_DEV == 1)
 #define IMX_FEC_BASE			ENET2_BASE_ADDR
 #define CONFIG_FEC_MXC_PHYADDR          0x2
-#ifdef CONFIG_DM_ETH
 #define CONFIG_ETHPRIME                 "eth1"
-#else
-#define CONFIG_ETHPRIME                 "FEC1"
-#endif
 
 #endif
 
 #define CONFIG_FEC_XCV_TYPE             RGMII
 
 
-#define CONFIG_PHYLIB
 #define CONFIG_PHY_ATHEROS
 #define CONFIG_FEC_MXC_MDIO_BASE        ENET_BASE_ADDR
 
@@ -293,16 +273,7 @@
 #define CONFIG_ENV_SPI_MAX_HZ		CONFIG_SF_DEFAULT_SPEED
 #endif
 
-/* EA: EEPROM */
-#define CONFIG_CMD_EEPROM
-#define CONFIG_SYS_I2C_EEPROM_ADDR_LEN 2
-#define CONFIG_ENV_EEPROM_IS_ON_I2C
-/* the page boundary is 32 bytes (2^5 = 32) */
-#define CONFIG_SYS_EEPROM_PAGE_WRITE_BITS 5
-#define CONFIG_SYS_EEPROM_PAGE_WRITE_DELAY_MS 10
+#define EA_SHARED_CONFIG_MEM (CONFIG_SYS_SPL_MALLOC_START + CONFIG_SYS_SPL_MALLOC_SIZE)
 
-#if defined(CONFIG_ANDROID_SUPPORT)
-#include "mx6sxsabresdandroid.h"
-#endif
 
 #endif				/* __CONFIG_H */

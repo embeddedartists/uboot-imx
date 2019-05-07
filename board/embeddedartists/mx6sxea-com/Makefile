@@ -5,4 +5,7 @@
 
 obj-y  += mx6sxea-com.o
 
+ifdef CONFIG_SPL_BUILD
+obj-y  += spl.o
+endif
 

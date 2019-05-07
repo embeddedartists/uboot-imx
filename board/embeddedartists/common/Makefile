@@ -17,7 +17,6 @@ obj-y  += spl.o
 
 obj-$(CONFIG_EA_IMX_PTP)	+= ea_ptp.o
 
-obj-$(CONFIG_POWER_PFUZE100)    += pfuze.o
 ifdef CONFIG_FSL_FASTBOOT
 obj-${CONFIG_ANDROID_RECOVERY} += recovery.o
 endif

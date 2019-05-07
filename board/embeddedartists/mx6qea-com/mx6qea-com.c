@@ -840,7 +840,7 @@ int power_init_board(void)
 	reg = pmic_reg_read(dev, PFUZE100_VGEN5VOL);
 	reg &= ~LDO_VOL_MASK;
 	reg |= LDOB_3_00V;
-	pmic_reg_write(dev, PFUZE100_SW1ABSTBY, reg);
+	pmic_reg_write(dev, PFUZE100_VGEN5VOL, reg);
 
 
 	/* Set SW1AB stanby volage to 0.975V */
