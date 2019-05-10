@@ -34,28 +34,28 @@
 /* i2c1 for eeprom */
 struct i2c_pads_info i2c_pad_info1 = {
 	.scl = {
-		.i2c_mode = MX6_PAD_GPIO1_IO00__I2C1_SCL | PC,
-		.gpio_mode = MX6_PAD_GPIO1_IO00__GPIO1_IO_0 | PC,
-		.gp = IMX_GPIO_NR(1, 0),
+		.i2c_mode =  MX6_PAD_UART4_TX_DATA__I2C1_SCL | PC,
+		.gpio_mode = MX6_PAD_UART4_TX_DATA__GPIO1_IO28 | PC,
+		.gp = IMX_GPIO_NR(1, 28),
 	},
 	.sda = {
-		.i2c_mode = MX6_PAD_GPIO1_IO01__I2C1_SDA | PC,
-		.gpio_mode = MX6_PAD_GPIO1_IO01__GPIO1_IO_1 | PC,
-		.gp = IMX_GPIO_NR(1, 1),
+		.i2c_mode = MX6_PAD_UART4_RX_DATA__I2C1_SDA | PC,
+		.gpio_mode = MX6_PAD_UART4_RX_DATA__GPIO1_IO29 | PC,
+		.gp = IMX_GPIO_NR(1, 29),
 	},
 };
 
 /* i2c2 for gpio expander */
 struct i2c_pads_info i2c_pad_info2 = {
 	.scl = {
-		.i2c_mode = MX6_PAD_GPIO1_IO02__I2C2_SCL | PC,
-		.gpio_mode = MX6_PAD_GPIO1_IO02__GPIO1_IO_2 | PC,
-		.gp = IMX_GPIO_NR(1, 2),
+		.i2c_mode =  MX6_PAD_UART5_TX_DATA__I2C2_SCL | PC,
+		.gpio_mode = MX6_PAD_UART5_TX_DATA__GPIO1_IO30 | PC,
+		.gp = IMX_GPIO_NR(1, 30),
 	},
 	.sda = {
-		.i2c_mode = MX6_PAD_GPIO1_IO03__I2C2_SDA | PC,
-		.gpio_mode = MX6_PAD_GPIO1_IO03__GPIO1_IO_3 | PC,
-		.gp = IMX_GPIO_NR(1, 3),
+		.i2c_mode = MX6_PAD_UART5_RX_DATA__I2C2_SDA | PC,
+		.gpio_mode = MX6_PAD_UART5_RX_DATA__GPIO1_IO31 | PC,
+		.gp = IMX_GPIO_NR(1, 31),
 	},
 };
 
@@ -63,18 +63,23 @@ struct i2c_pads_info i2c_pad_info2 = {
 	PAD_CTL_PUS_22K_UP  | PAD_CTL_SPEED_LOW |		\
 	PAD_CTL_DSE_80ohm   | PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
 
-/* USDHC3: eMMC */
-static iomux_v3_cfg_t const usdhc3_pads[] = {
-	MX6_PAD_SD3_CLK__USDHC3_CLK | MUX_PAD_CTRL(USDHC_PAD_CTRL),
-	MX6_PAD_SD3_CMD__USDHC3_CMD | MUX_PAD_CTRL(USDHC_PAD_CTRL),
-	MX6_PAD_SD3_DATA0__USDHC3_DATA0 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
-	MX6_PAD_SD3_DATA1__USDHC3_DATA1 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
-	MX6_PAD_SD3_DATA2__USDHC3_DATA2 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
-	MX6_PAD_SD3_DATA3__USDHC3_DATA3 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
-	MX6_PAD_SD3_DATA4__USDHC3_DATA4 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
-	MX6_PAD_SD3_DATA5__USDHC3_DATA5 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
-	MX6_PAD_SD3_DATA6__USDHC3_DATA6 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
-	MX6_PAD_SD3_DATA7__USDHC3_DATA7 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+/* USDHC2 / eMMC */
+static iomux_v3_cfg_t const usdhc2_pads[] = {
+	MX6_PAD_NAND_RE_B__USDHC2_CLK | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	MX6_PAD_NAND_WE_B__USDHC2_CMD | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	MX6_PAD_NAND_DATA00__USDHC2_DATA0 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	MX6_PAD_NAND_DATA01__USDHC2_DATA1 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	MX6_PAD_NAND_DATA02__USDHC2_DATA2 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	MX6_PAD_NAND_DATA03__USDHC2_DATA3 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	MX6_PAD_NAND_DATA04__USDHC2_DATA4 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	MX6_PAD_NAND_DATA05__USDHC2_DATA5 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	MX6_PAD_NAND_DATA06__USDHC2_DATA6 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	MX6_PAD_NAND_DATA07__USDHC2_DATA7 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+
+	/*
+	 * RST_B
+	 */
+	MX6_PAD_NAND_ALE__GPIO4_IO10 | MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
 /*
@@ -84,78 +89,71 @@ static iomux_v3_cfg_t const usdhc3_pads[] = {
  * be read from eeprom (if available).
  */
 
-static ea_ddr_cfg_pair_t ddr_init_mx6sx[] = {
-	{0x020e0618, 0x000c0000},
-	{0x020e05fc, 0x00000000},
+static ea_ddr_cfg_pair_t ddr_init_mx6ul[] = {
+	{0x020c4068, 0xffffffff},
+	{0x020c406c, 0xffffffff},
+	{0x020c4070, 0xffffffff},
+	{0x020c4074, 0xffffffff},
+	{0x020c4078, 0xffffffff},
+	{0x020c407c, 0xffffffff},
+	{0x020c4080, 0xffffffff},
+	{0x020c4084, 0xffffffff},
+	{0x020E04B4, 0x000C0000},
+	{0x020E04AC, 0x00000000},
+	{0x020E027C, 0x00000008},
+	{0x020E0250, 0x00000030},
+	{0x020E024C, 0x00000030},
+	{0x020E0490, 0x00000030},
+	{0x020E0288, 0x00000030},
+	{0x020E0270, 0x00000000},
+	{0x020E0260, 0x00000030},
+	{0x020E0264, 0x00000030},
+	{0x020E04A0, 0x00000030},
+	{0x020E0494, 0x00020000},
+	{0x020E0280, 0x00000038},
+	{0x020E0284, 0x00000030},
+	{0x020E04B0, 0x00020000},
+	{0x020E0498, 0x00000030},
+	{0x020E04A4, 0x00000030},
+	{0x020E0244, 0x00000030},
+	{0x020E0248, 0x00000030},
+	{0x021B001C, 0x00008000},
+	{0x021B0800, 0xA1390003},
+	{0x021B080C, 0x00090000},
+	{0x021B083C, 0x41540154},
+	{0x021B0848, 0x40404442},
+	{0x021B0850, 0x40405450},
+	{0x021B081C, 0x33333333},
+	{0x021B0820, 0x33333333},
+	{0x021B082C, 0xf3333333},
+	{0x021B0830, 0xf3333333},
+	{0x021B08C0, 0x00922012},
+	{0x021B0858, 0x00000F00},
+	{0x021B08b8, 0x00000800},
+	{0x021B0004, 0x0002002D},
+	{0x021B0008, 0x1B333000},
 
-	{0x020e032c, 0x00000030},
-
-	{0x020e0300, 0x00000020},
-	{0x020e02fc, 0x00000020},
-	{0x020e05f4, 0x00000020},
-
-	{0x020e0340, 0x00000020},
-
-	{0x020e0320, 0x00000000},
-	{0x020e0310, 0x00000020},
-	{0x020e0314, 0x00000020},
-	{0x020e0614, 0x00000020},
-
-	{0x020e05f8, 0x00020000},
-	{0x020e0330, 0x00000028},
-	{0x020e0334, 0x00000028},
-	{0x020e0338, 0x00000028},
-	{0x020e033c, 0x00000028},
-
-	{0x020e0608, 0x00020000},
-	{0x020e060c, 0x00000028},
-	{0x020e0610, 0x00000028},
-	{0x020e061c, 0x00000028},
-	{0x020e0620, 0x00000028},
-	{0x020e02ec, 0x00000028},
-	{0x020e02f0, 0x00000028},
-	{0x020e02f4, 0x00000028},
-	{0x020e02f8, 0x00000028},
-
-	{0x021b0800, 0xa1390003},
-
-	{0x021b080c, 0x002b0025},
-	{0x021b0810, 0x00290024},
-
-	{0x021b083c, 0x4153014B},
-	{0x021b0840, 0x013E0132},
-
-	{0x021b0848, 0x43434549},
-	{0x021b0850, 0x36363A35},
-
-	{0x021b081c, 0x33333333},
-	{0x021b0820, 0x33333333},
-	{0x021b0824, 0x33333333},
-	{0x021b0828, 0x33333333},
-
-	{0x021b08b8, 0x00000800},
-
-	{0x021b0004, 0x0002002d},
-	{0x021b0008, 0x00333030},
-	{0x021b000c, 0x676b52f3},
-	{0x021b0010, 0xb66d8b63},
-	{0x021b0014, 0x01ff00db},
-	{0x021b0018, 0x00011740},
-	{0x021b001c, 0x00008000},
-	{0x021b002c, 0x000026d2},
-	{0x021b0030, 0x006b1023},
-	{0x021b0040, 0x0000005f},
-	{0x021b0000, 0x84190000},
-
-	{0x021b001c, 0x04008032},
-	{0x021b001c, 0x00008033},
-	{0x021b001c, 0x00048031},
-	{0x021b001c, 0x05208030},
-	{0x021b001c, 0x04008040},
-
-	{0x021b0020, 0x00000800},
-	{0x021b0818, 0x00011117},
-	{0x021b001c, 0x00000000},
+	{0x021B000C, 0x676B54F3},
+	{0x021B0010, 0xB68E0A83},
+	{0x021B0014, 0x01FF00DB},
+	{0x021B0018, 0x00211740},
+	{0x021B001C, 0x00008000},
+	{0x021B002C, 0x000026D2},
+	{0x021B0030, 0x006B1023},
+	{0x021B0040, 0x0000004F},
+	{0x021B0000, 0x84180000},
+// ------> NOK
+/*	{0x021B001C, 0x02008032},
+	{0x021B001C, 0x00008033},
+	{0x021B001C, 0x00048031},
+	{0x021B001C, 0x15208030},
+	{0x021B001C, 0x04008040},*/
+// <----- NOK
+	{0x021B0020, 0x00000800},
+	{0x021B0818, 0x00000227},
+	{0x021B0004, 0x0002552D},
+	{0x021B0404, 0x00011006},
+	{0x021B001C, 0x00000000},
 };
 
 
@@ -238,7 +236,7 @@ static void spl_dram_init(uint32_t *size)
 		}
 
 	} else {
-		dram_table_init(ddr_init_mx6sx, ARRAY_SIZE(ddr_init_mx6sx));
+		dram_table_init(ddr_init_mx6ul, ARRAY_SIZE(ddr_init_mx6ul));
 	}
 
 }
@@ -248,7 +246,7 @@ void spl_board_init(void)
 }
 
 static struct fsl_esdhc_cfg usdhc_cfg = {
-	USDHC3_BASE_ADDR
+	USDHC2_BASE_ADDR, 0, 8
 };
 
 int board_mmc_getcd(struct mmc *mmc)
@@ -266,8 +264,15 @@ int board_mmc_init(bd_t *bis)
          */
 
 	imx_iomux_v3_setup_multiple_pads(
-		usdhc3_pads, ARRAY_SIZE(usdhc3_pads));
-	usdhc_cfg.sdhc_clk = mxc_get_clock(MXC_ESDHC3_CLK);
+		usdhc2_pads, ARRAY_SIZE(usdhc2_pads));
+
+	/* reset */
+	gpio_direction_output(IMX_GPIO_NR(4, 10), 0);
+	udelay(500);
+	gpio_direction_output(IMX_GPIO_NR(4, 10), 1);
+
+	usdhc_cfg.sdhc_clk = mxc_get_clock(MXC_ESDHC2_CLK);
+
 
 	status |= fsl_esdhc_initialize(bis, &usdhc_cfg);
 

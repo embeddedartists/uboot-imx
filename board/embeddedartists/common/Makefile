@@ -13,11 +13,5 @@ obj-y  += ea_gpio_expander.o
 obj-y  += mmc.o
 obj-y  += ea_board.o
 
-obj-y  += spl.o
-
 obj-$(CONFIG_EA_IMX_PTP)	+= ea_ptp.o
-
-ifdef CONFIG_FSL_FASTBOOT
-obj-${CONFIG_ANDROID_RECOVERY} += recovery.o
-endif
 

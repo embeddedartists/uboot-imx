@@ -45,7 +45,6 @@ typedef struct {
 
 int ea_eeprom_init(void);
 int ea_eeprom_get_config(ea_eeprom_config_t* config);
-int ea_eeprom_dram_init(void);
 int ea_eeprom_ddr_cfg_init(ea_ddr_cfg_t *cfg);
 int ea_eeprom_ddr_cfg_read(ea_ddr_cfg_t *cfg, ea_ddr_cfg_pair_t* pairs,
         int num, int *num_read);

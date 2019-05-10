@@ -452,14 +452,6 @@ static int setup_fec(int fec_id)
 	return 0;
 }
 
-/*
-int board_eth_init(bd_t *bis)
-{
-	setup_fec(CONFIG_FEC_ENET_DEV);
-	return cpu_eth_init(bis);
-}
-*/
-
 int board_phy_config(struct phy_device *phydev)
 {
 	/* Enable 1.8V(SEL_1P5_1P8_POS_REG) on
