@@ -66,6 +66,11 @@ config TARGET_MX8MQEA_COM
 	select SUPPORT_SPL
 	select IMX8M_LPDDR4
 
+config TARGET_MX8MMEA_UCOM
+	bool "mx8mmea_ucom"
+	select IMX8MM
+	select SUPPORT_SPL
+	select IMX8M_LPDDR4
 
 endchoice
 
@@ -78,5 +83,6 @@ source "board/freescale/imx8mq_phanbell/Kconfig"
 source "board/freescale/imx8mm_evk/Kconfig"
 source "board/freescale/imx8mm_val/Kconfig"
 source "board/embeddedartists/mx8mqea-com/Kconfig"
+source "board/embeddedartists/mx8mmea-ucom/Kconfig"
 
 endif
