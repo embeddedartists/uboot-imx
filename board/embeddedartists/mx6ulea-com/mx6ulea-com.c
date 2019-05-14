@@ -467,6 +467,8 @@ int board_init(void)
 	eadisp_setup_display(displays, ARRAY_SIZE(displays));
 #endif
 
+	ea_print_board();
+
 	return 0;
 }
 

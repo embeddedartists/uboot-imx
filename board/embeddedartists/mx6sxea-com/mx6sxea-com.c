@@ -708,6 +708,8 @@ int board_init(void)
 	ea_configure_tfp410();
 #endif
 
+	ea_print_board();
+
 	return 0;
 }
 
