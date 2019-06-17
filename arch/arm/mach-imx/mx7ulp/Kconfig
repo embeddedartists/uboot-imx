@@ -32,9 +32,16 @@ config TARGET_MX7ULP_EVK
 	select BOARD_LATE_INIT
 	select MX7ULP
 
+config TARGET_MX7ULPEA_UCOM
+	bool "Support EA mx7ulp uCOM board"
+	select BOARD_LATE_INIT
+	select MX7ULP
+	select SUPPORT_SPL
+
 endchoice
 
 source "board/freescale/mx7ulp_arm2/Kconfig"
 source "board/freescale/mx7ulp_evk/Kconfig"
+source "board/embeddedartists/mx7ulpea-ucom/Kconfig"
 
 endif
