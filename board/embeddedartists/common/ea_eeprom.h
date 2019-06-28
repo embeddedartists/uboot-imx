@@ -16,9 +16,23 @@
 
 #define EA_EEPROM_MAGIC 0xEA434F4D
 
+/* indicates which max version that is supported */
+#define EA_EEPROM_CFG_VERSION (2)
+
+/*
+ * The data type indicates what kind of data that is stored after the
+ * config header.
+ */
+
+/* num value pairs */
+#define EA_EEPROM_DATA_TYPE_PAIRS (0)
+/* gzipped data that can be specific to the board */
+#define EA_EEPROM_DATA_TYPE_GZIP  (1)
+
+
 typedef struct {
 	uint32_t magic;
-	uint8_t  config_version;
+	uint8_t  version;
 	uint32_t board_part_nr;
 	uint8_t  board_rev[4];
 	uint32_t batch;
@@ -28,8 +42,15 @@ typedef struct {
 	uint8_t  mac3[6];
 	uint8_t  mac4[6];
 	uint32_t ddr_size;
-	uint32_t num_reg_value_pairs;
-	uint8_t  reserved[3];
+
+	/*
+	 * The data_size is number of value pairs when data is pairs.
+	 * It is size of gzipped data when gzip is used.
+	 */
+	uint32_t data_size;
+
+	uint8_t  data_type;
+	uint8_t  reserved[2];
 } __attribute__((__packed__)) ea_eeprom_config_t;
 
 typedef struct {
@@ -49,6 +70,7 @@ int ea_eeprom_ddr_cfg_init(ea_ddr_cfg_t *cfg);
 int ea_eeprom_ddr_cfg_read(ea_ddr_cfg_t *cfg, ea_ddr_cfg_pair_t* pairs,
         int num, int *num_read);
 
+int ea_eeprom_read_all_data(uint8_t* buf, int buf_sz, int *read);
 
 #endif
 

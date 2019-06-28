@@ -86,6 +86,13 @@ int ea_eeprom_get_config(ea_eeprom_config_t* config)
 #endif
 
 	if (config->magic != EA_EEPROM_MAGIC) {
+		printf("EA config: invalid magic number\n");
+		return -EINVAL;
+	}
+
+	if (config->version > EA_EEPROM_CFG_VERSION) {
+		printf("EA config: Unsupported config version (%d != %d)\n",
+			config->version, EA_EEPROM_CFG_VERSION);
 		return -EINVAL;
 	}
 
@@ -100,7 +107,7 @@ int ea_eeprom_ddr_cfg_init(ea_ddr_cfg_t *cfg)
 	ea_eeprom_init();
 	ret = ea_eeprom_get_config(&config);
 	if (!ret) {
-		cfg->num_pairs = config.num_reg_value_pairs;
+		cfg->num_pairs = config.data_size;
 		cfg->next = 0;
 		cfg->ddr_size_mb = config.ddr_size;
 	}
@@ -159,6 +166,57 @@ int ea_eeprom_ddr_cfg_read(ea_ddr_cfg_t *cfg, ea_ddr_cfg_pair_t* pairs,
 
 	*num_read = to_read;
 	cfg->next += to_read;
+
+	return 0;
+}
+
+int ea_eeprom_read_all_data(uint8_t* buf, int buf_sz, int *read)
+{
+	int to_read;
+        ea_eeprom_config_t config;
+        int ret = 0;
+
+        ea_eeprom_init();
+        ret = ea_eeprom_get_config(&config);
+        if (ret) return ret;
+
+
+#ifdef CONFIG_DM_I2C
+	struct udevice *i2c_dev = NULL;
+
+        ret = ea_dm_i2c_init(&i2c_dev);
+        if (ret) return ret;
+
+#endif
+
+	*read = 0;
+
+	to_read = config.data_size;
+	if (buf_sz < to_read) return -EINVAL;
+
+
+#if !defined(CONFIG_DM_I2C)
+
+	if (i2c_read(EA_EEPROM_I2C_SLAVE,
+		sizeof(ea_eeprom_config_t),
+		2,
+		buf,
+		to_read))
+	{
+		return -EIO;
+	}
+#else
+	ret = dm_i2c_read(i2c_dev,
+		sizeof(ea_eeprom_config_t),
+		buf,
+		to_read);
+	if (ret) {
+		printf("%s dm_i2c_read failed, err %d\n", __func__, ret);
+		return -EIO;
+	}
+#endif
+
+	*read = to_read;
 
 	return 0;
 }

@@ -73,23 +73,159 @@ static iomux_v3_cfg_t const usdhc1_pads[] = {
 	IMX8MQ_PAD_SD1_RESET_B__GPIO2_IO10 | MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
+#include "lpddr4_timing.c"
+
+enum ea_ddr_field {
+	EA_DDR_DDRC   = 1,
+	EA_DDR_DDRPHY,
+	EA_DDR_DDRPHY_TRAINED,
+	EA_DDR_PHY_PIE,
+	EA_DDR_FSP_INFO,
+	EA_DDR_FSP0,
+	EA_DDR_FSP1,
+	EA_DDR_FSP2,
+	EA_DDR_FSP3,
+};
+
+struct dram_fsp_msg ea_ddr_dram_fsp_msg[4] = {{1}};
+
+#define EA_DBUF_SZ (16384)
+#define EA_GZBUF_SZ (6144)
+static unsigned char ea_dbuf[EA_DBUF_SZ] = {1};
+static unsigned char ea_gzbuf[EA_GZBUF_SZ] = {1};
+
+static void spl_ddr_map_array(enum ea_ddr_field idx, struct dram_cfg_param* a, int sz)
+{
+	switch(idx) {
+	case EA_DDR_DDRC:
+		dram_timing.ddrc_cfg = a;
+		dram_timing.ddrc_cfg_num = sz;
+
+		break;
+	case EA_DDR_DDRPHY:
+		dram_timing.ddrphy_cfg = a;
+		dram_timing.ddrphy_cfg_num = sz;
+
+		break;
+	case EA_DDR_DDRPHY_TRAINED:
+		dram_timing.ddrphy_trained_csr = a;
+		dram_timing.ddrphy_trained_csr_num = sz;
+
+		break;
+	case EA_DDR_PHY_PIE:
+		dram_timing.ddrphy_pie = a;
+		dram_timing.ddrphy_pie_num = sz;
+
+		break;
+	case EA_DDR_FSP_INFO:
+		/*
+		 * [0].reg = size of the fsp table
+		 * [1].reg = fsp_table[0]
+		 * [1].val = fsp_table[1]
+		 * [2].reg = fsp_table[2]
+		 * [2].val = fsp_table[3]
+		 */
+		dram_timing.fsp_msg_num = a[0].reg;
+		dram_timing.fsp_msg = ea_ddr_dram_fsp_msg;
+		dram_timing.fsp_table[0] = a[1].reg;
+		dram_timing.fsp_table[1] = a[1].val;
+		dram_timing.fsp_table[2] = a[2].reg;
+		dram_timing.fsp_table[3] = a[2].val;
+		break;
+	case EA_DDR_FSP0:
+		/*
+		 * First pair conatins drate and fw_type
+		 */
+		ea_ddr_dram_fsp_msg[0].drate   = a[0].reg;
+		ea_ddr_dram_fsp_msg[0].fw_type = a[0].val;
+		ea_ddr_dram_fsp_msg[0].fsp_cfg = &a[1];
+
+		/* sz also contains the drate and fw_type pair -> remove one */
+		ea_ddr_dram_fsp_msg[0].fsp_cfg_num = sz-1;
+
+		break;
+	case EA_DDR_FSP1:
+		ea_ddr_dram_fsp_msg[1].drate   = a[0].reg;
+		ea_ddr_dram_fsp_msg[1].fw_type = a[0].val;
+		ea_ddr_dram_fsp_msg[1].fsp_cfg = &a[1];
+		ea_ddr_dram_fsp_msg[1].fsp_cfg_num = sz-1;
+
+		break;
+	case EA_DDR_FSP2:
+		ea_ddr_dram_fsp_msg[2].drate   = a[0].reg;
+		ea_ddr_dram_fsp_msg[2].fw_type = a[0].val;
+		ea_ddr_dram_fsp_msg[2].fsp_cfg = &a[1];
+		ea_ddr_dram_fsp_msg[2].fsp_cfg_num = sz-1;
+
+		break;
+	case EA_DDR_FSP3:
+		ea_ddr_dram_fsp_msg[3].drate   = a[0].reg;
+		ea_ddr_dram_fsp_msg[3].fw_type = a[0].val;
+		ea_ddr_dram_fsp_msg[3].fsp_cfg = &a[1];
+		ea_ddr_dram_fsp_msg[3].fsp_cfg_num = sz-1;
+
+		break;
+	default:
+		printf("Invalid ddr field index (%d). Invalid data in eeprom?\n", idx);
+		break;
+	}
+}
+
+static int spl_ddr_unpack_data(ea_eeprom_config_t* cfg)
+{
+	int ret;
+	int offset;
+	int nread=0;
+	unsigned long len;
+	struct dram_cfg_param* p;
+
+	/* data_size is in this case the size of the gzipped data */
+	len = cfg->data_size;
+
+	ret = ea_eeprom_read_all_data(ea_gzbuf, EA_GZBUF_SZ, &nread);
+	if (ret) {
+		printf("Failed to read ddr data from eeprom %d\n", ret);
+		return ret;
+	}
+
+	ret = gunzip(ea_dbuf, EA_DBUF_SZ, ea_gzbuf, &len);
+	if (ret) {
+		printf("Failed to unpack ddr data %d\n", ret);
+		return ret;
+	}
+
+	p = (struct dram_cfg_param*)&ea_dbuf[0];
+
+	offset = 0;
+	while(offset*sizeof(struct dram_cfg_param) < len) {
+		spl_ddr_map_array(p[offset].reg, &p[offset+1], p[offset].val);
+		offset += (p[offset].val+1);
+	}
+
+	return ret;
+}
+
 static void spl_dram_init(uint32_t *size)
 {
-	ea_ddr_cfg_t cfg;
+	ea_eeprom_config_t cfg;
 	int ret;
 
         /* set default value, will be replaced if  eeprom cfg is valid */
         *size = (PHYS_SDRAM_SIZE >> 20);
 
-        ret = ea_eeprom_ddr_cfg_init(&cfg);
+        ret = ea_eeprom_get_config(&cfg);
 
         /* If eeprom is valid read ddr config; otherwise use default */
         if (!ret) {
-                *size = cfg.ddr_size_mb;
+                *size = cfg.ddr_size;
 
 		/*
-		 * No DDR config data stored in eeprom. Using generated xxx_timing.c
+		 * timing values might exist in eeprom as gzipped data
 		 */
+		if (cfg.data_type == EA_EEPROM_DATA_TYPE_GZIP) {
+			printf("EA: Using gzipped ddr data from eeprom\n");
+			ret = spl_ddr_unpack_data(&cfg);
+		}
         }
 
 	ddr_init(&dram_timing);
