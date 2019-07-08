@@ -21,8 +21,8 @@
 	compatible = "fsl,imx8mmea-ucom", "fsl,imx8mm";
 
 	chosen {
-		bootargs = "console=ttymxc0,115200 earlycon=ec_imx6q,0x30890000,115200";
-		stdout-patch = &uart1;
+		bootargs = "console=ttymxc1,115200 earlycon=ec_imx6q,0x30890000,115200";
+		stdout-patch = &uart2;
 	};
 
 	reg_usdhc2_vmmc: regulator-usdhc2 {
@@ -70,8 +70,8 @@
 
 		pinctrl_flexspi0: flexspi0grp {
 			fsl,pins = <
-				MX8MM_IOMUXC_NAND_ALE_QSPI_A_SCLK 0x1c4
-				MX8MM_IOMUXC_NAND_CE0_B_QSPI_A_SS0_B 0x84
+				MX8MM_IOMUXC_NAND_ALE_QSPI_A_SCLK    0x1c4
+				MX8MM_IOMUXC_NAND_CE0_B_QSPI_A_SS0_B  0x84
 
 				MX8MM_IOMUXC_NAND_DATA00_QSPI_A_DATA0 0x84
 				MX8MM_IOMUXC_NAND_DATA01_QSPI_A_DATA1 0x84
@@ -107,16 +107,17 @@
 			>;
 		};
 
-		pinctrl_uart1: uart1grp {
+		pinctrl_uart2: uart2grp {
 			fsl,pins = <
-				MX8MM_IOMUXC_UART1_RXD_UART1_DCE_RX	0x49
-				MX8MM_IOMUXC_UART1_RXD_UART1_DTE_TX	0x49
+				MX8MM_IOMUXC_UART2_RXD_UART2_DCE_RX	0x49
+				MX8MM_IOMUXC_UART2_TXD_UART2_DCE_TX	0x49
 			>;
 		};
 
 		pinctrl_usdhc2_gpio: usdhc2grpgpio {
 			fsl,pins = <
 				MX8MM_IOMUXC_SD2_RESET_B_GPIO2_IO19	0x41
+				MX8MM_IOMUXC_SD2_CD_B_GPIO2_IO12	0x41
 			>;
 		};
 
@@ -207,6 +208,20 @@
 		pinctrl_wdog: wdoggrp {
 			fsl,pins = <
 				MX8MM_IOMUXC_GPIO1_IO02_WDOG1_WDOG_B		0xc6
+			>;
+		};
+
+		pinctrl_usbotg1: usbotg1grp {
+			fsl,pins = <
+				MX8MM_IOMUXC_GPIO1_IO12_USB1_OTG_PWR	0x49
+				MX8MM_IOMUXC_GPIO1_IO13_USB1_OTG_OC	0x49
+			>;
+		};
+
+		pinctrl_usbotg2: usbotg2grp {
+			fsl,pins = <
+				MX8MM_IOMUXC_GPIO1_IO14_USB2_OTG_PWR	0x49
+				MX8MM_IOMUXC_GPIO1_IO15_USB2_OTG_OC	0x49
 			>;
 		};
 	};
@@ -419,23 +434,25 @@
 	};
 };
 
-&uart1 { /* console */
+&uart2 { /* console */
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart1>;
+	pinctrl-0 = <&pinctrl_uart2>;
 	status = "okay";
 };
 
+/* uSD connector on carrier board */
 &usdhc2 {
 	pinctrl-names = "default", "state_100mhz", "state_200mhz";
 	pinctrl-0 = <&pinctrl_usdhc2>, <&pinctrl_usdhc2_gpio>;
 	pinctrl-1 = <&pinctrl_usdhc2_100mhz>, <&pinctrl_usdhc2_gpio>;
 	pinctrl-2 = <&pinctrl_usdhc2_200mhz>, <&pinctrl_usdhc2_gpio>;
 	bus-width = <4>;
-	non-removable;
+	cd-gpios = <&gpio2 12 GPIO_ACTIVE_LOW>;
 	vmmc-supply = <&reg_usdhc2_vmmc>;
 	status = "okay";
 };
 
+/* eMMC */
 &usdhc3 {
 	pinctrl-names = "default", "state_100mhz", "state_200mhz";
 	pinctrl-0 = <&pinctrl_usdhc3>;
@@ -458,9 +475,15 @@
 };
 
 &usbotg1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_usbotg1>;
+	dr_mode = "otg";
 	status = "okay";
 };
 
 &usbotg2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_usbotg2>;
+	dr_mode = "host";
 	status = "okay";
 };

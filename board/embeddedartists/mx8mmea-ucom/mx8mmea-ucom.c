@@ -41,8 +41,8 @@ DECLARE_GLOBAL_DATA_PTR;
 #define WDOG_PAD_CTRL	(PAD_CTL_DSE6 | PAD_CTL_ODE | PAD_CTL_PUE | PAD_CTL_PE)
 
 static iomux_v3_cfg_t const uart_pads[] = {
-	IMX8MM_PAD_UART1_RXD_UART1_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
-	IMX8MM_PAD_UART1_TXD_UART1_TX | MUX_PAD_CTRL(UART_PAD_CTRL),
+	IMX8MM_PAD_UART2_RXD_UART2_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
+	IMX8MM_PAD_UART2_TXD_UART2_TX | MUX_PAD_CTRL(UART_PAD_CTRL),
 };
 
 static iomux_v3_cfg_t const wdog_pads[] = {
@@ -50,9 +50,9 @@ static iomux_v3_cfg_t const wdog_pads[] = {
 };
 
 #ifdef CONFIG_FSL_FSPI
-#define QSPI_PAD_CTRL	(PAD_CTL_DSE2 | PAD_CTL_HYS)
+#define QSPI_PAD_CTRL	(PAD_CTL_DSE6 | PAD_CTL_HYS)
 static iomux_v3_cfg_t const qspi_pads[] = {
-	IMX8MM_PAD_NAND_ALE_QSPI_A_SCLK | MUX_PAD_CTRL(QSPI_PAD_CTRL | PAD_CTL_PE | PAD_CTL_PUE),
+	IMX8MM_PAD_NAND_ALE_QSPI_A_SCLK | MUX_PAD_CTRL(QSPI_PAD_CTRL | PAD_CTL_PE | PAD_CTL_PUE | PAD_CTL_FSEL1),
 	IMX8MM_PAD_NAND_CE0_B_QSPI_A_SS0_B | MUX_PAD_CTRL(QSPI_PAD_CTRL),
 
 	IMX8MM_PAD_NAND_DATA00_QSPI_A_DATA0 | MUX_PAD_CTRL(QSPI_PAD_CTRL),
@@ -165,8 +165,6 @@ int board_phy_config(struct phy_device *phydev)
 }
 #endif
 
-#ifdef CONFIG_USB_TCPC
-
 int board_usb_init(int index, enum usb_init_type init)
 {
 	debug("board_usb_init %d, type %d\n", index, init);
@@ -185,13 +183,6 @@ int board_usb_cleanup(int index, enum usb_init_type init)
 	imx8m_usb_power(index, false);
 	return ret;
 }
-
-int board_ehci_usb_phy_mode(struct udevice *dev)
-{
-	return USB_INIT_DEVICE;
-}
-
-#endif
 
 int board_init(void)
 {

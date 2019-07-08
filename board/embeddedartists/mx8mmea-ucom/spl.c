@@ -104,7 +104,8 @@ void spl_board_init(void)
 	puts("Normal Boot\n");
 }
 
-static struct fsl_esdhc_cfg usdhc_cfg[1] = {
+static struct fsl_esdhc_cfg usdhc_cfg[2] = {
+	{USDHC2_BASE_ADDR, 0, 1}, /* required as SPL wants to boot from device 1 */
 	{USDHC3_BASE_ADDR, 0, 1},
 };
 
@@ -116,11 +117,19 @@ int board_mmc_getcd(struct mmc *mmc)
 
 int board_mmc_init(bd_t *bis)
 {
-	usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC3_CLK);
+	/* Dummy code - Needed as SPL wants to boot from MMC1 so there
+	   must be a MMC0. */
+	usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC2_CLK);
+	//imx_iomux_v3_setup_multiple_pads(
+	//	usdhc2_pads, ARRAY_SIZE(usdhc2_pads));
+
+	fsl_esdhc_initialize(bis, &usdhc_cfg[0]);
+
+	usdhc_cfg[1].sdhc_clk = mxc_get_clock(MXC_ESDHC3_CLK);
 	imx_iomux_v3_setup_multiple_pads(
 		usdhc3_pads, ARRAY_SIZE(usdhc3_pads));
 
-	return fsl_esdhc_initialize(bis, &usdhc_cfg[0]);
+	return fsl_esdhc_initialize(bis, &usdhc_cfg[1]);
 }
 
 #ifdef CONFIG_POWER
@@ -214,7 +223,7 @@ void board_init_f(ulong dummy)
 	 * when the device model (CONFIG_DM) is enabled.
 	 */
         ea_conf->magic = EA_CONFIG_MAGIC;
-        ea_conf->is_carrier_v2 = ea_is_carrier_v2(1);
+        ea_conf->is_carrier_v2 = ea_is_carrier_v2(0);
         ea_conf->ddr_size = size;
 
 	board_init_r(NULL, 0);
