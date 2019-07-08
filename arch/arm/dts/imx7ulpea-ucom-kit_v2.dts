@@ -16,7 +16,7 @@
 
 	chosen {
 		bootargs = "console=ttyLP0,115200 earlycon=lpuart32,0x402D0000,115200";
-		stdout-path = &lpuart6;
+		stdout-path = &lpuart4;
 	};
 
 	memory {
@@ -71,7 +71,7 @@
 
 };
 
-&qspi1 {
+/*&qspi1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_qspi1_1>;
 	status = "okay";
@@ -83,7 +83,7 @@
 		compatible = "macronix,mx25r3235f";
 		spi-max-frequency = <29000000>;
 	};
-};
+};*/
 
 
 &iomuxc1 {
@@ -258,13 +258,13 @@
 	status = "okay";
 };
 
-&lpuart4 { 
+&lpuart4 { /* console */
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_lpuart4>;
 	status = "okay";
 };
 
-&lpuart6 { /* console */
+&lpuart6 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_lpuart6>;
 	status = "okay";

@@ -2,13 +2,13 @@
  * Copyright (C) 2016 Freescale Semiconductor, Inc.
  * Copyright 2017 NXP
  *
- * Configuration settings for the Freescale i.MX7ULP EVK board.
+ * Configuration settings for the Embedded Artists i.MX7 ULP uCOM Board.
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
 
-#ifndef __MX7ULP_EVK_CONFIG_H
-#define __MX7ULP_EVK_CONFIG_H
+#ifndef __MX7ULPEA_UCOM_H
+#define __MX7ULPEA_UCOM_H
 
 #include <linux/sizes.h>
 #include <asm/arch/imx-regs.h>
@@ -16,9 +16,9 @@
 
 #ifdef CONFIG_SPL_BUILD
 
-#define CONFIG_SERIAL_LPUART_BASE      0x40A60000
+#define CONFIG_SERIAL_LPUART_BASE      0x402D0000
 
-#endif /* CONFIG_SPL_BUI */
+#endif /* CONFIG_SPL_BUILD */
 
 #ifdef CONFIG_SECURE_BOOT
 #ifndef CONFIG_CSF_SIZE
@@ -75,7 +75,7 @@
 #define CONFIG_SYS_MALLOC_LEN		(8 * SZ_1M)
 
 /* UART */
-#define LPUART_BASE			LPUART6_RBASE
+#define LPUART_BASE			LPUART4_RBASE
 
 /* allow to overwrite serial and ethaddr */
 #define CONFIG_ENV_OVERWRITE
@@ -130,7 +130,7 @@
 	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
 	"mmcautodetect=yes\0" \
 	"mmcargs=setenv bootargs console=${console},${baudrate} " \
-		"root=${mmcroot}\0" \
+		"root=${mmcroot} ${args_from_script}\0" \
 	"loadbootscript=" \
 		"fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${script};\0" \
 	"bootscript=echo Running bootscript from mmc ...; " \
@@ -159,7 +159,8 @@
 		"fi;\0" \
 	"netargs=setenv bootargs console=${console},${baudrate} " \
 		"root=/dev/nfs " \
-		"ip=:::::eth0:dhcp nfsroot=${serverip}:${nfsroot},v3,tcp\0" \
+		"ip=:::::eth0:dhcp nfsroot=${serverip}:${nfsroot},v3,tcp " \
+		"${args_from_script}\0" \
 	"netboot=echo Booting from net ...; " \
 		"run netargs; " \
 		"if test ${ip_dyn} = yes; then " \

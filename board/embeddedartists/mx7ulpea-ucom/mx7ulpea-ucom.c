@@ -42,22 +42,33 @@ int dram_init(void)
 	return 0;
 }
 
-static iomux_cfg_t const lpuart6_pads[] = {
-	MX7ULP_PAD_PTE11__LPUART6_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
-	MX7ULP_PAD_PTE10__LPUART6_TX | MUX_PAD_CTRL(UART_PAD_CTRL),
+static iomux_cfg_t const lpuart4_pads[] = {
+	MX7ULP_PAD_PTC3__LPUART4_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
+	MX7ULP_PAD_PTC2__LPUART4_TX | MUX_PAD_CTRL(UART_PAD_CTRL),
 };
 
 static void setup_iomux_uart(void)
 {
-	mx7ulp_iomux_setup_multiple_pads(lpuart6_pads,
-					 ARRAY_SIZE(lpuart6_pads));
+	mx7ulp_iomux_setup_multiple_pads(lpuart4_pads,
+					 ARRAY_SIZE(lpuart4_pads));
 }
 
 #ifdef CONFIG_FSL_QSPI
 
+static iomux_cfg_t const qspi_pads[] = {
+	MX7ULP_PAD_PTB8__QSPIA_SS0_B | MUX_PAD_CTRL(QSPI_PAD_CTRL1),
+	MX7ULP_PAD_PTB15__QSPIA_SCLK  | MUX_PAD_CTRL(QSPI_PAD_CTRL1),
+	MX7ULP_PAD_PTB16__QSPIA_DATA3 | MUX_PAD_CTRL(QSPI_PAD_CTRL1),
+	MX7ULP_PAD_PTB17__QSPIA_DATA2 | MUX_PAD_CTRL(QSPI_PAD_CTRL1),
+	MX7ULP_PAD_PTB18__QSPIA_DATA1 | MUX_PAD_CTRL(QSPI_PAD_CTRL1),
+	MX7ULP_PAD_PTB19__QSPIA_DATA0 | MUX_PAD_CTRL(QSPI_PAD_CTRL1),
+};
+
 int board_qspi_init(void)
 {
 	u32 val;
+
+	mx7ulp_iomux_setup_multiple_pads(qspi_pads, ARRAY_SIZE(qspi_pads));
 
 	/* enable clock */
 	val = readl(PCC1_RBASE + 0x94);
