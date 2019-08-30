@@ -9,6 +9,11 @@ config IMX_M4_BIND
 	  Select this to bind a ULP M4 image to final u-boot image
 	  User needs put the M4 image ulp_m4.bin under u-boot directory
 
+config LDO_ENABLED_MODE
+	bool "i.MX7ULP LDO Enabled Mode"
+	help
+	  Select this option to enable the PMC1 LDO.
+
 config MX7ULP
 	select HAS_CAAM
 	bool
