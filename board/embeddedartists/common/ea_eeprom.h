@@ -11,7 +11,11 @@
 #define __MX6SXEA_EEPROM_H
 
 
-#define EA_EEPROM_I2C_BUS   0
+#ifdef CONFIG_MX7ULP
+  #define EA_EEPROM_I2C_BUS   5
+#else
+  #define EA_EEPROM_I2C_BUS   0
+#endif
 #define EA_EEPROM_I2C_SLAVE 0x55
 
 #define EA_EEPROM_MAGIC 0xEA434F4D

@@ -148,7 +148,6 @@
 				IMX7ULP_PAD_PTD8__SDHC0_D2	0x43
 				IMX7ULP_PAD_PTD9__SDHC0_D1	0x43
 				IMX7ULP_PAD_PTD10__SDHC0_D0	0x43
-				IMX7ULP_PAD_PTC10__PTC10	0x10000	/* USDHC0 CD */
 				IMX7ULP_PAD_PTD0__PTD0		0x20000	/* USDHC0 RST */
 			>;
 		};
@@ -240,6 +239,7 @@
 	#size-cells = <0>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_lpi2c7>;
+	status = "okay";
 };
 
 &lpi2c5 {
