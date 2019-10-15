@@ -539,7 +539,15 @@ static void do_enable_hdmi(struct display_info_t const *dev)
 {
 	/* Default is lvds1 so disable it */
 	disable_lvds(dev);
-	imx_enable_hdmi_phy();
+
+	/* NOTE:
+	 * We have seen problems with hdmi when it has been enabled both
+	 * in u-boot and in the Linux kernel. The kernel could seem to freeze
+	 * due to a massive amount of overflow interrupts.
+	 * https://community.nxp.com/thread/342916
+	 */
+
+	/* imx_enable_hdmi_phy();*/
 }
 
 static void do_enable_parallel_rgb(struct display_info_t const *dev)
