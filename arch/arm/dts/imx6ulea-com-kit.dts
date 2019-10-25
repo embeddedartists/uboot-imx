@@ -62,6 +62,19 @@
 			regulator-max-microvolt = <3300000>;
 		};
 
+		reg_usb_otg1_vbus: regulator@0 {
+			compatible = "regulator-fixed";
+			reg = <2>;
+			regulator-name = "usb_otg1_vbus";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+
+			/* This is a dummy pin. It is not used but must
+			   be declared for USB OTG to work. It could be
+			   any pin. */
+			gpio = <&gpio1 6 GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+		};
 	};
 
 };
@@ -479,7 +492,7 @@
 };
 
 &usbotg1 {
-	vbus-supply = <&reg_3v3>;
+	vbus-supply = <&reg_usb_otg1_vbus>;
 	status = "okay";
 };
 
