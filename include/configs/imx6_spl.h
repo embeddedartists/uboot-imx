@@ -21,7 +21,12 @@
  *    and some padding thus 'our' max size is really 0x00908000 - 0x00918000
  *    or 64KB
  */
+#if defined(CONFIG_MX6UL)
+/* Workaround for ERR011115 in https://www.nxp.com/docs/en/errata/IMX6ULCE.pdf */
+#define CONFIG_SPL_TEXT_BASE		0x00909000
+#else
 #define CONFIG_SPL_TEXT_BASE		0x00908000
+#endif
 #define CONFIG_SPL_MAX_SIZE		0x10000
 #define CONFIG_SPL_STACK		0x0091FFB8
 /*
