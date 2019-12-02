@@ -772,19 +772,22 @@ int board_eth_init(bd_t *bis)
 
 int board_early_init_f(void)
 {
+	return 0;
+}
+
+int board_init_common(void)
+{
+	/*
+	 * The functionality below was previously in board_early_init_f,
+	 * but when moving to the Device Model gpio is not available
+	 * before reallocation and hence PERI PWR wasn't enabled.
+	 */
+
 	/* configure and enable pwr */
 	imx_iomux_v3_setup_multiple_pads(peri_pwr_pads,
 			ARRAY_SIZE(peri_pwr_pads));
+	gpio_request(IMX_GPIO_NR(7, 12), "peri pwr");
 	gpio_direction_output(IMX_GPIO_NR(7, 12), 1);
-
-	/* enable USB 5V. Doesn't seem to work to do this in Linux/DTS?? */
-	gpio_direction_output(IMX_GPIO_NR(1, 0), 1);
-
-	/*
-	 * Must initialize timer early since delay functions are used.
-	 * Without timer_init a delay function will hang.
-	 */
-	timer_init();
 
 #ifndef CONFIG_EA_NO_UART_FLUSH
         /*
@@ -810,6 +813,13 @@ int board_init(void)
 {
 	/* address of boot parameters */
 	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
+
+	board_init_common();
+
+	/* enable USB 5V. Doesn't seem to work to do this in Linux/DTS?? */
+	gpio_request(IMX_GPIO_NR(1, 0), "USB5V");
+	gpio_direction_output(IMX_GPIO_NR(1, 0), 1);
+
 
 #if defined(CONFIG_VIDEO_IPUV3)
 	setup_display();

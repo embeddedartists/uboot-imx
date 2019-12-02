@@ -105,7 +105,7 @@ int mmc_map_to_kernel_blk(int dev_no)
 int board_mmc_get_env_dev(int devno)
 {
 	int no = devno;
-	bool is_v2 = false;
+	bool is_v2 = true;
 	ea_config_t *ea_conf = (ea_config_t *)EA_SHARED_CONFIG_MEM;
 
 	if (ea_conf->magic == EA_CONFIG_MAGIC) {
@@ -419,18 +419,16 @@ void ldo_mode_set(int ldo_bypass)
 
 int board_early_init_f(void)
 {
+	return 0;
+}
+
+int board_init_common(void)
+{
 	/* configure and enable pwr on carrier board*/
 	imx_iomux_v3_setup_multiple_pads(peri_pwr_pads,
 			ARRAY_SIZE(peri_pwr_pads));
 	gpio_request(IMX_GPIO_NR(5, 2), "peri 3.3  pwr");
 	gpio_direction_output(IMX_GPIO_NR(5, 2), 1);
-
-	/*
-	 * Must initialize timer early since delay functions are used.
-	 * Without timer_init a delay function will hang or cause undefined
-	 * behaviour.
-	 */
-	timer_init();
 
 #ifndef CONFIG_EA_NO_UART_FLUSH
 	/*
@@ -457,6 +455,7 @@ int board_init(void)
 	/* Address of boot parameters */
 	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
 
+	board_init_common();
 
 #ifdef	CONFIG_FEC_MXC
 	setup_fec(CONFIG_FEC_ENET_DEV);
@@ -507,7 +506,7 @@ int board_fix_fdt(void* rw_fdt_blob)
 {
 	int ret = 0;
 
-	bool is_v2 = false;
+	bool is_v2 = true;
 	ea_config_t *ea_conf = (ea_config_t *)EA_SHARED_CONFIG_MEM;
 
 	if (ea_conf->magic == EA_CONFIG_MAGIC) {

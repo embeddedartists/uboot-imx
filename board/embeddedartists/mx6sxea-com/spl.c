@@ -274,6 +274,8 @@ int board_mmc_init(bd_t *bis)
 	return status;
 }
 
+int board_init_common(void);
+
 void board_init_f(ulong dummy)
 {
 	uint32_t size;
@@ -287,8 +289,8 @@ void board_init_f(ulong dummy)
 	/* needed to be able to useelay function */
 	timer_init();
 
-	/* call to setup uart pad muxing */
-	board_early_init_f();
+	/* call to setup uart pad muxing and peri pwr*/
+	board_init_common();
 
 	preloader_console_init();
 
