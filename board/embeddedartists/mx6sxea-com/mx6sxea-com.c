@@ -246,7 +246,7 @@ void board_enable_lvds0(const struct display_info_t *di, int enable)
 		gpio_direction_output(IMX_GPIO_NR(7, 11) , 1);
 
 		/* Backlight power enable */
-		gpio_request(IMX_GPIO_NR(1, 0), "backlight pwr");
+		gpio_request(IMX_GPIO_NR(1, 9), "backlight pwr");
 		gpio_direction_output(IMX_GPIO_NR(1, 9) , 1);
 	}
 }
