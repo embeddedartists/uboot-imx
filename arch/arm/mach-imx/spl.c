@@ -103,6 +103,10 @@ u32 spl_boot_device(void)
 {
 	enum boot_device boot_device_spl = get_boot_device();
 
+#if defined(CONFIG_SPL_IMX_ROMAPI_SUPPORT)
+	return BOOT_DEVICE_IMX_ROMAPI;
+#endif
+
 	switch (boot_device_spl) {
 #if defined(CONFIG_MX7)
 	case SD1_BOOT:
@@ -125,7 +129,7 @@ u32 spl_boot_device(void)
 	case SD1_BOOT:
 	case MMC1_BOOT:
 		return BOOT_DEVICE_MMC1;
-#if defined(CONFIG_IMX8MM)
+#if defined(CONFIG_IMX8MM) || defined(CONFIG_IMX8MN)
 	case SD2_BOOT:
 	case MMC2_BOOT:
 		return BOOT_DEVICE_MMC1;
@@ -158,6 +162,12 @@ int g_dnl_bind_fixup(struct usb_device_descriptor *dev, const char *name)
 	put_unaligned(CONFIG_USB_GADGET_PRODUCT_NUM + 0xfff, &dev->idProduct);
 
 	return 0;
+}
+
+#define SDPV_BCD_DEVICE 0x500
+int g_dnl_get_board_bcd_device_number(int gcnum)
+{
+	return SDPV_BCD_DEVICE;
 }
 #endif
 

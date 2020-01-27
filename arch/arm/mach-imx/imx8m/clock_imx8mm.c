@@ -253,6 +253,7 @@ u32 decode_fracpll(enum clk_root_src frac_pll)
 }
 
 enum intpll_out_freq {
+	INTPLL_OUT_600M,
 	INTPLL_OUT_750M,
 	INTPLL_OUT_800M,
 	INTPLL_OUT_1200M,
@@ -292,15 +293,15 @@ struct imx_int_pll_rate_table {
 };
 
 static struct imx_int_pll_rate_table imx8mm_fracpll_tbl[] = {
-	PLL_1443X_RATE(800000000U, 300, 9, 0, 0),
-	PLL_1443X_RATE(750000000U, 250, 8, 0, 0),
+	PLL_1443X_RATE(800000000U, 200, 3, 1, 0),
+	PLL_1443X_RATE(750000000U, 250, 2, 2, 0),
 	PLL_1443X_RATE(650000000U, 325, 3, 2, 0),
 	PLL_1443X_RATE(600000000U, 300, 3, 2, 0),
 	PLL_1443X_RATE(594000000U, 99, 1, 2, 0),
-	PLL_1443X_RATE(400000000U, 300, 9, 1, 0),
-	PLL_1443X_RATE(266666667U, 400, 9, 2, 0),
+	PLL_1443X_RATE(400000000U, 400, 3, 3, 0),
+	PLL_1443X_RATE(266000000U, 266, 3, 3, 0),
 	PLL_1443X_RATE(167000000U, 334, 3, 4, 0),
-	PLL_1443X_RATE(100000000U, 300, 9, 3, 0),
+	PLL_1443X_RATE(100000000U, 200, 3, 4, 0),
 };
 
 #define DRAM_BYPASS_ROOT_CONFIG(_rate, _m, _p, _s, _k)			\
@@ -403,7 +404,7 @@ void dram_pll_init(enum dram_pll_out_val pll_val)
 		freq = 167000000UL;
 		break;
 	case DRAM_PLL_OUT_266M:
-		freq = 266666667UL;
+		freq = 266000000UL;
 		break;
 	case DRAM_PLL_OUT_667M:
 		freq = 667000000UL;
@@ -504,6 +505,11 @@ int intpll_configure(enum pll_clocks pll, enum intpll_out_freq freq)
 	};
 
 	switch (freq) {
+	case INTPLL_OUT_600M:
+		/* 24 * 0x12c / 3 / 2 ^ 2 */
+		pll_div_ctl_val = INTPLL_MAIN_DIV_VAL(0x12c) |
+			INTPLL_PRE_DIV_VAL(3) | INTPLL_POST_DIV_VAL(2);
+		break;
 	case INTPLL_OUT_750M:
 		/* 24 * 0xfa / 2 / 2 ^ 2 */
 		pll_div_ctl_val = INTPLL_MAIN_DIV_VAL(0xfa) |
@@ -579,7 +585,12 @@ void mxs_set_lcdclk(uint32_t base_addr, uint32_t freq)
 find:
 	/* Select to video PLL */
 	debug("mxs_set_lcdclk, pre = %d, post = %d\n", pre, post);
+
+#ifdef CONFIG_IMX8MN
+	clock_set_target_val(DISPLAY_PIXEL_CLK_ROOT, CLK_ROOT_ON | CLK_ROOT_SOURCE_SEL(1) | CLK_ROOT_PRE_DIV(pre - 1) | CLK_ROOT_POST_DIV(post - 1));
+#else
 	clock_set_target_val(LCDIF_PIXEL_CLK_ROOT, CLK_ROOT_ON | CLK_ROOT_SOURCE_SEL(1) | CLK_ROOT_PRE_DIV(pre - 1) | CLK_ROOT_POST_DIV(post - 1));
+#endif
 
 }
 
@@ -600,8 +611,11 @@ void enable_display_clk(unsigned char enable)
 		clock_set_target_val(MIPI_DSI_CORE_CLK_ROOT, CLK_ROOT_ON | CLK_ROOT_SOURCE_SEL(1));
 
 		/* 27Mhz MIPI DPHY PLL ref from video PLL */
+#ifdef CONFIG_IMX8MN
+		clock_set_target_val(DISPLAY_DSI_PHY_REF_CLK_ROOT, CLK_ROOT_ON | CLK_ROOT_SOURCE_SEL(7) |CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV22));
+#else
 		clock_set_target_val(MIPI_DSI_PHY_REF_CLK_ROOT, CLK_ROOT_ON | CLK_ROOT_SOURCE_SEL(7) |CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV22));
-
+#endif
 		clock_enable(CCGR_DISPMIX, true);
 	} else {
 		clock_enable(CCGR_DISPMIX, false);
@@ -611,16 +625,6 @@ void enable_display_clk(unsigned char enable)
 int clock_init()
 {
 	uint32_t val_cfg0;
-
-	/* Configure ARM at 1GHz */
-	clock_set_target_val(ARM_A53_CLK_ROOT, CLK_ROOT_ON | \
-			     CLK_ROOT_SOURCE_SEL(0));
-
-	intpll_configure(ANATOP_ARM_PLL, INTPLL_OUT_1200M);
-
-	clock_set_target_val(ARM_A53_CLK_ROOT, CLK_ROOT_ON | \
-			     CLK_ROOT_SOURCE_SEL(1) | \
-			     CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV1));
 
 	/*
 	 * According to ANAMIX SPEC
@@ -644,7 +648,20 @@ int clock_init()
 		INTPLL_DIV20_CLKE_MASK;
 	writel(val_cfg0, SYS_PLL2_GNRL_CTL);
 
-	intpll_configure(ANATOP_SYSTEM_PLL3, INTPLL_OUT_750M);
+	/* Configure ARM at 1.2GHz */
+	clock_set_target_val(ARM_A53_CLK_ROOT, CLK_ROOT_ON | \
+			     CLK_ROOT_SOURCE_SEL(2));
+
+	intpll_configure(ANATOP_ARM_PLL, INTPLL_OUT_1200M);
+
+	clock_set_target_val(ARM_A53_CLK_ROOT, CLK_ROOT_ON | \
+			     CLK_ROOT_SOURCE_SEL(1) | \
+			     CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV1));
+
+	if (is_imx8mn())
+		intpll_configure(ANATOP_SYSTEM_PLL3, INTPLL_OUT_600M);
+	else
+		intpll_configure(ANATOP_SYSTEM_PLL3, INTPLL_OUT_750M);
 	clock_set_target_val(NOC_CLK_ROOT, CLK_ROOT_ON | CLK_ROOT_SOURCE_SEL(2));
 
 	/* config GIC to sys_pll2_100m */
@@ -730,8 +747,14 @@ int set_clk_qspi(void)
 	 * sys pll1 100M
 	 */
 	clock_enable(CCGR_QSPI, 0);
-	clock_set_target_val(QSPI_CLK_ROOT, CLK_ROOT_ON |
-			     CLK_ROOT_SOURCE_SEL(7));
+
+	if (is_imx8mn()) {
+		clock_set_target_val(QSPI_CLK_ROOT, CLK_ROOT_ON |
+				     CLK_ROOT_SOURCE_SEL(1)  | CLK_ROOT_POST_DIV(CLK_ROOT_POST_DIV2));
+	} else {
+		clock_set_target_val(QSPI_CLK_ROOT, CLK_ROOT_ON |
+				     CLK_ROOT_SOURCE_SEL(7));
+	}
 	clock_enable(CCGR_QSPI, 1);
 
 	return 0;

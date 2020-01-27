@@ -60,7 +60,7 @@ static enum env_location env_locations[] = {
 #ifdef CONFIG_ENV_IS_IN_UBI
 	ENVL_UBI,
 #endif
-#ifdef CONFIG_ENV_IS_NOWHERE
+#if defined(CONFIG_ENV_IS_NOWHERE) || defined(CONFIG_ENV_DEFAULT_NOWHERE)
 	ENVL_NOWHERE,
 #endif
 };
@@ -245,3 +245,10 @@ int env_init(void)
 
 	return ret;
 }
+
+#ifndef ENV_IS_EMBEDDED
+__weak long long env_get_offset(long long defautl_offset)
+{
+	return defautl_offset;
+}
+#endif

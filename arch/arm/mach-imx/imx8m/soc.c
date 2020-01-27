@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2019 NXP
  *
  * Peng Fan <peng.fan@nxp.com>
  *
@@ -25,10 +25,12 @@
 #ifdef CONFIG_IMX_SEC_INIT
 #include <fsl_caam.h>
 #endif
+#include <environment.h>
+#include <efi_loader.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#if defined(CONFIG_SECURE_BOOT) || defined(CONFIG_AVB_ATX)
+#if defined(CONFIG_SECURE_BOOT) || defined(CONFIG_AVB_ATX) || defined(CONFIG_IMX_TRUSTY_OS)
 struct imx_sec_config_fuse_t const imx_sec_config_fuse = {
 	.bank = 1,
 	.word = 3,
@@ -62,7 +64,7 @@ void enable_tzc380(void)
 	/* Enable TZASC and lock setting */
 	setbits_le32(&gpr->gpr[10], GPR_TZASC_EN);
 	setbits_le32(&gpr->gpr[10], GPR_TZASC_EN_LOCK);
-#ifdef CONFIG_IMX8MM
+#if defined(CONFIG_IMX8MM) || defined(CONFIG_IMX8MN)
 	setbits_le32(&gpr->gpr[10], GPR_TZASC_SWAP_ID);
 #endif
 
@@ -128,7 +130,11 @@ static struct mm_region imx8m_mem_map[] = {
 		.phys = 0x40000000UL,
 		.size = PHYS_SDRAM_SIZE,
 		.attrs = PTE_BLOCK_MEMTYPE(MT_NORMAL) |
+#ifdef CONFIG_IMX_TRUSTY_OS
+			 PTE_BLOCK_INNER_SHARE
+#else
 			 PTE_BLOCK_OUTER_SHARE
+#endif
 #if CONFIG_NR_DRAM_BANKS > 1
 	}, {
 		/* DRAM2 */
@@ -136,7 +142,11 @@ static struct mm_region imx8m_mem_map[] = {
 		.phys = 0x100000000UL,
 		.size = PHYS_SDRAM_2_SIZE,
 		.attrs = PTE_BLOCK_MEMTYPE(MT_NORMAL) |
+#ifdef CONFIG_IMX_TRUSTY_OS
+			 PTE_BLOCK_INNER_SHARE
+#else
 			 PTE_BLOCK_OUTER_SHARE
+#endif
 #endif
 	}, {
 		/* List terminator */
@@ -189,6 +199,23 @@ static u32 get_cpu_variant_type(u32 type)
 				return MXC_CPU_IMX8MML;
 			break;
 		}
+	} else if (type == MXC_CPU_IMX8MN) {
+		switch (value & 0x3) {
+		case 2:
+			if (value & 0x1000000)
+				return MXC_CPU_IMX8MNDL;
+			else
+				return MXC_CPU_IMX8MND;
+		case 3:
+			if (value & 0x1000000)
+				return MXC_CPU_IMX8MNSL;
+			else
+				return MXC_CPU_IMX8MNS;
+		default:
+			if (value & 0x1000000)
+				return MXC_CPU_IMX8MNL;
+			break;
+		}
 	}
 
 	return type;
@@ -204,8 +231,12 @@ u32 get_cpu_rev(void)
 
 	reg &= 0xff;
 
-	/* iMX8MM */
-	 if (major_low == 0x41) {
+	/* iMX8MN */
+	 if (major_low == 0x42) {
+		type = get_cpu_variant_type(MXC_CPU_IMX8MN);
+		return (type << 12) | reg;
+	 } else if (major_low == 0x41) {
+		/* iMX8MM */
 		type = get_cpu_variant_type(MXC_CPU_IMX8MM);
 		return (type << 12) | reg;
 	} else {
@@ -262,7 +293,8 @@ int arch_cpu_init(void)
 		clock_init();
 		imx_set_wdog_powerdown(false);
 
-		if (is_imx8md() || is_imx8mmd() || is_imx8mmdl() || is_imx8mms() || is_imx8mmsl()) {
+		if (is_imx8md() || is_imx8mmd() || is_imx8mmdl() || is_imx8mms() || is_imx8mmsl() ||
+			is_imx8mnd() || is_imx8mndl() || is_imx8mns() || is_imx8mnsl()) {
 			/* Power down cpu core 1, 2 and 3 for iMX8M Dual core or Single core */
 			struct pgc_reg *pgc_core1 = (struct pgc_reg *)(GPC_BASE_ADDR + 0x840);
 			struct pgc_reg *pgc_core2 = (struct pgc_reg *)(GPC_BASE_ADDR + 0x880);
@@ -271,7 +303,7 @@ int arch_cpu_init(void)
 
 			writel(0x1, &pgc_core2->pgcr);
 			writel(0x1, &pgc_core3->pgcr);
-			if (is_imx8mms() || is_imx8mmsl()) {
+			if (is_imx8mms() || is_imx8mmsl() || is_imx8mns() || is_imx8mnsl()) {
 				writel(0x1, &pgc_core1->pgcr);
 				writel(0xE, &gpc->cpu_pgc_dn_trg);
 			} else {
@@ -297,6 +329,77 @@ int arch_cpu_init(void)
 
 	return 0;
 }
+
+#ifdef CONFIG_IMX8MN
+struct rom_api
+{
+	uint16_t ver;
+	uint16_t tag;
+	uint32_t reserved1;
+	uint32_t (*download_image)(uint8_t * dest, uint32_t offset, uint32_t size,  uint32_t xor);
+	uint32_t (*query_boot_infor)(uint32_t info_type, uint32_t *info, uint32_t xor);
+};
+static struct rom_api* g_rom_api = (struct rom_api*)0x980;
+
+typedef enum {
+    BT_DEV_TYPE_SD = 1,
+    BT_DEV_TYPE_MMC = 2,
+    BT_DEV_TYPE_NAND = 3,
+    BT_DEV_TYPE_FLEXSPINOR = 4,
+
+    BT_DEV_TYPE_USB = 0xE,
+    BT_DEV_TYPE_MEM_DEV = 0xF,
+
+    BT_DEV_TYPE_INVALID = 0xFF
+} boot_dev_type_e;
+
+#define QUERY_BT_DEV		2
+
+#define ROM_API_OKAY		0xF0
+
+enum boot_device get_boot_device(void)
+{
+	volatile gd_t *pgd = gd;
+	int ret;
+	uint32_t boot;
+	u16 boot_type;
+	u8 boot_instance;
+	enum boot_device boot_dev = SD1_BOOT;
+
+	ret = g_rom_api->query_boot_infor(QUERY_BT_DEV, &boot, ((uintptr_t) &boot)^ QUERY_BT_DEV);
+        gd =  pgd;
+
+	if (ret != ROM_API_OKAY) {
+		puts("ROMAPI: failure at query_boot_info\n");
+		return -1;
+	}
+
+	boot_type = boot >> 16;
+	boot_instance = (boot >> 8) & 0xff;
+
+	switch (boot_type) {
+	case BT_DEV_TYPE_SD:
+		boot_dev = boot_instance + SD1_BOOT;
+		break;
+	case BT_DEV_TYPE_MMC:
+		boot_dev = boot_instance + MMC1_BOOT;
+		break;
+	case BT_DEV_TYPE_NAND:
+		boot_dev = NAND_BOOT;
+		break;
+	case BT_DEV_TYPE_FLEXSPINOR:
+		boot_dev = QSPI_BOOT;
+		break;
+	case BT_DEV_TYPE_USB:
+		boot_dev = USB_BOOT;
+		break;
+	default:
+		break;
+	}
+
+	return boot_dev;
+}
+#endif
 
 bool is_usb_boot(void)
 {
@@ -398,6 +501,20 @@ add_status:
 }
 
 #ifdef CONFIG_IMX8MQ
+bool check_dcss_fused(void)
+{
+	struct ocotp_regs *ocotp = (struct ocotp_regs *)OCOTP_BASE_ADDR;
+	struct fuse_bank *bank = &ocotp->bank[1];
+	struct fuse_bank1_regs *fuse =
+		(struct fuse_bank1_regs *)bank->fuse_regs;
+
+	u32 value = readl(&fuse->tester4);
+	if (value & 0x4000000)
+		return true;
+
+	return false;
+}
+
 static int disable_mipi_dsi_nodes(void *blob)
 {
 	const char *nodes_path[] = {
@@ -418,7 +535,8 @@ static int disable_dcss_nodes(void *blob)
 		"/hdmi_cec@32c33800",
 		"/hdmi_drm@32c00000",
 		"/display-subsystem",
-		"/sound-hdmi"
+		"/sound-hdmi",
+		"/sound-hdmi-arc"
 	};
 
 	return disable_fdt_nodes(blob, nodes_path, ARRAY_SIZE(nodes_path));
@@ -471,7 +589,7 @@ void board_quiesce_devices(void)
 }
 #endif
 
-static int disable_vpu_nodes(void *blob)
+int disable_vpu_nodes(void *blob)
 {
 	const char *nodes_path_8mq[] = {
 		"/vpu@38300000"
@@ -492,7 +610,16 @@ static int disable_vpu_nodes(void *blob)
 
 }
 
-static int disable_cpu_nodes(void *blob, u32 disabled_cores)
+int disable_gpu_nodes(void *blob)
+{
+	const char *nodes_path_8mn[] = {
+		"/gpu@38000000"
+	};
+
+	return disable_fdt_nodes(blob, nodes_path_8mn, ARRAY_SIZE(nodes_path_8mn));
+}
+
+int disable_cpu_nodes(void *blob, u32 disabled_cores)
 {
 	const char *nodes_path[] = {
 			"/cpus/cpu@1",
@@ -595,8 +722,11 @@ usb_modify_speed:
 
 	if (is_imx8mql()) {
 		disable_vpu_nodes(blob);
-		disable_dcss_nodes(blob);
-		check_mipi_dsi_nodes(blob);
+		if (check_dcss_fused()) {
+			printf("DCSS is fused\n");
+			disable_dcss_nodes(blob);
+			check_mipi_dsi_nodes(blob);
+		}
 	}
 
 	if (is_imx8md())
@@ -610,6 +740,46 @@ usb_modify_speed:
 		disable_cpu_nodes(blob, 2);
 	else if (is_imx8mms() || is_imx8mmsl())
 		disable_cpu_nodes(blob, 3);
+
+#elif defined(CONFIG_IMX8MN)
+	if (is_imx8mnl() || is_imx8mndl() ||  is_imx8mnsl())
+		disable_gpu_nodes(blob);
+
+	if (is_imx8mnd() || is_imx8mndl())
+		disable_cpu_nodes(blob, 2);
+	else if (is_imx8mns() || is_imx8mnsl())
+		disable_cpu_nodes(blob, 3);
+
+#ifdef CONFIG_IMX8MN_FORCE_NOM_SOC
+	/* Disable the DVFS by removing 1.4Ghz and 1.5Ghz operating-points*/
+	int rc;
+	int nodeoff;
+	static const char * const nodes_path = "/cpus/cpu@0";
+	u32 val[] = {1200000, 850000};
+
+	nodeoff = fdt_path_offset(blob, nodes_path);
+	if (nodeoff < 0) {
+		printf("Unable to find node %s, err=%s\n",
+		       nodes_path, fdt_strerror(nodeoff));
+		return nodeoff;
+	}
+
+	printf("Found %s node\n", nodes_path);
+
+	val[0] = cpu_to_fdt32(val[0]);
+	val[1] = cpu_to_fdt32(val[1]);
+	rc = fdt_setprop(blob, nodeoff, "operating-points", &val, 2 * sizeof(u32));
+	if (rc) {
+		printf("Unable to update operating-points for node %s, err=%s\n",
+		       nodes_path, fdt_strerror(rc));
+		return rc;
+	}
+
+	printf("Update %s:%s\n", nodes_path,
+	       "operating-points");
+
+#endif /* CONFIG_IMX8MN_FORCE_NOM_SOC */
+
 #endif
 
 	return ft_add_optee_node(blob, bd);
@@ -711,3 +881,118 @@ int imx8m_usb_power(int usb_id, bool on)
 #endif
 	return 0;
 }
+
+void nxp_tmu_arch_init(void *reg_base)
+{
+	if (is_imx8mm() || is_imx8mn()) {
+		/* Load TCALIV and TASR from fuses */
+		struct ocotp_regs *ocotp = (struct ocotp_regs *)OCOTP_BASE_ADDR;
+		struct fuse_bank *bank = &ocotp->bank[3];
+		struct fuse_bank3_regs *fuse =
+			(struct fuse_bank3_regs *)bank->fuse_regs;
+
+		u32 tca_rt, tca_hr, tca_en;
+		u32 buf_vref, buf_slope;
+
+		tca_rt = fuse->ana0 & 0xFF;
+		tca_hr = (fuse->ana0 & 0xFF00) >> 8;
+		tca_en = (fuse->ana0 & 0x2000000) >> 25;
+
+		buf_vref = (fuse->ana0 & 0x1F00000) >> 20;
+		buf_slope = (fuse->ana0 & 0xF0000) >> 16;
+
+		writel(buf_vref | (buf_slope << 16), (ulong)reg_base + 0x28);
+		writel((tca_en << 31) |(tca_hr <<16) | tca_rt,  (ulong)reg_base + 0x30);
+	}
+}
+
+#if defined(CONFIG_SPL_BUILD)
+#if defined(CONFIG_IMX8MQ) || defined(CONFIG_IMX8MM) || defined(CONFIG_IMX8MN)
+bool serror_need_skip = true;
+void do_error(struct pt_regs *pt_regs, unsigned int esr)
+{
+	/* If stack is still in ROM reserved OCRAM not switch to SPL, it is the ROM SError */
+	ulong sp;
+	asm volatile("mov %0, sp" : "=r"(sp) : );
+
+	if (serror_need_skip &&
+		sp < 0x910000 && sp >= 0x900000) {
+
+		/* Check for ERR050342, imx8mq HDCP enabled parts */
+		if (is_imx8mq() && !(readl(OCOTP_BASE_ADDR + 0x450) & 0x08000000)) {
+			serror_need_skip = false;
+			return; /* Do nothing skip the SError in ROM */
+		}
+
+		/* Check for ERR050350, field return mode for imx8mq, mm and mn */
+		if (readl(OCOTP_BASE_ADDR + 0x630) & 0x1) {
+			serror_need_skip = false;
+			return; /* Do nothing skip the SError in ROM */
+		}
+	}
+
+	efi_restore_gd();
+	printf("\"Error\" handler, esr 0x%08x\n", esr);
+	show_regs(pt_regs);
+	panic("Resetting CPU ...\n");
+
+}
+#endif
+#endif
+
+#if defined(CONFIG_IMX8MN)
+enum env_location env_get_location(enum env_operation op, int prio)
+{
+	enum boot_device dev = get_boot_device();
+	enum env_location env_loc = ENVL_UNKNOWN;
+
+	if (prio)
+		return env_loc;
+
+	switch (dev) {
+#ifdef CONFIG_ENV_IS_IN_SPI_FLASH
+	case QSPI_BOOT:
+		env_loc = ENVL_SPI_FLASH;
+		break;
+#endif
+#ifdef CONFIG_ENV_IS_IN_NAND
+	case NAND_BOOT:
+		env_loc = ENVL_NAND;
+		break;
+#endif
+#ifdef CONFIG_ENV_IS_IN_MMC
+	case SD1_BOOT:
+	case SD2_BOOT:
+	case SD3_BOOT:
+	case MMC1_BOOT:
+	case MMC2_BOOT:
+	case MMC3_BOOT:
+		env_loc =  ENVL_MMC;
+		break;
+#endif
+	default:
+#ifdef CONFIG_ENV_DEFAULT_NOWHERE
+		env_loc = ENVL_NOWHERE;
+#endif
+		break;
+	}
+
+	return env_loc;
+}
+
+#ifndef ENV_IS_EMBEDDED
+long long env_get_offset(long long defautl_offset)
+{
+	enum boot_device dev = get_boot_device();
+
+	switch (dev) {
+	case NAND_BOOT:
+		return (60 << 20);  /* 60MB offset for NAND */
+	default:
+		break;
+	}
+
+	return defautl_offset;
+}
+#endif
+#endif

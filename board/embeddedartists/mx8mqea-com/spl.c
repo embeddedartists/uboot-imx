@@ -325,8 +325,8 @@ void board_init_f(ulong dummy)
 	ea_config_t *ea_conf = (ea_config_t *)EA_SHARED_CONFIG_MEM;
 	int ret;
 
-	/* Clear global data */
-	memset((void *)gd, 0, sizeof(gd_t));
+	/* Clear the BSS. */
+	memset(__bss_start, 0, __bss_end - __bss_start);
 
 	arch_cpu_init();
 
@@ -338,8 +338,6 @@ void board_init_f(ulong dummy)
 
 	preloader_console_init();
 
-	/* Clear the BSS. */
-	memset(__bss_start, 0, __bss_end - __bss_start);
 
 	ret = spl_init();
 	if (ret) {

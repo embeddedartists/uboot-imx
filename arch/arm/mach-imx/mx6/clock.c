@@ -1378,43 +1378,6 @@ unsigned int mxc_get_clock(enum mxc_clock clk)
 	return 0;
 }
 
-#ifndef CONFIG_SPL_BUILD
-/*
- * Dump some core clockes.
- */
-int do_mx6_showclocks(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
-{
-	u32 freq;
-	freq = decode_pll(PLL_SYS, MXC_HCLK);
-	printf("PLL_SYS    %8d MHz\n", freq / 1000000);
-	freq = decode_pll(PLL_BUS, MXC_HCLK);
-	printf("PLL_BUS    %8d MHz\n", freq / 1000000);
-	freq = decode_pll(PLL_USBOTG, MXC_HCLK);
-	printf("PLL_OTG    %8d MHz\n", freq / 1000000);
-	freq = decode_pll(PLL_ENET, MXC_HCLK);
-	printf("PLL_NET    %8d MHz\n", freq / 1000000);
-
-	printf("\n");
-	printf("ARM        %8d kHz\n", mxc_get_clock(MXC_ARM_CLK) / 1000);
-	printf("IPG        %8d kHz\n", mxc_get_clock(MXC_IPG_CLK) / 1000);
-	printf("UART       %8d kHz\n", mxc_get_clock(MXC_UART_CLK) / 1000);
-#ifdef CONFIG_MXC_SPI
-	printf("CSPI       %8d kHz\n", mxc_get_clock(MXC_CSPI_CLK) / 1000);
-#endif
-	printf("AHB        %8d kHz\n", mxc_get_clock(MXC_AHB_CLK) / 1000);
-	printf("AXI        %8d kHz\n", mxc_get_clock(MXC_AXI_CLK) / 1000);
-	printf("DDR        %8d kHz\n", mxc_get_clock(MXC_DDR_CLK) / 1000);
-	printf("USDHC1     %8d kHz\n", mxc_get_clock(MXC_ESDHC_CLK) / 1000);
-	printf("USDHC2     %8d kHz\n", mxc_get_clock(MXC_ESDHC2_CLK) / 1000);
-	printf("USDHC3     %8d kHz\n", mxc_get_clock(MXC_ESDHC3_CLK) / 1000);
-	printf("USDHC4     %8d kHz\n", mxc_get_clock(MXC_ESDHC4_CLK) / 1000);
-	printf("EMI SLOW   %8d kHz\n", mxc_get_clock(MXC_EMI_SLOW_CLK) / 1000);
-	printf("IPG PERCLK %8d kHz\n", mxc_get_clock(MXC_IPG_PERCLK) / 1000);
-
-	return 0;
-}
-
-#ifndef CONFIG_MX6SX
 static void pre_misc_setting(void)
 {
 	/* Bypass IPU1 QoS generator */
@@ -1459,7 +1422,42 @@ void enable_ipu_clock(void)
 		pre_misc_setting();
 	}
 }
+
+#ifndef CONFIG_SPL_BUILD
+/*
+ * Dump some core clockes.
+ */
+int do_mx6_showclocks(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	u32 freq;
+	freq = decode_pll(PLL_SYS, MXC_HCLK);
+	printf("PLL_SYS    %8d MHz\n", freq / 1000000);
+	freq = decode_pll(PLL_BUS, MXC_HCLK);
+	printf("PLL_BUS    %8d MHz\n", freq / 1000000);
+	freq = decode_pll(PLL_USBOTG, MXC_HCLK);
+	printf("PLL_OTG    %8d MHz\n", freq / 1000000);
+	freq = decode_pll(PLL_ENET, MXC_HCLK);
+	printf("PLL_NET    %8d MHz\n", freq / 1000000);
+
+	printf("\n");
+	printf("ARM        %8d kHz\n", mxc_get_clock(MXC_ARM_CLK) / 1000);
+	printf("IPG        %8d kHz\n", mxc_get_clock(MXC_IPG_CLK) / 1000);
+	printf("UART       %8d kHz\n", mxc_get_clock(MXC_UART_CLK) / 1000);
+#ifdef CONFIG_MXC_SPI
+	printf("CSPI       %8d kHz\n", mxc_get_clock(MXC_CSPI_CLK) / 1000);
 #endif
+	printf("AHB        %8d kHz\n", mxc_get_clock(MXC_AHB_CLK) / 1000);
+	printf("AXI        %8d kHz\n", mxc_get_clock(MXC_AXI_CLK) / 1000);
+	printf("DDR        %8d kHz\n", mxc_get_clock(MXC_DDR_CLK) / 1000);
+	printf("USDHC1     %8d kHz\n", mxc_get_clock(MXC_ESDHC_CLK) / 1000);
+	printf("USDHC2     %8d kHz\n", mxc_get_clock(MXC_ESDHC2_CLK) / 1000);
+	printf("USDHC3     %8d kHz\n", mxc_get_clock(MXC_ESDHC3_CLK) / 1000);
+	printf("USDHC4     %8d kHz\n", mxc_get_clock(MXC_ESDHC4_CLK) / 1000);
+	printf("EMI SLOW   %8d kHz\n", mxc_get_clock(MXC_EMI_SLOW_CLK) / 1000);
+	printf("IPG PERCLK %8d kHz\n", mxc_get_clock(MXC_IPG_PERCLK) / 1000);
+
+	return 0;
+}
 
 #if defined(CONFIG_MX6QDL) || defined(CONFIG_MX6Q) || defined(CONFIG_MX6DL) || \
 	defined(CONFIG_MX6S)

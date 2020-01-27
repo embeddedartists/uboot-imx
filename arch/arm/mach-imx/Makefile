@@ -75,6 +75,7 @@ ifneq ($(CONFIG_SPL_BUILD),y)
 obj-$(CONFIG_CMD_BMODE) += cmd_bmode.o
 obj-$(CONFIG_CMD_HDMIDETECT) += cmd_hdmidet.o
 obj-$(CONFIG_CMD_DEKBLOB) += cmd_dek.o
+obj-$(CONFIG_IMX_VSERVICE) += imx_vservice.o
 endif
 
 PLUGIN = board/$(BOARDDIR)/plugin
@@ -194,7 +195,7 @@ spl/u-boot-nand-spl.imx: SPL FORCE
 
 targets += $(addprefix ../../../,$(IMX_CONFIG) SPL u-boot.uim spl/u-boot-nand-spl.imx)
 
-obj-$(CONFIG_ARM64) += sip.o
+obj-$(CONFIG_ARM64) += lowlevel.o sip.o
 
 obj-$(CONFIG_MX5) += mx5/
 obj-$(CONFIG_MX6) += mx6/

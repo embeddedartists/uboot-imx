@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 NXP
+ * Copyright 2018-2019 NXP
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
@@ -19,14 +19,14 @@
 #include <asm/mach-imx/mxc_i2c.h>
 #include <fsl_esdhc.h>
 #include <mmc.h>
-#include "ddr/ddr.h"
+#include <asm/arch/imx8m_ddr.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
 void spl_dram_init(void)
 {
 	/* ddr train */
-	ddr_init();
+	ddr_init(&dram_timing);
 }
 
 #define I2C_PAD_CTRL	(PAD_CTL_DSE6 | PAD_CTL_HYS | PAD_CTL_PUE | PAD_CTL_PE)
@@ -178,6 +178,9 @@ int power_init_board(void)
 	/* unlock the PMIC regs */
 	pmic_reg_write(p, BD71837_REGLOCK, 0x1);
 
+	/* increase VDD_SOC to typical value 0.85v before first DRAM access */
+	pmic_reg_write(p, BD71837_BUCK1_VOLT_RUN, 0x0f);
+
 	/* increase VDD_DRAM to 0.9v for 3Ghz DDR */
 	pmic_reg_write(p, BD71837_BUCK5_VOLT, 0x2);
 
@@ -228,8 +231,8 @@ int board_fit_config_name_match(const char *name)
 
 void board_init_f(ulong dummy)
 {
-	/* Clear global data */
-	memset((void *)gd, 0, sizeof(gd_t));
+	/* Clear the BSS. */
+	memset(__bss_start, 0, __bss_end - __bss_start);
 
 	arch_cpu_init();
 
@@ -238,9 +241,6 @@ void board_init_f(ulong dummy)
 	timer_init();
 
 	preloader_console_init();
-
-	/* Clear the BSS. */
-	memset(__bss_start, 0, __bss_end - __bss_start);
 
 	board_init_r(NULL, 0);
 }

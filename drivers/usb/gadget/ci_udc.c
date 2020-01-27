@@ -139,6 +139,7 @@ static struct ci_drv controller = {
 		.name	= "ci_udc",
 		.ops	= &ci_udc_ops,
 		.is_dualspeed = 1,
+		.max_speed = USB_SPEED_HIGH,
 	},
 };
 
@@ -329,6 +330,7 @@ static int ci_ep_enable(struct usb_ep *ep,
 	num = desc->bEndpointAddress & USB_ENDPOINT_NUMBER_MASK;
 	in = (desc->bEndpointAddress & USB_DIR_IN) != 0;
 	ci_ep->desc = desc;
+	ep->desc = desc;
 
 	if (num) {
 		int max = get_unaligned_le16(&desc->wMaxPacketSize);
@@ -351,6 +353,7 @@ static int ci_ep_disable(struct usb_ep *ep)
 	struct ci_ep *ci_ep = container_of(ep, struct ci_ep, ep);
 
 	ci_ep->desc = NULL;
+	ep->desc = NULL;
 	return 0;
 }
 
@@ -1005,8 +1008,6 @@ int usb_gadget_register_driver(struct usb_gadget_driver *driver)
 	if (!driver)
 		return -EINVAL;
 	if (!driver->bind || !driver->setup || !driver->disconnect)
-		return -EINVAL;
-	if (driver->speed != USB_SPEED_FULL && driver->speed != USB_SPEED_HIGH)
 		return -EINVAL;
 
 #ifdef CONFIG_DM_USB

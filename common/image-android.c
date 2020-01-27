@@ -18,6 +18,7 @@
 #include <fsl_fastboot.h>
 #include <asm/setup.h>
 #include <dm.h>
+#include <mmc.h>
 
 #define ANDROID_IMAGE_DEFAULT_KERNEL_ADDR	0x10008000
 
@@ -125,6 +126,19 @@ int android_image_get_kernel(const struct andr_img_hdr *hdr, int verify,
 					serialnr.high,
 					serialnr.low);
 	strncat(commandline, newbootargs, sizeof(commandline) - strlen(commandline));
+
+	if (serialnr.high + serialnr.low != 0) {
+		char bd_addr[16]={0};
+		sprintf(bd_addr,
+			"%08x%08x",
+			serialnr.high,
+			serialnr.low);
+		sprintf(newbootargs,
+			" androidboot.btmacaddr=%c%c:%c%c:%c%c:%c%c:%c%c:%c%c",
+			bd_addr[0],bd_addr[1],bd_addr[2],bd_addr[3],bd_addr[4],bd_addr[5],
+			bd_addr[6],bd_addr[7],bd_addr[8],bd_addr[9],bd_addr[10],bd_addr[11]);
+		strncat(commandline, newbootargs, sizeof(commandline) - strlen(commandline));
+	}
 #endif
 
 	/* append soc type into bootargs */
@@ -136,24 +150,36 @@ int android_image_get_kernel(const struct andr_img_hdr *hdr, int verify,
 		strncat(commandline, newbootargs, sizeof(commandline) - strlen(commandline));
 	}
 
-	int bootdev = get_boot_device();
-	if (bootdev == SD1_BOOT || bootdev == SD2_BOOT ||
-		bootdev == SD3_BOOT || bootdev == SD4_BOOT) {
-		sprintf(newbootargs,
-			" androidboot.storage_type=sd");
-	} else if (bootdev == MMC1_BOOT || bootdev == MMC2_BOOT ||
-		bootdev == MMC3_BOOT || bootdev == MMC4_BOOT) {
-		sprintf(newbootargs,
-			" androidboot.storage_type=emmc");
-	} else if (bootdev == NAND_BOOT) {
-		sprintf(newbootargs,
-			" androidboot.storage_type=nand");
-	} else
-		printf("boot device type is incorrect.\n");
+	sprintf(newbootargs,
+			" androidboot.boot_device_root=mmcblk%d", mmc_map_to_kernel_blk(mmc_get_env_dev()));
 	strncat(commandline, newbootargs, sizeof(commandline) - strlen(commandline));
-	if (bootloader_gpt_overlay()) {
-		sprintf(newbootargs, " gpt");
+
+	char *storage_type = env_get("storage_type");
+	if (storage_type) {
+		sprintf(newbootargs,
+			" androidboot.storage_type=%s",
+			storage_type);
 		strncat(commandline, newbootargs, sizeof(commandline) - strlen(commandline));
+	} else {
+		int bootdev = get_boot_device();
+		if (bootdev == SD1_BOOT || bootdev == SD2_BOOT ||
+			bootdev == SD3_BOOT || bootdev == SD4_BOOT) {
+			sprintf(newbootargs,
+				" androidboot.storage_type=sd");
+		} else if (bootdev == MMC1_BOOT || bootdev == MMC2_BOOT ||
+			bootdev == MMC3_BOOT || bootdev == MMC4_BOOT) {
+			sprintf(newbootargs,
+				" androidboot.storage_type=emmc");
+		} else if (bootdev == NAND_BOOT) {
+			sprintf(newbootargs,
+				" androidboot.storage_type=nand");
+		} else
+			printf("boot device type is incorrect.\n");
+		strncat(commandline, newbootargs, sizeof(commandline) - strlen(commandline));
+		if (bootloader_gpt_overlay()) {
+			sprintf(newbootargs, " gpt");
+			strncat(commandline, newbootargs, sizeof(commandline) - strlen(commandline));
+		}
 	}
 
 	/* boot metric variables */
@@ -222,6 +248,7 @@ int android_image_get_kernel(const struct andr_img_hdr *hdr, int verify,
 		strncat(commandline, bootargs_trusty, sizeof(commandline) - strlen(commandline));
 	}
 
+#ifdef CONFIG_APPEND_BOOTARGS
 	/* Add 'append_bootargs' to hold some paramemters which need to be appended
 	 * to bootargs */
 	char *append_bootargs = env_get("append_bootargs");
@@ -234,6 +261,7 @@ int android_image_get_kernel(const struct andr_img_hdr *hdr, int verify,
 			strncat(commandline, append_bootargs, sizeof(commandline) - strlen(commandline));
 		}
 	}
+#endif
 
 	debug("Kernel command line: %s\n", commandline);
 	env_set("bootargs", commandline);

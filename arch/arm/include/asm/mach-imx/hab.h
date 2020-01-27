@@ -19,8 +19,6 @@
  */
 #define IVT_HEADER_MAGIC	0xD1
 #define IVT_TOTAL_LENGTH	0x20
-#define IVT_HEADER_V1		0x40
-#define IVT_HEADER_V2		0x41
 
 struct __packed ivt_header {
 	uint8_t		magic;
@@ -43,6 +41,15 @@ struct __packed hab_hdr {
 	u8 tag;              /* Tag field */
 	u8 len[2];           /* Length field in bytes (big-endian) */
 	u8 par;              /* Parameters field */
+};
+
+/* Default event structure */
+struct __packed evt_def {
+	struct hab_hdr hdr;		/* Header */
+	uint32_t sts;			/* Status */
+	uint32_t ctx;			/* Default context */
+	uint8_t *data;			/* Default data location */
+	size_t bytes;			/* Size of default data */
 };
 
 /* -------- start of HAB API updates ------------*/
@@ -216,6 +223,12 @@ typedef void hapi_clock_init_t(void);
 
 #define IVT_SIZE			0x20
 #define CSF_PAD_SIZE			0x2000
+
+#define HAB_TAG_EVT		0xDB
+#define HAB_TAG_EVT_DEF		0x0C
+
+#define HAB_MAJ_VER		0x40
+#define HAB_MAJ_MASK		0xF0
 
 /* ----------- end of HAB API updates ------------*/
 

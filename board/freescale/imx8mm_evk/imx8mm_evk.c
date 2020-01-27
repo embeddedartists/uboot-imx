@@ -160,6 +160,26 @@ int dram_init(void)
 	else
 		gd->ram_size = PHYS_SDRAM_SIZE;
 
+#if CONFIG_NR_DRAM_BANKS > 1
+	gd->ram_size += PHYS_SDRAM_2_SIZE;
+#endif
+
+	return 0;
+}
+
+int dram_init_banksize(void)
+{
+	gd->bd->bi_dram[0].start = PHYS_SDRAM;
+	if (rom_pointer[1])
+		gd->bd->bi_dram[0].size = PHYS_SDRAM_SIZE -rom_pointer[1];
+	else
+		gd->bd->bi_dram[0].size = PHYS_SDRAM_SIZE;
+
+#if CONFIG_NR_DRAM_BANKS > 1
+	gd->bd->bi_dram[1].start = PHYS_SDRAM_2;
+	gd->bd->bi_dram[1].size = PHYS_SDRAM_2_SIZE;
+#endif
+
 	return 0;
 }
 
@@ -196,7 +216,7 @@ static int setup_fec(void)
 
 	/* Use 125M anatop REF_CLK1 for ENET1, not from external */
 	clrsetbits_le32(&iomuxc_gpr_regs->gpr[1],
-			IOMUXC_GPR_GPR1_GPR_ENET1_TX_CLK_SEL_SHIFT, 0);
+			IOMUXC_GPR_GPR1_GPR_ENET1_TX_CLK_SEL_MASK, 0);
 	return set_clk_enet(ENET_125MHZ);
 }
 
@@ -733,3 +753,11 @@ int is_recovery_key_pressing(void)
 }
 #endif /*CONFIG_ANDROID_RECOVERY*/
 #endif /*CONFIG_FSL_FASTBOOT*/
+
+phys_size_t get_effective_memsize(void)
+{
+	if (rom_pointer[1])
+		return (PHYS_SDRAM_SIZE - rom_pointer[1]);
+	else
+		return PHYS_SDRAM_SIZE;
+}

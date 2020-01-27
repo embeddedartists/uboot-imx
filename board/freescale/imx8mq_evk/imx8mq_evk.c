@@ -134,7 +134,7 @@ static int setup_fec(void)
 
 	/* Use 125M anatop REF_CLK1 for ENET1, not from external */
 	clrsetbits_le32(&iomuxc_gpr_regs->gpr[1],
-			IOMUXC_GPR_GPR1_GPR_ENET1_TX_CLK_SEL_SHIFT, 0);
+			IOMUXC_GPR_GPR1_GPR_ENET1_TX_CLK_SEL_MASK, 0);
 	return set_clk_enet(ENET_125MHZ);
 }
 
@@ -170,7 +170,11 @@ int board_phy_config(struct phy_device *phydev)
 #define USB_PHY_CTRL2_TXENABLEN0	BIT(8)
 
 static struct dwc3_device dwc3_device_data = {
+#ifdef CONFIG_SPL_BUILD
 	.maximum_speed = USB_SPEED_HIGH,
+#else
+	.maximum_speed = USB_SPEED_SUPER,
+#endif
 	.base = USB1_BASE_ADDR,
 	.dr_mode = USB_DR_MODE_PERIPHERAL,
 	.index = 0,

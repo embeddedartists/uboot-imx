@@ -25,17 +25,19 @@
 
 /* Defines */
 
-#define SC_IRQ_NUM_GROUP    5U          /*!< Number of groups */
+#define SC_IRQ_NUM_GROUP        7U   /*!< Number of groups */
 
 /*!
  * @name Defines for sc_irq_group_t
  */
 /*@{*/
-#define SC_IRQ_GROUP_TEMP   0U   /*!< Temp interrupts */
-#define SC_IRQ_GROUP_WDOG   1U   /*!< Watchdog interrupts */
-#define SC_IRQ_GROUP_RTC    2U   /*!< RTC interrupts */
-#define SC_IRQ_GROUP_WAKE   3U   /*!< Wakeup interrupts */
-#define SC_IRQ_GROUP_SYSCTR 4U   /*!< System counter interrupts */
+#define SC_IRQ_GROUP_TEMP       0U   /*!< Temp interrupts */
+#define SC_IRQ_GROUP_WDOG       1U   /*!< Watchdog interrupts */
+#define SC_IRQ_GROUP_RTC        2U   /*!< RTC interrupts */
+#define SC_IRQ_GROUP_WAKE       3U   /*!< Wakeup interrupts */
+#define SC_IRQ_GROUP_SYSCTR     4U   /*!< System counter interrupts */
+#define SC_IRQ_GROUP_REBOOTED   5U   /*!< Partition reboot complete */
+#define SC_IRQ_GROUP_REBOOT     6U   /*!< Partition reboot starting */
 /*@}*/
 
 /*!
@@ -86,6 +88,9 @@
 /*@{*/
 #define SC_IRQ_BUTTON            (1U << 0U)    /*!< Button interrupt */
 #define SC_IRQ_PAD               (1U << 1U)    /*!< Pad wakeup */
+#define SC_IRQ_USR1              (1U << 2U)    /*!< User defined 1 */
+#define SC_IRQ_USR2              (1U << 3U)    /*!< User defined 2 */
+#define SC_IRQ_BC_PAD            (1U << 4U)    /*!< Pad wakeup (broadcast to all partitions) */
 /*@}*/
 
 /*!

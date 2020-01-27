@@ -164,15 +164,6 @@ extern env_t *env_ptr;
 extern void env_reloc(void);
 #endif
 
-#ifdef CONFIG_ENV_IS_IN_MMC
-#include <mmc.h>
-
-extern int mmc_get_env_addr(struct mmc *mmc, int copy, u32 *env_addr);
-# ifdef CONFIG_SYS_MMC_ENV_PART
-extern uint mmc_get_env_part(struct mmc *mmc);
-# endif
-#endif
-
 #ifndef DO_DEPS_ONLY
 
 #include <env_attr.h>
@@ -289,6 +280,12 @@ int env_export(env_t *env_out);
 /* Select and import one of two redundant environments */
 int env_import_redund(const char *buf1, int buf1_status,
 		      const char *buf2, int buf2_status);
+#endif
+
+#ifdef ENV_IS_EMBEDDED
+#define env_get_offset(x) x
+#else
+long long env_get_offset(long long defautl_offset);
 #endif
 
 /**

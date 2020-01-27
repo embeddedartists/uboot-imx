@@ -24,7 +24,7 @@
 #define GPU_ARB_END_ADDR                0x01803FFF
 #define APBH_DMA_ARB_BASE_ADDR          0x01804000
 #define APBH_DMA_ARB_END_ADDR           0x0180BFFF
-#define M4_BOOTROM_BASE_ADDR			0x007F8000
+#define MCU_BOOTROM_BASE_ADDR			0x007F8000
 
 #elif !defined(CONFIG_MX6SLL)
 #define CAAM_ARB_BASE_ADDR              0x00100000
@@ -1101,9 +1101,6 @@ struct dbg_monitor_regs {
 	u32	snvs_info[4];		/* SNVS info */
 	u32	version[4];		/* Version */
 };
-
- /* gd->flags reserves high 16 bits for arch-specific flags */
-#define GD_FLG_ARCH_MX6_USB_BOOT		0x80000000	 /* If set, the u-boot is booting from USB serial download */
 
 /*
  * If ROM fail back to USB recover mode, USBPH0_PWD will be clear to use USB

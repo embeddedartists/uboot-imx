@@ -13,6 +13,10 @@ config IMX8MM
 	bool
 	select IMX8M
 
+config IMX8MN
+	bool
+	select IMX8M
+
 choice
 	prompt	"NXP i.MX8M board select"
 	optional
@@ -38,15 +42,23 @@ config TARGET_IMX8MQ_PHANBELL
 	select IMX8MQ
 	select SUPPORT_SPL
 
+config TARGET_IMX8MQ_AIY
+	bool "imx8mq_aiy"
+	select IMX8MQ
+	select SUPPORT_SPL
+	select IMX8M_LPDDR4
+
 config TARGET_IMX8MM_DDR4_VAL
 	bool "imx8mm DDR4 validation board"
 	select IMX8MM
 	select SUPPORT_SPL
+	select IMX8M_DDR4
 
 config TARGET_IMX8MM_DDR3L_VAL
 	bool "imx8mm DDR3L validation board"
 	select IMX8MM
 	select SUPPORT_SPL
+	select IMX8M_DDR3L
 
 config TARGET_IMX8MM_EVK
 	bool "imx8mm LPDDR4 EVK board"
@@ -72,6 +84,12 @@ config TARGET_MX8MMEA_UCOM
 	select SUPPORT_SPL
 	select IMX8M_LPDDR4
 
+config TARGET_IMX8MN_EVK
+	bool "imx8mn DDR4 EVK board"
+	select IMX8MN
+	select SUPPORT_SPL
+	select IMX8M_DDR4
+
 endchoice
 
 config SYS_SOC
@@ -80,9 +98,11 @@ config SYS_SOC
 source "board/freescale/imx8mq_evk/Kconfig"
 source "board/freescale/imx8mq_arm2/Kconfig"
 source "board/freescale/imx8mq_phanbell/Kconfig"
+source "board/freescale/imx8mq_aiy/Kconfig"
 source "board/freescale/imx8mm_evk/Kconfig"
 source "board/freescale/imx8mm_val/Kconfig"
 source "board/embeddedartists/mx8mqea-com/Kconfig"
 source "board/embeddedartists/mx8mmea-ucom/Kconfig"
+source "board/freescale/imx8mn_evk/Kconfig"
 
 endif

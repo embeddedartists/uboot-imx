@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2015-2016 Freescale Semiconductor, Inc.
- * Copyright 2017 NXP
+ * Copyright 2017,2019 NXP
  *
  * Configuration settings for the Freescale i.MX6UL 14x14 EVK board.
  *
@@ -87,9 +87,10 @@
 
 #define CONFIG_MFG_ENV_SETTINGS \
 	CONFIG_MFG_ENV_SETTINGS_DEFAULT \
-	"initrd_addr=0x83800000\0" \
+	"initrd_addr=0x86800000\0" \
 	"initrd_high=0xffffffff\0" \
 	"emmc_dev=1\0"\
+	"emmc_ack=1\0"\
 	"sd_dev=1\0" \
 
 #if defined(CONFIG_NAND_BOOT)
@@ -99,6 +100,7 @@
 	"panel=TFT43AB\0" \
 	"fdt_addr=0x83000000\0" \
 	"fdt_high=0xffffffff\0"	  \
+	"tee_addr=0x84000000\0" \
 	"console=ttymxc0\0" \
 	"bootargs=console=ttymxc0,115200 ubi.mtd=4 "  \
 		"root=ubi0:rootfs rootfstype=ubifs "		     \
@@ -109,7 +111,7 @@
 		"nand read ${fdt_addr} 0x5000000 0x100000;"\
 		"if test ${tee} = yes; then " \
 			"nand read ${tee_addr} 0x6000000 0x400000;"\
-			"bootm ${teeaddr} - ${fdt_addr};" \
+			"bootm ${tee_addr} - ${fdt_addr};" \
 		"else " \
 			"bootz ${loadaddr} - ${fdt_addr};" \
 		"fi\0"

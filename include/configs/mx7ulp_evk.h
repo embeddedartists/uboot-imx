@@ -94,7 +94,7 @@
 
 #define CONFIG_MFG_ENV_SETTINGS \
 	CONFIG_MFG_ENV_SETTINGS_DEFAULT  \
-	"initrd_addr=0x63800000\0" \
+	"initrd_addr=0x66800000\0" \
 	"initrd_high=0xffffffff\0" \
 	"emmc_dev=0\0" \
 	"sd_dev=0\0"
@@ -233,6 +233,7 @@
 #define CONFIG_IMX_VIDEO_SKIP
 
 #define CONFIG_HX8363
+#define CONFIG_RM68200
 #endif
 
 #define CONFIG_OF_SYSTEM_SETUP

@@ -12,6 +12,7 @@
 #include <asm/arch/i2c.h>
 #include <asm/arch/sys_proto.h>
 #include <asm/arch/cpu.h>
+#include <asm/arch/lpcg.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -121,26 +122,45 @@ u32 imx_get_fecclk(void)
 	return mxc_get_clock(MXC_FEC_CLK);
 }
 
+static struct imx_i2c_map *get_i2c_desc(unsigned i2c_num)
+{
+	int i;
+	for (i = 0; i < ARRAY_SIZE(imx_i2c_desc); i++) {
+		if (imx_i2c_desc[i].index == i2c_num)
+			return &imx_i2c_desc[i];
+	}
+	return NULL;
+}
+
 int enable_i2c_clk(unsigned char enable, unsigned i2c_num)
 {
 	sc_ipc_t ipc;
 	sc_err_t err;
+	struct imx_i2c_map *desc;
+	int i;
 
-	if (i2c_num >= ARRAY_SIZE(imx_i2c_desc))
+	desc = get_i2c_desc(i2c_num);
+	if (!desc)
 		return -EINVAL;
 
 	ipc = gd->arch.ipc_channel_handle;
 
 	if (enable)
 		err = sc_pm_clock_enable(ipc,
-			imx_i2c_desc[i2c_num].rsrc, 2, true, false);
+			desc->rsrc, 2, true, false);
 	else
 		err = sc_pm_clock_enable(ipc,
-			imx_i2c_desc[i2c_num].rsrc, 2, false, false);
+			desc->rsrc, 2, false, false);
 
 	if (err != SC_ERR_NONE) {
 		printf("i2c clock error %d\n", err);
 		return -EPERM;
+	}
+
+	for (i = 0; i < 4; i++) {
+		if (desc->lpcg[i] == 0)
+			break;
+		LPCG_AllClockOn(desc->lpcg[i]);
 	}
 
 	return 0;
@@ -151,12 +171,14 @@ u32 imx_get_i2cclk(unsigned i2c_num)
 	sc_err_t err;
 	sc_ipc_t ipc;
 	u32 clock_rate;
+	struct imx_i2c_map *desc;
 
-	if (i2c_num >= ARRAY_SIZE(imx_i2c_desc))
-		return 0;
+	desc = get_i2c_desc(i2c_num);
+	if (!desc)
+		return -EINVAL;
 
 	ipc = gd->arch.ipc_channel_handle;
-	err = sc_pm_get_clock_rate(ipc, imx_i2c_desc[i2c_num].rsrc, 2,
+	err = sc_pm_get_clock_rate(ipc, desc->rsrc, 2,
 		&clock_rate);
 	if (err != SC_ERR_NONE)
 		return 0;
@@ -184,6 +206,8 @@ void init_clk_fspi(int index)
 		puts("FSPI0 enable clock failed\n");
 		return;
 	}
+
+	LPCG_AllClockOn(FSPI_0_LPCG);
 
 	return;
 }
@@ -224,11 +248,14 @@ void init_clk_gpmi_nand(void)
 		return;
 	}
 
+	LPCG_AllClockOn(NAND_LPCG);
+
 	return;
 }
 
 void enable_usboh3_clk(unsigned char enable)
 {
+	LPCG_AllClockOn(USB_2_LPCG);
 	return;
 }
 
@@ -254,6 +281,7 @@ void init_clk_usb3(int index)
 		printf("USB3 set clock failed!, line=%d (error = %d)\n",
 			__LINE__, err);
 
+	LPCG_AllClockOn(USB_3_LPCG);
 	return;
 }
 
@@ -269,6 +297,8 @@ int cdns3_disable_clks(int index)
 	sc_ipc_t ipc;
 
 	ipc = gd->arch.ipc_channel_handle;
+
+	LPCG_AllClockOff(USB_3_LPCG);
 
 	err = sc_pm_clock_enable(ipc, SC_R_USB_2, SC_PM_CLK_MISC, false, false);
 	if (err != SC_ERR_NONE)
@@ -345,6 +375,8 @@ void init_clk_usdhc(u32 index)
 		printf("SDHC_%d per clk enable failed!\n", index);
 		return;
 	}
+
+	LPCG_AllClockOn(USDHC_0_LPCG + index * 0x10000);
 }
 
 void init_clk_fec(int index)
@@ -353,6 +385,7 @@ void init_clk_fec(int index)
 	sc_ipc_t ipc;
 	sc_pm_clock_rate_t rate = 24000000;
 	sc_rsrc_t enet[2] = {SC_R_ENET_0, SC_R_ENET_1};
+	bool enet_freq_limited = false;
 
 	if (index > 1)
 		return;
@@ -361,6 +394,17 @@ void init_clk_fec(int index)
 		index = 0;
 
 	ipc = gd->arch.ipc_channel_handle;
+
+	/* FEC may limited to RMII 10/100 by fuse, check it */
+	if (is_imx8qxp()) {
+		uint32_t fuse_val = 0;
+
+		err = sc_misc_otp_fuse_read(ipc, 0xa, &fuse_val);
+		if (err != SC_ERR_NONE)
+			printf("%s fuse read error: %d\n", __func__, err);
+		else
+			enet_freq_limited = ((fuse_val >> (index + 1)) & 0x1);
+	}
 
 	/* Disable SC_R_ENET_0 clock root */
 	err = sc_pm_clock_enable(ipc, enet[index], 0, false, false);
@@ -371,8 +415,10 @@ void init_clk_fec(int index)
 		return;
 	}
 
-	/* Set SC_R_ENET_0 clock root to 125 MHz */
-	rate = 125000000;
+	/* Set SC_R_ENET_0 clock root to 250 MHz, the clkdiv is set to div 2
+	* so finally RGMII TX clk is 125Mhz
+	*/
+	rate = 250000000;
 
 	/* div = 8 clk_source = PLL_1 ss_slice #7 in verfication codes */
 	err = sc_pm_set_clock_rate(ipc, enet[index], 2, &rate);
@@ -388,6 +434,38 @@ void init_clk_fec(int index)
 	if (err != SC_ERR_NONE) {
 		printf("\nSC_R_ENET_0 set clock enable failed! (error = %d)\n", err);
 		return;
+	}
+
+	/* Configure GPR regisers */
+	if (!enet_freq_limited) {
+		if (sc_misc_set_control(ipc, enet[index], SC_C_TXCLK,  0) != SC_ERR_NONE)
+			printf("\nConfigure GPR registers operation(%d) failed!\n", SC_C_TXCLK);
+	} else {
+		/* SCFW will force TXCLK not from PERCLK if ENET freq is fused, here we explictly set to 1 */
+		if (sc_misc_set_control(ipc, enet[index], SC_C_TXCLK,  1) != SC_ERR_NONE)
+			printf("\nConfigure GPR registers operation(%d) failed!\n", SC_C_TXCLK);
+	}
+
+	/* Enable divclk */
+	if (sc_misc_set_control(ipc, enet[index], SC_C_CLKDIV,  1) != SC_ERR_NONE)
+		printf("\nConfigure GPR registers operation(%d) failed!\n", SC_C_CLKDIV);
+	if (sc_misc_set_control(ipc, enet[index], SC_C_DISABLE_50,  0) != SC_ERR_NONE)
+		printf("\nConfigure GPR registers operation(%d) failed!\n", SC_C_DISABLE_50);
+	if (sc_misc_set_control(ipc, enet[index], SC_C_DISABLE_125,  0) != SC_ERR_NONE)
+		printf("\nConfigure GPR registers operation(%d) failed!\n", SC_C_DISABLE_125);
+	if (sc_misc_set_control(ipc, enet[index], SC_C_SEL_125,  0) != SC_ERR_NONE)
+		printf("\nConfigure GPR registers operation(%d) failed!\n", SC_C_SEL_125);
+	if (sc_misc_set_control(ipc, enet[index], SC_C_IPG_STOP,  0) != SC_ERR_NONE)
+		printf("\nConfigure GPR registers operation(%d) failed!\n", SC_C_IPG_STOP);
+
+	LPCG_ClockOn(ENET_0_LPCG + index * 0x10000, 0);
+	LPCG_ClockOn(ENET_0_LPCG + index * 0x10000, 1);
+	LPCG_ClockOn(ENET_0_LPCG + index * 0x10000, 2);
+	LPCG_ClockOn(ENET_0_LPCG + index * 0x10000, 4);
+	LPCG_ClockOn(ENET_0_LPCG + index * 0x10000, 5);
+	if (!enet_freq_limited) {
+		/* RGMII TX CLK */
+		LPCG_ClockOn(ENET_0_LPCG + index * 0x10000, 3);
 	}
 }
 

@@ -30,6 +30,7 @@
 #include <asm/arch/video_common.h>
 #include <power-domain.h>
 #include <cdns3-uboot.h>
+#include <asm/arch/lpcg.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -162,6 +163,8 @@ int board_early_init_f(void)
 	if (sciErr != SC_ERR_NONE)
 		return 0;
 
+	LPCG_AllClockOn(LPUART_0_LPCG);
+
 	setup_iomux_uart();
 
 #ifdef CONFIG_SPL_BUILD
@@ -180,7 +183,7 @@ int board_early_init_f(void)
 #ifndef CONFIG_SPL_BUILD
 static struct fsl_esdhc_cfg usdhc_cfg[CONFIG_SYS_FSL_USDHC_NUM] = {
 	{USDHC1_BASE_ADDR, 0, 8},
-#ifndef CONFIG_TARGET_IMX8DX_DDR3_ARM2
+#ifndef CONFIG_TARGET_IMX8X_17X17_VAL
 	{USDHC2_BASE_ADDR, 0, 4},
 #endif
 };
@@ -469,8 +472,8 @@ int checkboard(void)
 {
 #if defined(CONFIG_TARGET_IMX8QXP_DDR3_ARM2)
 	puts("Board: iMX8QXP DDR3 ARM2\n");
-#elif defined(CONFIG_TARGET_IMX8DX_DDR3_ARM2)
-	puts("Board: iMX8DX DDR3 ARM2\n");
+#elif defined(CONFIG_TARGET_IMX8X_17X17_VAL)
+	puts("Board: iMX8X(QXP/DX) 17x17 Validation Board\n");
 #else
 	puts("Board: iMX8QXP LPDDR4 ARM2\n");
 #endif
@@ -511,6 +514,13 @@ static void imx8qxp_hsio_initialize(void)
 		if (ret)
 			printf("hsio_gpio Power up failed! (error = %d)\n", ret);
 	}
+
+	LPCG_AllClockOn(HSIO_PCIE_X1_LPCG);
+	LPCG_AllClockOn(HSIO_PHY_X1_LPCG);
+	LPCG_AllClockOn(HSIO_PHY_X1_CRR1_LPCG);
+	LPCG_AllClockOn(HSIO_PCIE_X1_CRR3_LPCG);
+	LPCG_AllClockOn(HSIO_MISC_LPCG);
+	LPCG_AllClockOn(HSIO_GPIO_LPCG);
 
 	imx8_iomux_setup_multiple_pads(board_pcie_pins, ARRAY_SIZE(board_pcie_pins));
 }

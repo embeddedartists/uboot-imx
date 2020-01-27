@@ -7,11 +7,20 @@ config IMX8M_LPDDR4
 	help
 	  Select the i.MX8M LPDDR4 driver support on i.MX8M SOC.
 
+config IMX8M_4G_LPDDR4
+	bool "imx8m 4GB LPDDR4"
+
 config IMX8M_DDR4
 	bool "imx8m ddr4"
 	select IMX8M_DRAM
 	help
 	  Select the i.MX8M DDR4 driver support on i.MX8M SOC.
+
+config IMX8M_DDR3L
+	bool "imx8m ddr3l"
+	select IMX8M_DRAM
+	help
+	  Select the i.MX8M DDR3L driver support on i.MX8M SOC.
 
 config SAVED_DRAM_TIMING_BASE
 	hex "Define the base address for saved dram timing"

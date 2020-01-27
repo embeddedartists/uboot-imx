@@ -18,10 +18,16 @@ DECLARE_GLOBAL_DATA_PTR;
 #define ALIGN_SIZE		0x1000
 #define MX6DQ_PU_IROM_MMU_EN_VAR	0x009024a8
 #define MX6DLS_PU_IROM_MMU_EN_VAR	0x00901dd0
-#define MX6SL_PU_IROM_MMU_EN_VAR	0x00900a18
+#define MX6SL_PU_IROM_MMU_EN_VAR	0x00901c60
 #define IS_HAB_ENABLED_BIT \
 	(is_soc_type(MXC_SOC_MX7ULP) ? 0x80000000 :	\
 	 ((is_soc_type(MXC_SOC_MX7) || is_soc_type(MXC_SOC_IMX8M))? 0x2000000 : 0x2))
+
+#ifdef CONFIG_MX7ULP
+#define HAB_M4_PERSISTENT_START	((soc_rev() >= CHIP_REV_2_0) ? 0x20008040 : \
+				  0x20008180)
+#define HAB_M4_PERSISTENT_BYTES		0xB80
+#endif
 
 static int ivt_header_error(const char *err_str, struct ivt_header *ivt_hdr)
 {
@@ -41,8 +47,7 @@ static int verify_ivt_header(struct ivt_header *ivt_hdr)
 	if (be16_to_cpu(ivt_hdr->length) != IVT_TOTAL_LENGTH)
 		result = ivt_header_error("bad length", ivt_hdr);
 
-	if (ivt_hdr->version != IVT_HEADER_V1 &&
-	    ivt_hdr->version != IVT_HEADER_V2)
+	if ((ivt_hdr->version & HAB_MAJ_MASK) != HAB_MAJ_VER)
 		result = ivt_header_error("bad version", ivt_hdr);
 
 	return result;
@@ -447,8 +452,8 @@ static int get_hab_status(void)
 		printf("\nHAB Configuration: 0x%02x, HAB State: 0x%02x\n",
 		       config, state);
 
-		/* Display HAB Error events */
-		while (hab_rvt_report_event(HAB_FAILURE, index, event_data,
+		/* Display HAB events */
+		while (hab_rvt_report_event(HAB_STS_ANY, index, event_data,
 					&bytes) == HAB_SUCCESS) {
 			puts("\n");
 			printf("--------- HAB Event %d -----------------\n",
@@ -469,15 +474,99 @@ static int get_hab_status(void)
 	return 0;
 }
 
+#ifdef CONFIG_MX7ULP
+
+static int get_record_len(struct record *rec)
+{
+	return (size_t)((rec->len[0] << 8) + (rec->len[1]));
+}
+
+static int get_hab_status_m4(void)
+{
+	unsigned int index = 0;
+	uint8_t event_data[128];
+	size_t record_len, offset = 0;
+	enum hab_config config = 0;
+	enum hab_state state = 0;
+
+	if (imx_hab_is_enabled())
+		puts("\nSecure boot enabled\n");
+	else
+		puts("\nSecure boot disabled\n");
+
+	/*
+	 * HAB in both A7 and M4 gather the security state
+	 * and configuration of the chip from
+	 * shared SNVS module
+	 */
+	hab_rvt_report_status(&config, &state);
+	printf("\nHAB Configuration: 0x%02x, HAB State: 0x%02x\n",
+	       config, state);
+
+	struct record *rec = (struct record *)(HAB_M4_PERSISTENT_START);
+
+	record_len = get_record_len(rec);
+
+	/* Check if HAB persistent memory is valid */
+	if (rec->tag != HAB_TAG_EVT_DEF ||
+	    record_len != sizeof(struct evt_def) ||
+	    (rec->par & HAB_MAJ_MASK) != HAB_MAJ_VER) {
+		puts("\nERROR: Invalid HAB persistent memory\n");
+		return 1;
+	}
+
+	/* Parse events in HAB M4 persistent memory region */
+	while (offset < HAB_M4_PERSISTENT_BYTES) {
+		rec = (struct record *)(HAB_M4_PERSISTENT_START + offset);
+
+		record_len = get_record_len(rec);
+
+		if (rec->tag == HAB_TAG_EVT) {
+			memcpy(&event_data, rec, record_len);
+			puts("\n");
+			printf("--------- HAB Event %d -----------------\n",
+			       index + 1);
+			puts("event data:\n");
+			display_event(event_data, record_len);
+			puts("\n");
+			index++;
+		}
+
+		offset += record_len;
+
+		/* Ensure all records start on a word boundary */
+		if ((offset % 4) != 0)
+			offset =  offset + (4 - (offset % 4));
+	}
+
+	if (!index)
+		puts("No HAB Events Found!\n\n");
+
+	return 0;
+}
+#endif
+
 static int do_hab_status(cmd_tbl_t *cmdtp, int flag, int argc,
 			 char * const argv[])
 {
+#ifdef CONFIG_MX7ULP
+	if ((argc > 2)) {
+		cmd_usage(cmdtp);
+		return 1;
+	}
+
+	if (strcmp("m4", argv[1]) == 0)
+		get_hab_status_m4();
+	else
+		get_hab_status();
+#else
 	if ((argc != 1)) {
 		cmd_usage(cmdtp);
 		return 1;
 	}
 
 	get_hab_status();
+#endif
 
 	return 0;
 }
@@ -517,11 +606,20 @@ static int do_hab_failsafe(cmd_tbl_t *cmdtp, int flag, int argc,
 	return 0;
 }
 
+#ifdef CONFIG_MX7ULP
+U_BOOT_CMD(
+		hab_status, CONFIG_SYS_MAXARGS, 2, do_hab_status,
+		"display HAB status and events",
+		"hab_status - A7 HAB event and status\n"
+		"hab_status m4 - M4 HAB event and status"
+	  );
+#else
 U_BOOT_CMD(
 		hab_status, CONFIG_SYS_MAXARGS, 1, do_hab_status,
 		"display HAB status",
 		""
 	  );
+#endif
 
 U_BOOT_CMD(
 		hab_auth_img, 4, 0, do_authenticate_image,
@@ -737,11 +835,11 @@ int imx_hab_authenticate_image(uint32_t ddr_start, uint32_t image_size,
 	status = hab_rvt_check_target(HAB_TGT_MEMORY, (void *)(ulong)ddr_start, bytes);
 	if (status != HAB_SUCCESS) {
 		printf("HAB check target 0x%08x-0x%08lx fail\n",
-		       ddr_start, ddr_start + bytes);
+		       ddr_start, ddr_start + (ulong)bytes);
 		goto hab_exit_failure_print_status;
 	}
 #ifdef DEBUG
-	printf("\nivt_offset = 0x%x, ivt addr = 0x%x\n", ivt_offset, ivt_addr);
+	printf("\nivt_offset = 0x%x, ivt addr = 0x%lx\n", ivt_offset, ivt_addr);
 	printf("ivt entry = 0x%08x, dcd = 0x%08x, csf = 0x%08x\n", ivt->entry,
 	       ivt->dcd, ivt->csf);
 	puts("Dumping IVT\n");

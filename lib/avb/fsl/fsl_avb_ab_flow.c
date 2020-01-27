@@ -31,10 +31,18 @@ void fsl_slot_set_unbootable(AvbABSlotData* slot) {
  */
 void fsl_slot_normalize(AvbABSlotData* slot) {
 	if (slot->priority > 0) {
+#if defined(CONFIG_DUAL_BOOTLOADER) && !defined(CONFIG_SPL_BUILD)
+		if ((slot->tries_remaining == 0)
+			&& (!slot->successful_boot) && (slot->bootloader_verified != 1)) {
+			/* We've exhausted all tries -> unbootable. */
+			fsl_slot_set_unbootable(slot);
+		}
+#else
 		if ((slot->tries_remaining == 0) && (!slot->successful_boot)) {
 			/* We've exhausted all tries -> unbootable. */
 			fsl_slot_set_unbootable(slot);
 		}
+#endif
 		if ((slot->tries_remaining > 0) && (slot->successful_boot)) {
 			/* Illegal state - avb_ab_mark_slot_successful() will clear
 			* tries_remaining when setting successful_boot.
@@ -63,6 +71,8 @@ bool fsl_slot_is_bootable(AvbABSlotData* slot) {
 #define PARTITION_BOOTLOADER "bootloader"
 
 extern int mmc_switch(struct mmc *mmc, u8 set, u8 index, u8 value);
+extern int mmc_load_image_parse_container(struct spl_image_info *spl_image,
+					struct mmc *mmc, unsigned long sector);
 
 /* Pre-declaration of h_spl_load_read(), see detail implementation in
  * common/spl/spl_mmc.c.
@@ -86,9 +96,11 @@ void fsl_avb_ab_data_init(AvbABData* data) {
 	data->slots[0].priority = AVB_AB_MAX_PRIORITY;
 	data->slots[0].tries_remaining = AVB_AB_MAX_TRIES_REMAINING;
 	data->slots[0].successful_boot = 0;
+	data->slots[0].bootloader_verified = 0;
 	data->slots[1].priority = AVB_AB_MAX_PRIORITY - 1;
 	data->slots[1].tries_remaining = AVB_AB_MAX_TRIES_REMAINING;
 	data->slots[1].successful_boot = 0;
+	data->slots[1].bootloader_verified = 0;
 }
 
 bool fsl_avb_ab_data_verify_and_byteswap(const AvbABData* src,
@@ -164,10 +176,10 @@ int fsl_load_metadata_dual_uboot(struct blk_desc *dev_desc,
 		printf("Can't get partition info of partition: misc\n");
 		return -1;
 	} else {
-		read_from_partition_in_bytes(
-		    dev_desc, &info, FSL_AB_METADATA_MISC_PARTITION_OFFSET,
-		    sizeof(AvbABData),
-				(void *)ab_data, &num_bytes );
+		read_from_partition_in_bytes(dev_desc, &info,
+						FSL_AB_METADATA_MISC_PARTITION_OFFSET,
+						sizeof(AvbABData),
+						(void *)ab_data, &num_bytes );
 		if (num_bytes != sizeof(AvbABData)) {
 			printf("Error--read metadata fail!\n");
 			return -1;
@@ -202,6 +214,7 @@ int fsl_load_metadata_dual_uboot(struct blk_desc *dev_desc,
 	}
 }
 
+#if !defined(CONFIG_XEN) && defined(CONFIG_IMX_TRUSTY_OS)
 static int spl_verify_rbidx(struct mmc *mmc, AvbABSlotData *slot,
 			struct spl_image_info *spl_image)
 {
@@ -261,19 +274,21 @@ static int spl_verify_rbidx(struct mmc *mmc, AvbABSlotData *slot,
 	}
 
 }
+#endif /* CONFIG_XEN */
 
-int mmc_load_image_raw_sector_dual_uboot(
+#ifdef CONFIG_PARSE_CONTAINER
+int mmc_load_image_parse_container_dual_uboot(
 		struct spl_image_info *spl_image, struct mmc *mmc)
 {
-	unsigned long count;
 	disk_partition_t info;
 	int ret = 0, n = 0;
 	char partition_name[PARTITION_NAME_LEN];
 	struct blk_desc *dev_desc;
-	struct image_header *header;
 	AvbABData ab_data, ab_data_orig;
 	size_t slot_index_to_boot, target_slot;
+#if !defined(CONFIG_XEN) && defined(CONFIG_IMX_TRUSTY_OS)
 	struct keyslot_package kp;
+#endif
 
 	/* Check if gpt is valid */
 	dev_desc = mmc_get_blk_desc(mmc);
@@ -287,20 +302,182 @@ int mmc_load_image_raw_sector_dual_uboot(
 		return -1;
 	}
 
-	/* Init RPMB keyslot package if not initialized before. */
+#if !defined(CONFIG_XEN) && defined(CONFIG_IMX_TRUSTY_OS)
+	/* Read RPMB keyslot package, xen won't check this. */
 	read_keyslot_package(&kp);
 	if (strcmp(kp.magic, KEYPACK_MAGIC)) {
-		printf("keyslot package magic error. Will generate new one\n");
-		if (gen_rpmb_key(&kp)) {
-			printf("Generate keyslot package fail!\n");
+		if (rpmbkey_is_set()) {
+			printf("\nFATAL - RPMB key was destroyed!\n");
+			hang();
+		} else
+			printf("keyslot package magic error, do nothing here!\n");
+	} else {
+		/* Set power-on write protection to boot1 partition. */
+		if (mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL, EXT_CSD_BOOT_WP, BOOT1_PWR_WP)) {
+			printf("Unable to set power-on write protection to boot1!\n");
 			return -1;
 		}
 	}
-	/* Set power-on write protection to boot1 partition. */
-	if (mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL, EXT_CSD_BOOT_WP, BOOT1_PWR_WP)) {
-		printf("Unable to set power-on write protection to boot1!\n");
+#endif
+
+	/* Load AB metadata from misc partition */
+	if (fsl_load_metadata_dual_uboot(dev_desc, &ab_data,
+					&ab_data_orig)) {
 		return -1;
 	}
+
+	slot_index_to_boot = 2;  // Means not 0 or 1
+	target_slot =
+	    (ab_data.slots[1].priority > ab_data.slots[0].priority) ? 1 : 0;
+
+	for (n = 0; n < 2; n++) {
+		if (!fsl_slot_is_bootable(&ab_data.slots[target_slot])) {
+			target_slot = (target_slot == 1 ? 0 : 1);
+			continue;
+		}
+		/* Choose slot to load. */
+		snprintf(partition_name, PARTITION_NAME_LEN,
+			 PARTITION_BOOTLOADER"%s",
+			 slot_suffixes[target_slot]);
+
+		/* Read part info from gpt */
+		if (part_get_info_by_name(dev_desc, partition_name, &info) == -1) {
+			printf("Can't get partition info of partition bootloader%s\n",
+				slot_suffixes[target_slot]);
+			ret = -1;
+			goto end;
+		} else {
+			ret = mmc_load_image_parse_container(spl_image, mmc, info.start);
+
+			/* Don't need to check rollback index for xen. */
+#if !defined(CONFIG_XEN) && defined(CONFIG_IMX_TRUSTY_OS)
+			/* Image loaded successfully, go to verify rollback index */
+			if (!ret && rpmbkey_is_set())
+				ret = spl_verify_rbidx(mmc, &ab_data.slots[target_slot], spl_image);
+
+			/* Copy rpmb keyslot to secure memory. */
+			if (!ret)
+				fill_secure_keyslot_package(&kp);
+#endif
+		}
+
+		/* Set current slot to unbootable if load/verify fail. */
+		if (ret != 0) {
+			printf("Load or verify bootloader%s fail, setting unbootable..\n",
+			       slot_suffixes[target_slot]);
+			fsl_slot_set_unbootable(&ab_data.slots[target_slot]);
+			/* Switch to another slot. */
+			target_slot = (target_slot == 1 ? 0 : 1);
+		} else {
+			slot_index_to_boot = target_slot;
+			n = 2;
+		}
+	}
+
+	if (slot_index_to_boot == 2) {
+		/* No bootable slots, try to boot into recovery! */
+		printf("No bootable slots found, try to boot into recovery mode...\n");
+
+		ab_data.spl_recovery = true;
+		if ((ab_data.last_boot != 0) && (ab_data.last_boot != 1))
+			slot_index_to_boot = 0;
+		else
+			slot_index_to_boot = ab_data.last_boot;
+
+		snprintf(partition_name, PARTITION_NAME_LEN,
+			 PARTITION_BOOTLOADER"%s",
+			 slot_suffixes[slot_index_to_boot]);
+
+		/* Read part info from gpt */
+		if (part_get_info_by_name(dev_desc, partition_name, &info) == -1) {
+			printf("Can't get partition info of partition bootloader%s\n",
+				slot_suffixes[slot_index_to_boot]);
+			ret = -1;
+			goto end;
+		} else {
+			ret = mmc_load_image_parse_container(spl_image, mmc, info.start);
+
+			/* Don't need to check rollback index for xen. */
+#if !defined(CONFIG_XEN) && defined(CONFIG_IMX_TRUSTY_OS)
+			/* Image loaded successfully, go to verify rollback index */
+			if (!ret && rpmbkey_is_set())
+				ret = spl_verify_rbidx(mmc, &ab_data.slots[slot_index_to_boot], spl_image);
+
+			/* Copy rpmb keyslot to secure memory. */
+			if (!ret)
+				fill_secure_keyslot_package(&kp);
+#endif
+		}
+
+		if (ret)
+			goto end;
+	} else if (!ab_data.slots[slot_index_to_boot].successful_boot &&
+		   (ab_data.slots[slot_index_to_boot].tries_remaining > 0)) {
+		/* Set the bootloader_verified flag if current slot only has one chance. */
+		if (ab_data.slots[slot_index_to_boot].tries_remaining == 1)
+			ab_data.slots[slot_index_to_boot].bootloader_verified = 1;
+		ab_data.slots[slot_index_to_boot].tries_remaining -= 1;
+
+		ab_data.last_boot = slot_index_to_boot;
+	}
+	printf("Booting from bootloader%s...\n", slot_suffixes[slot_index_to_boot]);
+
+end:
+	/* Save metadata if changed. */
+	if (fsl_save_metadata_if_changed_dual_uboot(dev_desc, &ab_data, &ab_data_orig)) {
+		ret = -1;
+	}
+
+	if (ret)
+		return -1;
+	else
+		return 0;
+}
+#else /* CONFIG_PARSE_CONTAINER */
+int mmc_load_image_raw_sector_dual_uboot(
+		struct spl_image_info *spl_image, struct mmc *mmc)
+{
+	unsigned long count;
+	disk_partition_t info;
+	int ret = 0, n = 0;
+	char partition_name[PARTITION_NAME_LEN];
+	struct blk_desc *dev_desc;
+	struct image_header *header;
+	AvbABData ab_data, ab_data_orig;
+	size_t slot_index_to_boot, target_slot;
+#ifdef CONFIG_IMX_TRUSTY_OS
+	struct keyslot_package kp;
+#endif
+
+	/* Check if gpt is valid */
+	dev_desc = mmc_get_blk_desc(mmc);
+	if (dev_desc) {
+		if (part_get_info(dev_desc, 1, &info)) {
+			printf("GPT is invalid, please flash correct GPT!\n");
+			return -1;
+		}
+	} else {
+		printf("Get block desc fail!\n");
+		return -1;
+	}
+
+#ifdef CONFIG_IMX_TRUSTY_OS
+	/* Read RPMB keyslot package. */
+	read_keyslot_package(&kp);
+	if (strcmp(kp.magic, KEYPACK_MAGIC)) {
+		if (rpmbkey_is_set()) {
+			printf("\nFATAL - RPMB key was destroyed!\n");
+			hang();
+		} else
+			printf("keyslot package magic error, do nothing here!\n");
+	} else {
+		/* Set power-on write protection to boot1 partition. */
+		if (mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL, EXT_CSD_BOOT_WP, BOOT1_PWR_WP)) {
+			printf("Unable to set power-on write protection to boot1!\n");
+			return -1;
+		}
+	}
+#endif
 
 	/* Load AB metadata from misc partition */
 	if (fsl_load_metadata_dual_uboot(dev_desc, &ab_data,
@@ -356,13 +533,15 @@ int mmc_load_image_raw_sector_dual_uboot(
 				ret = -1;
 			}
 
+#ifdef CONFIG_IMX_TRUSTY_OS
 			/* Fit image loaded successfully, go to verify rollback index */
-			if (!ret)
+			if (!ret && rpmbkey_is_set())
 				ret = spl_verify_rbidx(mmc, &ab_data.slots[target_slot], spl_image);
 
 			/* Copy rpmb keyslot to secure memory. */
 			if (!ret)
 				fill_secure_keyslot_package(&kp);
+#endif
 		}
 
 		/* Set current slot to unbootable if load/verify fail. */
@@ -379,13 +558,74 @@ int mmc_load_image_raw_sector_dual_uboot(
 	}
 
 	if (slot_index_to_boot == 2) {
-		/* No bootable slots! */
-		printf("No bootable slots found.\n");
-		ret = -1;
-		goto end;
+		/* No bootable slots, try to boot into recovery! */
+		printf("No bootable slots found, try to boot into recovery mode...\n");
+
+		ab_data.spl_recovery = true;
+		if ((ab_data.last_boot != 0) && (ab_data.last_boot != 1))
+			slot_index_to_boot = 0;
+		else
+			slot_index_to_boot = ab_data.last_boot;
+
+		snprintf(partition_name, PARTITION_NAME_LEN,
+			 PARTITION_BOOTLOADER"%s",
+			 slot_suffixes[target_slot]);
+
+		/* Read part info from gpt */
+		if (part_get_info_by_name(dev_desc, partition_name, &info) == -1) {
+			printf("Can't get partition info of partition bootloader%s\n",
+				slot_suffixes[target_slot]);
+			ret = -1;
+			goto end;
+		} else {
+			header = (struct image_header *)(CONFIG_SYS_TEXT_BASE -
+				 sizeof(struct image_header));
+
+			/* read image header to find the image size & load address */
+			count = blk_dread(dev_desc, info.start, 1, header);
+			if (count == 0) {
+				ret = -1;
+				goto end;
+			}
+
+			/* Load fit and check HAB */
+			if (IS_ENABLED(CONFIG_SPL_LOAD_FIT) &&
+					image_get_magic(header) == FDT_MAGIC) {
+				struct spl_load_info load;
+
+				debug("Found FIT\n");
+				load.dev = mmc;
+				load.priv = NULL;
+				load.filename = NULL;
+				load.bl_len = mmc->read_bl_len;
+				load.read = h_spl_load_read;
+				ret = spl_load_simple_fit(spl_image, &load,
+							  info.start, header);
+			} else {
+				ret = -1;
+			}
+
+#ifdef CONFIG_IMX_TRUSTY_OS
+			/* Fit image loaded successfully, go to verify rollback index */
+			if (!ret && rpmbkey_is_set())
+				ret = spl_verify_rbidx(mmc, &ab_data.slots[target_slot], spl_image);
+
+			/* Copy rpmb keyslot to secure memory. */
+			if (!ret)
+				fill_secure_keyslot_package(&kp);
+#endif
+		}
+
+		if (ret)
+			goto end;
 	} else if (!ab_data.slots[slot_index_to_boot].successful_boot &&
 		   (ab_data.slots[slot_index_to_boot].tries_remaining > 0)) {
+		/* Set the bootloader_verified flag as if current slot only has one chance. */
+		if (ab_data.slots[slot_index_to_boot].tries_remaining == 1)
+			ab_data.slots[slot_index_to_boot].bootloader_verified = 1;
 		ab_data.slots[slot_index_to_boot].tries_remaining -= 1;
+
+		ab_data.last_boot = slot_index_to_boot;
 	}
 	printf("Booting from bootloader%s...\n", slot_suffixes[slot_index_to_boot]);
 
@@ -431,6 +671,7 @@ int spl_fit_get_rbindex(const void *fit, int images)
 
 	return index;
 }
+#endif /* CONFIG_PARSE_CONTAINER */
 
 /* For normal build */
 #elif !defined(CONFIG_SPL_BUILD)
@@ -507,6 +748,8 @@ AvbABFlowResult avb_flow_dual_uboot(AvbABOps* ab_ops,
 		printf("No bootable slot found!\n");
 		goto out;
 	}
+	/* Clear the bootloader_verified flag. */
+	ab_data.slots[target_slot].bootloader_verified = 0;
 
 	printf("Verifying slot %s ...\n", slot_suffixes[target_slot]);
 	verify_result = avb_slot_verify(ops,
@@ -657,6 +900,38 @@ out:
 
 	return ret;
 }
+
+extern AvbABOps fsl_avb_ab_ops;
+static bool spl_recovery_flag = false;
+bool is_spl_recovery(void)
+{
+	return spl_recovery_flag;
+}
+void check_spl_recovery(void)
+{
+	AvbABData ab_data, ab_data_orig;
+	AvbIOResult io_ret;
+
+	io_ret = fsl_load_metadata(&fsl_avb_ab_ops, &ab_data, &ab_data_orig);
+	if (io_ret != AVB_IO_RESULT_OK) {
+		printf("Load metadata fail, go to fail!\n");
+		hang();
+	}
+
+	spl_recovery_flag = ab_data.spl_recovery;
+	/* Clear spl recovery flag. */
+	ab_data.spl_recovery = false;
+	fsl_save_metadata_if_changed(&fsl_avb_ab_ops, &ab_data, &ab_data_orig);
+
+	if (spl_recovery_flag) {
+		printf("Enter spl recovery mode, only fastboot commands are supported!\n");
+
+		while (1) {
+			run_command("fastboot 0", 0);
+		}
+	}
+}
+
 #else /* CONFIG_DUAL_BOOTLOADER */
 /* For legacy i.mx6/7, we won't enable A/B due to the limitation of
  * storage capacity, but we still want to verify boot/recovery with

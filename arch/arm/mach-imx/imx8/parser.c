@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- * Copyright 2018 NXP
+ * Copyright 2018-2019 NXP
  */
-
 #include <common.h>
 #include <spl.h>
 #include <errno.h>
@@ -10,6 +9,7 @@
 #include <dm.h>
 #include <mmc.h>
 #include <spi_flash.h>
+#include <nand.h>
 #include <asm/arch/image.h>
 #include <asm/arch/sys_proto.h>
 #include <asm/mach-imx/sci/sci.h>
@@ -17,6 +17,8 @@
 
 #define MMC_DEV		0
 #define QSPI_DEV	1
+#define NAND_DEV	2
+#define RAM_DEV		3
 
 #define SEC_SECURE_RAM_BASE			(0x31800000UL)
 #define SEC_SECURE_RAM_END_BASE			(SEC_SECURE_RAM_BASE + 0xFFFFUL)
@@ -35,11 +37,12 @@ static int current_dev_type = MMC_DEV;
 static int start_offset;
 static void *device;
 
-static int read(int start, int len, void *load_addr)
+static int read(u32 start, u32 len, void *load_addr)
 {
 	int ret = -ENODEV;
 
-	if (!device) {
+	if (current_dev_type != NAND_DEV && current_dev_type != RAM_DEV
+		&& !device) {
 		debug("No device selected\n");
 		return ret;
 	}
@@ -73,10 +76,25 @@ static int read(int start, int len, void *load_addr)
 		}
 	}
 #endif
+#ifdef CONFIG_SPL_NAND_SUPPORT
+	if (current_dev_type == NAND_DEV) {
+		ret = nand_spl_load_image(start, len, load_addr);
+		if (ret != 0) {
+			debug("Read container image from NAND failed\n");
+			return -EIO;
+		}
+	}
+#endif
+
+	if (current_dev_type == RAM_DEV) {
+		memcpy(load_addr, (const void *)(ulong)start, len);
+		ret = 0;
+	}
 
 	return ret;
 }
 
+#ifdef CONFIG_AHAB_BOOT
 static int authenticate_image(struct boot_img_t *img, int image_index)
 {
 	sc_ipc_t ipcHndl = gd->arch.ipc_channel_handle;
@@ -111,7 +129,7 @@ static int authenticate_image(struct boot_img_t *img, int image_index)
 		return -EPERM;
 	}
 
-	err = sc_misc_seco_authenticate(ipcHndl, SC_MISC_VERIFY_IMAGE,
+	err = sc_seco_authenticate(ipcHndl, SC_MISC_VERIFY_IMAGE,
 					1 << image_index);
 	if (err) {
 		printf("authenticate img %d failed, return %d\n",
@@ -129,6 +147,7 @@ static int authenticate_image(struct boot_img_t *img, int image_index)
 
 	return ret;
 }
+#endif
 
 static struct boot_img_t *read_auth_image(struct container_hdr *container,
 					  int image_index)
@@ -149,29 +168,35 @@ static struct boot_img_t *read_auth_image(struct container_hdr *container,
 		return NULL;
 	}
 
+#ifdef CONFIG_AHAB_BOOT
 	if (authenticate_image(&images[image_index], image_index)) {
 		printf("Failed to authenticate image %d\n", image_index);
 		return NULL;
 	}
+#endif
 
 	return &images[image_index];
 }
 
 static int read_auth_container(struct spl_image_info *spl_image)
 {
+#ifdef CONFIG_AHAB_BOOT
 	sc_ipc_t ipcHndl = gd->arch.ipc_channel_handle;
+#endif
 	struct container_hdr *container = NULL;
 	uint16_t length;
 	int ret;
 	int i;
 
-	container = malloc(sizeof(struct container_hdr));
+	container = malloc(CONTAINER_HDR_ALIGNMENT);
 	if (!container)
 		return -ENOMEM;
 
 	ret = read(start_offset, CONTAINER_HDR_ALIGNMENT, (void *)container);
-	if (ret)
-		return ret;
+	if (ret) {
+		printf("Error in read container %d\n", ret);
+		goto out;
+	}
 
 	if (container->tag != 0x87 && container->version != 0x0) {
 		printf("Wrong container header\n");
@@ -188,23 +213,41 @@ static int read_auth_container(struct spl_image_info *spl_image)
 	length = container->length_lsb + (container->length_msb << 8);
 
 	debug("container length %u\n", length);
+
+	if (length > CONTAINER_HDR_ALIGNMENT) {
+		length =  ALIGN(length, CONTAINER_HDR_ALIGNMENT);
+
+		free(container);
+		container = malloc(length);
+		if (!container)
+			return -ENOMEM;
+
+		ret = read(start_offset, length, (void *)container);
+		if (ret) {
+			printf("Error in read full container %d\n", ret);
+			goto out;
+		}
+	}
+
+#ifdef CONFIG_AHAB_BOOT
 	memcpy((void *)SEC_SECURE_RAM_BASE, (const void *)container,
 	       ALIGN(length, CONFIG_SYS_CACHELINE_SIZE));
 
-	ret = sc_misc_seco_authenticate(ipcHndl, SC_MISC_AUTH_CONTAINER,
+	ret = sc_seco_authenticate(ipcHndl, SC_MISC_AUTH_CONTAINER,
 					SECO_LOCAL_SEC_SEC_SECURE_RAM_BASE);
 	if (ret) {
 		printf("authenticate container hdr failed, return %d\n", ret);
 		ret = -EFAULT;
 		goto out;
 	}
+#endif
 
 	for (i = 0; i < container->num_images; i++) {
 		struct boot_img_t *image = read_auth_image(container, i);
 
 		if (!image) {
 			ret = -EINVAL;
-			goto out;
+			goto end_auth;
 		}
 
 		if (i == 0) {
@@ -213,8 +256,17 @@ static int read_auth_container(struct spl_image_info *spl_image)
 		}
 	}
 
-	sc_misc_seco_authenticate(ipcHndl, SC_MISC_REL_CONTAINER, 0);
+#if defined(CONFIG_SPL_BUILD) && \
+	defined(CONFIG_DUAL_BOOTLOADER) && defined(CONFIG_IMX_TRUSTY_OS)
+	/* Everything checks out, get the sw_version now. */
+	spl_image->rbindex = (uint64_t)container->sw_version;
+#endif
 
+end_auth:
+#ifdef CONFIG_AHAB_BOOT
+	if (sc_seco_authenticate(ipcHndl, SC_MISC_REL_CONTAINER, 0) != SC_ERR_NONE)
+		printf("Error: release container failed!\n");
+#endif
 out:
 	free(container);
 
@@ -235,9 +287,21 @@ int mmc_load_image_parse_container(struct spl_image_info *spl_image,
 
 	if (!ret)
 	{
-		/* Images loaded, now check the rpmb keyblob for Trusty OS. */
-#if defined(CONFIG_IMX_TRUSTY_OS)
+		/* Images loaded, now check the rpmb keyblob for Trusty OS.
+		 * Skip this step when the dual bootloader feature is enabled
+		 * since the blob should be checked earlier.
+		 */
+#if defined(CONFIG_IMX_TRUSTY_OS) && !defined(CONFIG_DUAL_BOOTLOADER)
 		ret = check_rpmb_blob(mmc);
+#endif
+#if defined(CONFIG_IMX8_TRUSTY_XEN)
+		struct mmc *rpmb_mmc;
+
+		rpmb_mmc = find_mmc_device(0);
+		if (ret = mmc_init(rpmb_mmc))
+			printf("mmc init failed %s\n", __func__);
+		else
+			ret = check_rpmb_blob(rpmb_mmc);
 #endif
 	}
 	return ret;
@@ -251,6 +315,51 @@ int spi_load_image_parse_container(struct spl_image_info *spl_image,
 
 	current_dev_type = QSPI_DEV;
 	device = flash;
+
+	start_offset = offset;
+
+	ret = read_auth_container(spl_image);
+
+	return ret;
+}
+
+int nand_load_image_parse_container(struct spl_image_info *spl_image,
+				   unsigned long offset)
+{
+	int ret = 0;
+
+	current_dev_type = NAND_DEV;
+	device = NULL;
+
+	start_offset = offset;
+
+	ret = read_auth_container(spl_image);
+
+	return ret;
+}
+
+int sdp_load_image_parse_container(struct spl_image_info *spl_image,
+				   unsigned long offset)
+{
+	int ret = 0;
+
+	current_dev_type = RAM_DEV;
+	device = NULL;
+
+	start_offset = offset;
+
+	ret = read_auth_container(spl_image);
+
+	return ret;
+}
+
+int __weak nor_load_image_parse_container(struct spl_image_info *spl_image,
+					  unsigned long offset)
+{
+	int ret = 0;
+
+	current_dev_type = RAM_DEV;
+	device = NULL;
 
 	start_offset = offset;
 

@@ -654,7 +654,7 @@ static int initr_kbd(void)
 }
 #endif
 
-#ifdef AVB_RPMB
+#if defined(AVB_RPMB) && !defined(CONFIG_SPL)
 extern int init_avbkey(void);
 static int initr_avbkey(void)
 {
@@ -681,6 +681,15 @@ extern void tee_setup(void);
 static int initr_tee_setup(void)
 {
 	tee_setup();
+	return 0;
+}
+#endif
+
+#ifdef CONFIG_DUAL_BOOTLOADER
+extern void check_spl_recovery(void);
+static int initr_check_spl_recovery(void)
+{
+	check_spl_recovery();
 	return 0;
 }
 #endif
@@ -899,7 +908,7 @@ static init_fnc_t init_sequence_r[] = {
 #ifdef CONFIG_PS2KBD
 	initr_kbd,
 #endif
-#ifdef AVB_RPMB
+#if defined(AVB_RPMB) && !defined(CONFIG_SPL)
 	initr_avbkey,
 #endif
 #ifdef CONFIG_IMX_TRUSTY_OS
@@ -907,6 +916,9 @@ static init_fnc_t init_sequence_r[] = {
 #endif
 #ifdef CONFIG_FSL_FASTBOOT
 	initr_check_fastboot,
+#endif
+#ifdef CONFIG_DUAL_BOOTLOADER
+	initr_check_spl_recovery,
 #endif
 	run_main_loop,
 };

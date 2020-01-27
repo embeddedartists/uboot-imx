@@ -45,6 +45,7 @@
 #define MISC_FUNC_DEBUG_OUT 10U /*!< Index for misc_debug_out() RPC call */
 #define MISC_FUNC_WAVEFORM_CAPTURE 6U /*!< Index for misc_waveform_capture() RPC call */
 #define MISC_FUNC_BUILD_INFO 15U /*!< Index for misc_build_info() RPC call */
+#define MISC_FUNC_API_VER 35U /*!< Index for misc_api_ver() RPC call */
 #define MISC_FUNC_UNIQUE_ID 19U /*!< Index for misc_unique_id() RPC call */
 #define MISC_FUNC_SET_ARI 3U /*!< Index for misc_set_ari() RPC call */
 #define MISC_FUNC_BOOT_STATUS 7U /*!< Index for misc_boot_status() RPC call */
@@ -55,8 +56,10 @@
 #define MISC_FUNC_GET_TEMP 13U /*!< Index for misc_get_temp() RPC call */
 #define MISC_FUNC_GET_BOOT_DEV 16U /*!< Index for misc_get_boot_dev() RPC call */
 #define MISC_FUNC_GET_BOOT_TYPE 33U /*!< Index for misc_get_boot_type() RPC call */
+#define MISC_FUNC_GET_BOOT_CONTAINER 36U /*!< Index for misc_get_boot_container() RPC call */
 #define MISC_FUNC_GET_BUTTON_STATUS 18U /*!< Index for misc_get_button_status() RPC call */
 #define MISC_FUNC_ROMPATCH_CHECKSUM 26U /*!< Index for misc_rompatch_checksum() RPC call */
+#define MISC_FUNC_BOARD_IOCTL 34U /*!< Index for misc_board_ioctl() RPC call */
 /*@}*/
 
 /* Types */
@@ -69,7 +72,7 @@
  * @param[in]     caller_pt   caller partition
  * @param[in]     msg         pointer to RPC message
  */
-void misc_dispatch(sc_rm_pt_t caller_pt, sc_rpc_msg_t *msg);
+void misc_dispatch(sc_rm_pt_t caller_pt, sc_rsrc_t mu, sc_rpc_msg_t *msg);
 
 #endif /* SC_MISC_RPC_H */
 

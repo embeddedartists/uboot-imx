@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2019 NXP
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
@@ -13,7 +13,7 @@
 
 #ifdef CONFIG_SPL_BUILD
 
-#ifdef CONFIG_QSPI_BOOT
+#ifdef CONFIG_SPL_SPI_SUPPORT
 #define CONFIG_SPL_SPI_LOAD
 #endif
 
@@ -23,6 +23,14 @@
 #define CONFIG_SYS_MONITOR_LEN         (1024 * 1024)
 #define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_USE_SECTOR
 #define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR                0x1040 /* (flash.bin_offset + 2Mb)/sector_size */
+#define CONFIG_SYS_SPI_U_BOOT_OFFS 0x200000
+
+/*
+ * 0x08081000 - 0x08180FFF is for m4_0 xip image,
+ * 0x08181000 - 0x008280FFF is for m4_1 xip image
+  * So 3rd container image may start from 0x8281000
+ */
+#define CONFIG_SYS_UBOOT_BASE 0x08281000
 #define CONFIG_SYS_MMCSD_FS_BOOT_PARTITION             0
 
 
@@ -33,10 +41,10 @@
 #define CONFIG_SPL_LIBCOMMON_SUPPORT
 #define CONFIG_SPL_LIBGENERIC_SUPPORT
 #define CONFIG_SPL_SERIAL_SUPPORT
-#define CONFIG_SPL_BSS_START_ADDR      0x00128000
+#define CONFIG_SPL_BSS_START_ADDR      0x00138000
 #define CONFIG_SPL_BSS_MAX_SIZE        0x1000  /* 4 KB */
 #define CONFIG_SYS_SPL_MALLOC_START    0x00120000
-#define CONFIG_SYS_SPL_MALLOC_SIZE     0x3000  /* 12 KB */
+#define CONFIG_SYS_SPL_MALLOC_SIZE     0x18000  /* 12 KB */
 #define CONFIG_SERIAL_LPUART_BASE      0x5a060000
 #define CONFIG_SYS_ICACHE_OFF
 #define CONFIG_SYS_DCACHE_OFF
@@ -83,17 +91,17 @@
 
 #define CONFIG_ENV_OVERWRITE
 
+#ifdef CONFIG_SATA_IMX
 #define CONFIG_SCSI
 #define CONFIG_SCSI_AHCI
 #define CONFIG_SCSI_AHCI_PLAT
 #define CONFIG_SYS_SCSI_MAX_SCSI_ID 1
 #define CONFIG_CMD_SCSI
-#define CONFIG_LIBATA
 #define CONFIG_SYS_SCSI_MAX_LUN 1
 #define CONFIG_SYS_SCSI_MAX_DEVICE      (CONFIG_SYS_SCSI_MAX_SCSI_ID * CONFIG_SYS_SCSI_MAX_LUN)
 #define CONFIG_SYS_SCSI_MAXDEVICE       CONFIG_SYS_SCSI_MAX_DEVICE
 #define CONFIG_SYS_SATA_MAX_DEVICE	1
-#define CONFIG_SATA_IMX
+#endif
 
 #define CONFIG_FSL_HSIO
 #define CONFIG_PCIE_IMX8X
@@ -156,15 +164,15 @@
 		"run netboot; \0"
 
 #define XEN_BOOT_ENV \
+	    "domu-android-auto=no\0" \
             "xenhyper_bootargs=console=dtuart dtuart=/serial@5a060000 dom0_mem=2048M dom0_max_vcpus=2 dom0_vcpus_pin=true hmp-unsafe=true\0" \
             "xenlinux_bootargs= \0" \
             "xenlinux_console=hvc0 earlycon=xen\0" \
-            "xenlinux_addr=0x85000000\0" \
+            "xenlinux_addr=0x92000000\0" \
 	    "dom0fdt_file=fsl-imx8qm-mek-dom0.dtb\0" \
             "xenboot_common=" \
                 "${get_cmd} ${loadaddr} xen;" \
                 "${get_cmd} ${fdt_addr} ${dom0fdt_file};" \
-		"scu_rm dtb ${fdt_addr};" \
                 "if ${get_cmd} ${hdp_addr} ${hdp_file}; then; hdp load ${hdp_addr}; fi;" \
 				"if ${get_cmd} ${hdprx_addr} ${hdprx_file}; then; hdprx load ${hdprx_addr}; fi;" \
                 "${get_cmd} ${xenlinux_addr} ${image};" \
@@ -172,6 +180,10 @@
                 "fdt resize 256;" \
                 "fdt set /chosen/module@0 reg <0x00000000 ${xenlinux_addr} 0x00000000 0x${filesize}>; " \
                 "fdt set /chosen/module@0 bootargs \"${bootargs} ${xenlinux_bootargs}\"; " \
+		"if test ${domu-android-auto} = yes; then; " \
+			"fdt set /domu/doma android-auto <1>;" \
+			"fdt rm /gpio@5d090000 power-domains;" \
+		"fi;" \
                 "setenv bootargs ${xenhyper_bootargs};" \
                 "booti ${loadaddr} - ${fdt_addr};" \
             "\0" \
@@ -220,18 +232,17 @@
 	"image=Image\0" \
 	"panel=NULL\0" \
 	"console=ttyLP0\0" \
-	"earlycon=lpuart32,0x5a060000\0" \
 	"fdt_addr=0x83000000\0"			\
 	"fdt_high=0xffffffffffffffff\0"		\
-	"cntr_addr=0x88000000\0"			\
+	"cntr_addr=0x98000000\0"			\
 	"cntr_file=os_cntr_signed.bin\0" \
 	"boot_fdt=try\0" \
-	"fdt_file=fsl-imx8qm-mek.dtb\0" \
+	"fdt_file=undefined\0" \
 	"mmcdev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0" \
 	"mmcpart=" __stringify(CONFIG_SYS_MMC_IMG_LOAD_PART) "\0" \
 	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
 	"mmcautodetect=yes\0" \
-	"mmcargs=setenv bootargs console=${console},${baudrate} earlycon=${earlycon},${baudrate} root=${mmcroot}\0 " \
+	"mmcargs=setenv bootargs console=${console},${baudrate} earlycon root=${mmcroot}\0 " \
 	"loadbootscript=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${script};\0" \
 	"bootscript=echo Running bootscript from mmc ...; " \
 		"source\0" \
@@ -267,7 +278,7 @@
 				"echo wait for boot; " \
 			"fi;" \
 		"fi;\0" \
-	"netargs=setenv bootargs console=${console},${baudrate} earlycon=${earlycon},${baudrate} " \
+	"netargs=setenv bootargs console=${console},${baudrate} earlycon " \
 		"root=/dev/nfs " \
 		"ip=dhcp nfsroot=${serverip}:${nfsroot},v3,tcp\0" \
 	"netboot=echo Booting from net ...; " \
@@ -394,19 +405,26 @@
 #define CONFIG_SERIAL_TAG
 
 /* USB Config */
-#ifdef CONFIG_CMD_USB
+#ifndef CONFIG_SPL_BUILD
+#define CONFIG_CMD_USB
+#define CONFIG_USB_STORAGE
+#define CONFIG_USBD_HS
+
+#define CONFIG_CMD_USB_MASS_STORAGE
+#define CONFIG_USB_GADGET_MASS_STORAGE
+#define CONFIG_USB_FUNCTION_MASS_STORAGE
+
+#define CONFIG_USB_EHCI_HCD
+#endif
+
 #define CONFIG_USB_MAX_CONTROLLER_COUNT 2
 
 /* USB OTG controller configs */
 #ifdef CONFIG_USB_EHCI_HCD
+#define CONFIG_USB_EHCI_MX6
 #define CONFIG_USB_HOST_ETHER
 #define CONFIG_USB_ETHER_ASIX
 #define CONFIG_MXC_USB_PORTSC		(PORT_PTS_UTMI | PORT_PTS_PTW)
-#endif
-#endif /* CONFIG_CMD_USB */
-
-#ifdef CONFIG_USB_GADGET
-#define CONFIG_USBD_HS
 #endif
 
 /* Framebuffer */
@@ -422,13 +440,13 @@
 #endif
 
 #define CONFIG_OF_SYSTEM_SETUP
-#define BOOTAUX_RESERVED_MEM_BASE 0x88000000
-#define BOOTAUX_RESERVED_MEM_SIZE 0x08000000 /* Reserve from second 128MB */
 
 #if defined(CONFIG_ANDROID_SUPPORT)
 #include "imx8qm_mek_android.h"
 #elif defined (CONFIG_ANDROID_AUTO_SUPPORT)
 #include "imx8qm_mek_android_auto.h"
+#elif defined (CONFIG_IMX8_TRUSTY_XEN)
+#include "imx8qm_mek_trusty_xen.h"
 #endif
 
 #endif /* __IMX8QM_MEK_H */

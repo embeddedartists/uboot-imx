@@ -56,7 +56,7 @@ config SPL_BOOTROM_SUPPORT
 
 config SPL_RAW_IMAGE_SUPPORT
 	bool "Support SPL loading and booting of RAW images"
-	default n if (ARCH_MX6 && (SPL_MMC_SUPPORT || SPL_SATA_SUPPORT))
+	default n if ((ARCH_MX6 && (SPL_MMC_SUPPORT || SPL_SATA_SUPPORT)) || ARCH_IMX8 || ARCH_IMX8M)
 	default y if !TI_SECURE_DEVICE
 	help
 	  SPL will support loading and booting a RAW image when this option
@@ -526,6 +526,16 @@ config SPL_ONENAND_SUPPORT
 	  load U-Boot from supported devices. This enables the drivers in
 	  drivers/mtd/onenand as part of an SPL build.
 
+config SPL_IMX_ROMAPI_SUPPORT
+	bool "Support call ROMAPI"
+	depends on SPL
+	help
+	 Enable support call ROMAPI to load uboot from boot devices.
+
+config SPL_IMX_ROMAPI_LOADADDR
+	hex "Default load address to load image through ROM API"
+	depends on SPL_IMX_ROMAPI_SUPPORT
+
 config SPL_OS_BOOT
 	bool "Activate Falcon Mode"
 	depends on !TI_SECURE_DEVICE
@@ -724,6 +734,14 @@ config SPL_USB_SDP_SUPPORT
 	  Enable Serial Download Protocol (SDP) device support in SPL. This
 	  allows to download images into memory and execute (jump to) them
 	  using the same protocol as implemented by the i.MX family's boot ROM.
+
+config SPL_SDP_USB_DEV
+	int "SDP USB controller index"
+	default 0
+	depends on SPL_USB_SDP_SUPPORT
+	help
+	  Some boards have USB controller other than 0. Define this option
+	  so it can be used in compiled environment.
 endif
 
 config SPL_WATCHDOG_SUPPORT

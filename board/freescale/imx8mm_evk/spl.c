@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 NXP
+ * Copyright 2018-2019 NXP
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
@@ -177,8 +177,11 @@ int power_init_board(void)
 	/* unlock the PMIC regs */
 	pmic_reg_write(p, BD71837_REGLOCK, 0x1);
 
-	/* increase VDD_DRAM to 0.9v for 3Ghz DDR */
-	pmic_reg_write(p, BD71837_BUCK5_VOLT, 0x2);
+	/* increase VDD_SOC to typical value 0.85v before first DRAM access */
+	pmic_reg_write(p, BD71837_BUCK1_VOLT_RUN, 0x0f);
+
+	/* increase VDD_DRAM to 0.975v for 3Ghz DDR */
+	pmic_reg_write(p, BD71837_BUCK5_VOLT, 0x83);
 
 #ifndef CONFIG_IMX8M_LPDDR4
 	/* increase NVCC_DRAM_1V2 to 1.2v for DDR4 */
@@ -218,8 +221,8 @@ void board_init_f(ulong dummy)
 {
 	int ret;
 
-	/* Clear global data */
-	memset((void *)gd, 0, sizeof(gd_t));
+	/* Clear the BSS. */
+	memset(__bss_start, 0, __bss_end - __bss_start);
 
 	arch_cpu_init();
 
@@ -228,9 +231,6 @@ void board_init_f(ulong dummy)
 	timer_init();
 
 	preloader_console_init();
-
-	/* Clear the BSS. */
-	memset(__bss_start, 0, __bss_end - __bss_start);
 
 	ret = spl_init();
 	if (ret) {

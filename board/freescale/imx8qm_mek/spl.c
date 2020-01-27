@@ -123,7 +123,7 @@ int board_mmc_init(bd_t *bis)
                         ret = sc_pm_set_resource_power_mode(ipcHndl, SC_R_SDHC_1, SC_PM_PW_MODE_ON);
                         if (ret != SC_ERR_NONE)
                                 return ret;
-                        ret = sc_pm_set_resource_power_mode(ipcHndl, SC_R_GPIO_4, SC_PM_PW_MODE_ON);
+                        ret = sc_pm_set_resource_power_mode(ipcHndl, SC_R_GPIO_5, SC_PM_PW_MODE_ON);
                         if (ret != SC_ERR_NONE)
                                 return ret;
 
@@ -175,12 +175,14 @@ void spl_dram_init(void)
 
 void spl_board_init(void)
 {
-#if defined(CONFIG_QSPI_BOOT)
+#if defined(CONFIG_SPL_SPI_SUPPORT)
 	sc_ipc_t ipcHndl = 0;
 
 	ipcHndl = gd->arch.ipc_channel_handle;
-	if (sc_pm_set_resource_power_mode(ipcHndl, SC_R_FSPI_0, SC_PM_PW_MODE_ON)) {
-		puts("Warning: failed to initialize FSPI0\n");
+	if (sc_rm_is_resource_owned(ipcHndl, SC_R_FSPI_0)) {
+		if (sc_pm_set_resource_power_mode(ipcHndl, SC_R_FSPI_0, SC_PM_PW_MODE_ON)) {
+			puts("Warning: failed to initialize FSPI0\n");
+		}
 	}
 #endif
 
@@ -192,12 +194,14 @@ void spl_board_init(void)
 
 void spl_board_prepare_for_boot(void)
 {
-#if defined(CONFIG_QSPI_BOOT)
+#if defined(CONFIG_SPL_SPI_SUPPORT)
 	sc_ipc_t ipcHndl = 0;
 
 	ipcHndl = gd->arch.ipc_channel_handle;
-	if (sc_pm_set_resource_power_mode(ipcHndl, SC_R_FSPI_0, SC_PM_PW_MODE_OFF)) {
-		puts("Warning: failed to turn off FSPI0\n");
+	if (sc_rm_is_resource_owned(ipcHndl, SC_R_FSPI_0)) {
+		if (sc_pm_set_resource_power_mode(ipcHndl, SC_R_FSPI_0, SC_PM_PW_MODE_OFF)) {
+			puts("Warning: failed to turn off FSPI0\n");
+		}
 	}
 #endif
 }
@@ -215,8 +219,8 @@ int board_fit_config_name_match(const char *name)
 
 void board_init_f(ulong dummy)
 {
-        /* Clear global data */
-        memset((void *)gd, 0, sizeof(gd_t));
+       /* Clear the BSS. */
+        memset(__bss_start, 0, __bss_end - __bss_start);
 
         arch_cpu_init();
 
@@ -225,9 +229,6 @@ void board_init_f(ulong dummy)
         timer_init();
 
         preloader_console_init();
-
-        /* Clear the BSS. */
-        memset(__bss_start, 0, __bss_end - __bss_start);
 
         board_init_r(NULL, 0);
 }

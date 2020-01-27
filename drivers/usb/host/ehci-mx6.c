@@ -436,9 +436,16 @@ int __weak board_ehci_power(int port, int on)
 int ehci_mx6_common_init(struct usb_ehci *ehci, int index)
 {
 	int ret;
+	u32 portsc;
 
 	enable_usboh3_clk(1);
 	mdelay(1);
+
+	portsc = readl(&ehci->portsc);
+	if (portsc & PORT_PTS_PHCD) {
+		debug("suspended: portsc %x, enabled it.\n", portsc);
+		clrbits_le32(&ehci->portsc, PORT_PTS_PHCD);
+	}
 
 	/* Do board specific initialization */
 	ret = board_ehci_hcd_init(index);
@@ -607,7 +614,7 @@ static int ehci_usb_phy_mode(struct udevice *dev)
 			priv->init_type = USB_INIT_DEVICE;
 		else
 			priv->init_type = USB_INIT_HOST;
-	} else if (is_mx7() || is_imx8mm()) {
+	} else if (is_mx7() || is_imx8mm() || is_imx8mn()) {
 		phy_status = (void __iomem *)(priv->phy_base +
 					      USBNC_PHY_STATUS_OFFSET);
 		val = readl(phy_status);
@@ -658,7 +665,7 @@ static int ehci_get_usb_phy(struct udevice *dev)
 		}
 #endif
 		priv->phy_base = addr;
-	} else if (is_mx7() || is_imx8mm()) {
+	} else if (is_mx7() || is_imx8mm() || is_imx8mn()) {
 		priv->phy_base = addr;
 	} else {
 		return -EINVAL;

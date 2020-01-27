@@ -43,6 +43,7 @@
 #include <trusty/libtipc.h>
 #include <asm/mach-imx/hab.h>
 #endif
+#include <fsl_avb.h>
 
 #ifdef FASTBOOT_ENCRYPT_LOCK
 
@@ -385,6 +386,9 @@ FbLockState fastboot_get_lock_stat(void) {
 	unsigned char *bdata;
 	int mmc_id;
 	FbLockState ret;
+	/* uboot used by uuu will boot from USB, always return UNLOCK state */
+	if (is_boot_from_usb())
+		return g_lockstat;
 
 	bdata = (unsigned char *)memalign(ARCH_DMA_MINALIGN, SECTOR_SIZE);
 	if (bdata == NULL)
@@ -477,11 +481,11 @@ FbLockEnableResult fastboot_lock_enable() {
 	int mmc_id;
 	FbLockEnableResult ret;
 
-	/* for imx6 and imx7 platforms, ignore presistdata partition
-	 * for the convenience of using uuu
-	 */
-	if (is_mx6() || is_mx7() || is_mx7ulp())
+#ifdef CONFIG_DUAL_BOOTLOADER
+	/* Always allow unlock device in spl recovery mode. */
+	if (is_spl_recovery())
 		return FASTBOOT_UL_ENABLE;
+#endif
 
 	bdata = (unsigned char *)memalign(ALIGN_BYTES, SECTOR_SIZE);
 	if (bdata == NULL)

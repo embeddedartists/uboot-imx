@@ -17,6 +17,7 @@
 #define MMC_DEV		0
 #define QSPI_DEV	1
 #define NAND_DEV	2
+#define QSPI_NOR_DEV   3
 
 static int __get_container_size(ulong addr)
 {
@@ -103,6 +104,12 @@ static int get_container_size(void *dev, int dev_type, unsigned long offset)
 	}
 #endif
 
+#ifdef CONFIG_SPL_NOR_SUPPORT
+	if (dev_type == QSPI_NOR_DEV) {
+		memcpy(buf, (const void *)offset, CONTAINER_HDR_ALIGNMENT);
+	}
+#endif
+
 	ret = __get_container_size((ulong)buf);
 
 	free(buf);
@@ -134,6 +141,8 @@ static unsigned long get_boot_device_offset(void *dev, int dev_type)
 		offset = CONTAINER_HDR_QSPI_OFFSET;
 	} else if (dev_type == NAND_DEV) {
 		offset = CONTAINER_HDR_NAND_OFFSET;
+	} else if (dev_type == QSPI_NOR_DEV) {
+		offset = CONTAINER_HDR_QSPI_OFFSET + 0x08000000;
 	}
 
 	return offset;
@@ -166,6 +175,7 @@ static int get_imageset_end(void *dev, int dev_type)
 	return value_container[1] + offset2;
 }
 
+#ifdef CONFIG_SPL_SPI_LOAD
 unsigned long spl_spi_get_uboot_raw_sector(struct spi_flash *flash)
 {
 	int end;
@@ -177,7 +187,9 @@ unsigned long spl_spi_get_uboot_raw_sector(struct spi_flash *flash)
 
 	return end;
 }
+#endif
 
+#ifdef CONFIG_SPL_MMC_SUPPORT
 unsigned long spl_mmc_get_uboot_raw_sector(struct mmc *mmc)
 {
 	int end;
@@ -189,7 +201,9 @@ unsigned long spl_mmc_get_uboot_raw_sector(struct mmc *mmc)
 
 	return end/mmc->read_bl_len;
 }
+#endif
 
+#ifdef CONFIG_SPL_NAND_SUPPORT
 uint32_t spl_nand_get_uboot_raw_page(void)
 {
 	int end;
@@ -201,3 +215,26 @@ uint32_t spl_nand_get_uboot_raw_page(void)
 
 	return end;
 }
+#endif
+
+#ifdef CONFIG_SPL_NOR_SUPPORT
+unsigned long  spl_nor_get_uboot_base(void)
+{
+	int end;
+
+	/* Calculate the image set end,
+	 * if it is less than CONFIG_SYS_UBOOT_BASE(0x8281000),
+	 * we use CONFIG_SYS_UBOOT_BASE
+	 * Otherwise, use the calculated address
+	 */
+	end = get_imageset_end((void *)NULL, QSPI_NOR_DEV);
+	if (end <= CONFIG_SYS_UBOOT_BASE)
+		end = CONFIG_SYS_UBOOT_BASE;
+	else
+		end = ROUND(end, SZ_1K);
+
+	printf("Load image from NOR 0x%x\n", end);
+
+	return end;
+}
+#endif

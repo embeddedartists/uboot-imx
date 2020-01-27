@@ -19,6 +19,9 @@
 
 /* Defines */
 
+#define SCFW_API_VERSION_MAJOR  1U
+#define SCFW_API_VERSION_MINOR  7U
+
 #define SC_RPC_VERSION          1U
 
 #define SC_RPC_MAX_MSG          8U
@@ -43,7 +46,8 @@
 #define SC_RPC_SVC_PAD          6U
 #define SC_RPC_SVC_MISC         7U
 #define SC_RPC_SVC_IRQ          8U
-#define SC_RPC_SVC_ABORT        9U
+#define SC_RPC_SVC_SECO         9U
+#define SC_RPC_SVC_ABORT        10U
 
 #define SC_RPC_ASYNC_STATE_RD_START      0U
 #define SC_RPC_ASYNC_STATE_RD_ACTIVE     1U
@@ -53,6 +57,8 @@
 #define SC_RPC_ASYNC_STATE_WR_DONE       5U
 
 #define SC_RPC_MU_GIR_SVC       0x1U
+#define SC_RPC_MU_GIR_WAKE      0x2U
+#define SC_RPC_MU_GIR_BOOT      0x4U
 #define SC_RPC_MU_GIR_DBG       0x8U
 
 #define I8(X)       ((int8_t) (X))
@@ -83,7 +89,7 @@
 
 typedef uint8_t sc_rpc_svc_t;
 
-typedef struct sc_rpc_msg_s
+typedef struct
 {
     uint8_t version;
     uint8_t size;
@@ -102,7 +108,7 @@ typedef struct sc_rpc_msg_s
 
 typedef uint8_t sc_rpc_async_state_t;
 
-typedef struct sc_rpc_async_msg_s
+typedef struct
 {
     sc_rpc_async_state_t state;
     uint8_t wordIdx;

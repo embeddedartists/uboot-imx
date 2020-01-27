@@ -1,12 +1,14 @@
 /*
  * Copyright (C) 2016 Freescale Semiconductor, Inc.
- * Copyright 2017 NXP
+ * Copyright 2017, 2019 NXP
  *
  * SPDX-License-Identifier: GPL-2.0+
  */
 
 #ifndef _MX7ULP_REGS_H_
 #define _MX7ULP_REGS_H_
+
+#define ARCH_MXC
 
 #include <linux/sizes.h>
 
@@ -1144,8 +1146,9 @@ struct usbphy_regs {
 	u32	usb1_pfda_ctrl1_tog;		/* 0x14c */
 };
 
-
-#define	is_boot_from_usb(void)		(!(readl(USB_PHY0_BASE_ADDR) & (1<<20)))
+#include <stdbool.h>
+bool is_usb_boot(void);
+#define is_boot_from_usb  is_usb_boot
 #define	disconnect_from_pc(void)	writel(0x0, USBOTG0_RBASE + 0x140)
 
 struct bootrom_sw_info {

@@ -167,6 +167,18 @@ unsigned imx_ddr_size(void)
 const char *get_imx_type(u32 imxtype)
 {
 	switch (imxtype) {
+	case MXC_CPU_IMX8MN:
+		return "8MNano Quad";/* Quad-core version of the imx8mn */
+	case MXC_CPU_IMX8MND:
+		return "8MNano Dual";/* Dual-core version of the imx8mn */
+	case MXC_CPU_IMX8MNS:
+		return "8MNano Solo";/* Single-core version of the imx8mn */
+	case MXC_CPU_IMX8MNL:
+		return "8MNano QuadLite";/* Quad-core Lite version of the imx8mn */
+	case MXC_CPU_IMX8MNDL:
+		return "8MNano DualLite";/* Dual-core Lite version of the imx8mn */
+	case MXC_CPU_IMX8MNSL:
+		return "8MNano SoloLite";/* Single-core Lite version of the imx8mn */
 	case MXC_CPU_IMX8MM:
 		return "8MMQ";	/* Quad-core version of the imx8mm */
 	case MXC_CPU_IMX8MML:
@@ -238,7 +250,7 @@ int print_cpuinfo(void)
 	int cpu_tmp, minc, maxc, ret;
 
 	printf("CPU:   Freescale i.MX%s rev%d.%d",
-	       get_imx_type((cpurev & 0xFF000) >> 12),
+	       get_imx_type((cpurev & 0x1FF000) >> 12),
 	       (cpurev & 0x000F0) >> 4,
 	       (cpurev & 0x0000F) >> 0);
 	max_freq = get_cpu_speed_grade_hz();
@@ -250,7 +262,7 @@ int print_cpuinfo(void)
 	}
 #else
 	printf("CPU:   Freescale i.MX%s rev%d.%d at %d MHz\n",
-		get_imx_type((cpurev & 0xFF000) >> 12),
+		get_imx_type((cpurev & 0x1FF000) >> 12),
 		(cpurev & 0x000F0) >> 4,
 		(cpurev & 0x0000F) >> 0,
 		mxc_get_clock(MXC_ARM_CLK) / 1000000);
@@ -413,6 +425,7 @@ enum cpu_speed {
 	OCOTP_TESTER3_SPEED_GRADE1,
 	OCOTP_TESTER3_SPEED_GRADE2,
 	OCOTP_TESTER3_SPEED_GRADE3,
+	OCOTP_TESTER3_SPEED_GRADE4,
 };
 
 u32 get_cpu_speed_grade_hz(void)
@@ -425,7 +438,16 @@ u32 get_cpu_speed_grade_hz(void)
 
 	val = readl(&fuse->tester3);
 	val >>= OCOTP_TESTER3_SPEED_SHIFT;
-	val &= 0x3;
+
+	if (is_imx8mn()) {
+		val &= 0xf;
+		return 2300000000 - val * 100000000;
+	}
+
+	if (is_imx8mm())
+		val &= 0x7;
+	else
+		val &= 0x3;
 
 	switch(val) {
 	case OCOTP_TESTER3_SPEED_GRADE0:
@@ -436,6 +458,8 @@ u32 get_cpu_speed_grade_hz(void)
 		return (is_mx7() ? 1000000000 : (is_imx8mq() ? 1300000000 : 1600000000));
 	case OCOTP_TESTER3_SPEED_GRADE3:
 		return (is_mx7() ? 1200000000 : (is_imx8mq() ? 1500000000 : 1800000000));
+	case OCOTP_TESTER3_SPEED_GRADE4:
+		return 2000000000;
 	}
 
 	return 0;
@@ -478,7 +502,7 @@ u32 get_cpu_temp_grade(int *minc, int *maxc)
 }
 #endif
 
-#if defined(CONFIG_MX7) || defined(CONFIG_IMX8M)
+#if (defined(CONFIG_MX7) || defined(CONFIG_IMX8M)) && !defined(CONFIG_IMX8MN)
 enum boot_device get_boot_device(void)
 {
 	struct bootrom_sw_info **p =

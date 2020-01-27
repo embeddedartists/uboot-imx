@@ -299,11 +299,20 @@ get_long_file_name(fsdata *mydata, int curclust, __u8 *cluster,
 	if ((__u8 *)slotptr >= buflimit) {
 		if (curclust == 0)
 			return -1;
-		curclust = get_fatent(mydata, dir_curclust);
-		if (CHECK_CLUST(curclust, mydata->fatsize)) {
-			debug("curclust: 0x%x\n", curclust);
-			printf("Invalid FAT entry\n");
-			return -1;
+
+		if (mydata->fatsize == 32 ) {
+			curclust = get_fatent(mydata, dir_curclust);
+			if (CHECK_CLUST(curclust, mydata->fatsize)) {
+				debug("curclust: 0x%x\n", curclust);
+				printf("Invalid FAT entry\n");
+				return -1;
+			}
+		} else {
+			/*
+			 * In FAT16/12, the root dir is locate before data area
+			 * curclust may negative number
+			 */
+			curclust++;
 		}
 
 		dir_curclust = curclust;
@@ -582,14 +591,18 @@ static void flush_dir_table(fsdata *mydata, dir_entry **dentptr)
 		printf("error: wrinting directory entry\n");
 		return;
 	}
-	dir_newclust = find_empty_cluster(mydata);
-	set_fatent_value(mydata, dir_curclust, dir_newclust);
-	if (mydata->fatsize == 32)
+
+	if (mydata->fatsize == 32) {
+		dir_newclust = find_empty_cluster(mydata);
+		set_fatent_value(mydata, dir_curclust, dir_newclust);
 		set_fatent_value(mydata, dir_newclust, 0xffffff8);
-	else if (mydata->fatsize == 16)
-		set_fatent_value(mydata, dir_newclust, 0xfff8);
-	else if (mydata->fatsize == 12)
-		set_fatent_value(mydata, dir_newclust, 0xff8);
+	} else {
+		dir_newclust = dir_curclust + 1;
+		if (dir_newclust > 1) {
+			printf("error: fail to get empty clust for directory entry\n");
+			return;
+		}
+	}
 
 	dir_curclust = dir_newclust;
 

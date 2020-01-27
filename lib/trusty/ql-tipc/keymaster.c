@@ -290,6 +290,9 @@ int km_tipc_init(struct trusty_ipc_dev *dev)
         return TRUSTY_ERR_GENERIC;
     }
 
+    /* mark as initialized */
+    initialized = true;
+
     return TRUSTY_ERR_NONE;
 }
 
@@ -407,6 +410,21 @@ int trusty_append_attestation_cert_chain(const uint8_t *cert,
                                         cert, cert_size, algorithm);
 }
 
+int trusty_set_attestation_key_enc(const uint8_t *key, uint32_t key_size,
+                               keymaster_algorithm_t algorithm)
+{
+    return trusty_send_attestation_data(KM_SET_ATTESTATION_KEY_ENC, key, key_size,
+                                        algorithm);
+}
+
+int trusty_append_attestation_cert_chain_enc(const uint8_t *cert,
+                                         uint32_t cert_size,
+                                         keymaster_algorithm_t algorithm)
+{
+    return trusty_send_attestation_data(KM_APPEND_ATTESTATION_CERT_CHAIN_ENC,
+                                        cert, cert_size, algorithm);
+}
+
 int trusty_atap_get_ca_request(const uint8_t *operation_start,
                                uint32_t operation_start_size,
                                uint8_t **ca_request_p,
@@ -476,4 +494,32 @@ int trusty_atap_read_uuid_str(char **uuid_p)
         rc = TRUSTY_ERR_GENERIC;
     }
     return rc;
+}
+
+int trusty_get_mppubk(uint8_t *mppubk, uint32_t *size)
+{
+    int rc = TRUSTY_ERR_GENERIC;
+    struct km_get_mppubk_resp resp;
+
+    rc = km_send_request(KM_GET_MPPUBK, NULL, 0);
+    if (rc < 0) {
+        trusty_error("failed to send km mppubk request\n", rc);
+        return rc;
+    }
+
+    rc = km_read_raw_response(KM_GET_MPPUBK, &resp, sizeof(resp));
+    if (rc < 0) {
+        trusty_error("%s: failed (%d) to read km mppubk response\n", __func__, rc);
+        return rc;
+    }
+
+    if (resp.data_size != 64) {
+        trusty_error("%s: Wrong mppubk size!\n", __func__);
+        return TRUSTY_ERR_GENERIC;
+    } else {
+        *size = resp.data_size;
+    }
+
+    memcpy(mppubk, resp.data, resp.data_size);
+    return TRUSTY_ERR_NONE;
 }

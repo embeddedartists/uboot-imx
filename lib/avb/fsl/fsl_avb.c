@@ -16,11 +16,13 @@
 #include "utils.h"
 #include "debug.h"
 #include "trusty/avb.h"
+#if !defined(CONFIG_IMX_TRUSTY_OS)
 #include "fsl_public_key.h"
+#endif
 #include "fsl_atx_attributes.h"
 
 #define FSL_AVB_DEV "mmc"
-
+#define AVB_MAX_BUFFER_LENGTH 2048
 
 static struct blk_desc *fs_dev_desc = NULL;
 static struct blk_desc *get_mmc_desc(void) {
@@ -604,11 +606,27 @@ AvbIOResult fsl_validate_vbmeta_public_key_rpmb(AvbOps* ops,
 	assert(ops != NULL && out_is_trusted != NULL);
 	*out_is_trusted = false;
 
+#if defined(CONFIG_IMX_TRUSTY_OS) && !defined(CONFIG_AVB_ATX)
+	uint8_t public_key_buf[AVB_MAX_BUFFER_LENGTH];
+	if (trusty_read_vbmeta_public_key(public_key_buf,
+						public_key_length) != 0) {
+		ERR("Read public key error\n");
+		/* We're not going to return error code here because it will
+		 * abort the following avb verify process even we allow the
+		 * verification error. Return AVB_IO_RESULT_OK and keep the
+		 * 'out_is_trusted' as false, avb will handle the error
+		 * depends on the 'allow_verification_error' flag.
+		 */
+		return AVB_IO_RESULT_OK;
+	}
+
+	if (memcmp(public_key_buf, public_key_data, public_key_length)) {
+#else
 	/* match given public key */
 	if (memcmp(fsl_public_key, public_key_data, public_key_length)) {
-		ret = AVB_IO_RESULT_ERROR_IO;
+#endif
 		ERR("public key not match\n");
-		return AVB_IO_RESULT_ERROR_IO;
+		return AVB_IO_RESULT_OK;
 	}
 
 	*out_is_trusted = true;
@@ -631,8 +649,16 @@ AvbIOResult fsl_write_rollback_index_rpmb(AvbOps* ops, size_t rollback_index_slo
 	AvbIOResult ret;
 #ifdef CONFIG_IMX_TRUSTY_OS
 	if (trusty_write_rollback_index(rollback_index_slot, rollback_index)) {
-		ERR("write rollback from Trusty error!");
-		ret = AVB_IO_RESULT_ERROR_IO;
+		ERR("write rollback from Trusty error!\n");
+#ifndef CONFIG_AVB_ATX
+		/* Read/write rollback index from rpmb will fail if the rpmb
+		 * key hasn't been set, return AVB_IO_RESULT_OK in this case.
+		 */
+		if (!rpmbkey_is_set())
+			ret = AVB_IO_RESULT_OK;
+		else
+#endif
+			ret = AVB_IO_RESULT_ERROR_IO;
 	} else {
 		ret = AVB_IO_RESULT_OK;
 	}
@@ -720,8 +746,14 @@ AvbIOResult fsl_read_rollback_index_rpmb(AvbOps* ops, size_t rollback_index_slot
 	AvbIOResult ret;
 #ifdef CONFIG_IMX_TRUSTY_OS
 	if (trusty_read_rollback_index(rollback_index_slot, out_rollback_index)) {
-		ERR("read rollback from Trusty error!");
-		ret = AVB_IO_RESULT_ERROR_IO;
+		ERR("read rollback from Trusty error!\n");
+#ifndef CONFIG_AVB_ATX
+		if (!rpmbkey_is_set()) {
+			*out_rollback_index = 0;
+			ret = AVB_IO_RESULT_OK;
+		} else
+#endif
+			ret = AVB_IO_RESULT_ERROR_IO;
 	} else {
 		ret = AVB_IO_RESULT_OK;
 	}

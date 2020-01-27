@@ -449,6 +449,41 @@ void sc_misc_build_info(sc_ipc_t ipc, uint32_t *build,
     return;
 }
 
+void sc_misc_api_ver(sc_ipc_t ipc, uint16_t *cl_maj,
+    uint16_t *cl_min, uint16_t *sv_maj, uint16_t *sv_min)
+{
+    sc_rpc_msg_t msg;
+
+    RPC_VER(&msg) = SC_RPC_VERSION;
+    RPC_SVC(&msg) = U8(SC_RPC_SVC_MISC);
+    RPC_FUNC(&msg) = U8(MISC_FUNC_API_VER);
+    RPC_SIZE(&msg) = 1U;
+
+    sc_call_rpc(ipc, &msg, SC_FALSE);
+
+    if (cl_maj != NULL)
+    {
+        *cl_maj = SCFW_API_VERSION_MAJOR;
+    }
+
+    if (cl_min != NULL)
+    {
+        *cl_min = SCFW_API_VERSION_MINOR;
+    }
+
+    if (sv_maj != NULL)
+    {
+        *sv_maj = RPC_U16(&msg, 4U);
+    }
+
+    if (sv_min != NULL)
+    {
+        *sv_min = RPC_U16(&msg, 6U);
+    }
+
+    return;
+}
+
 void sc_misc_unique_id(sc_ipc_t ipc, uint32_t *id_l,
     uint32_t *id_h)
 {
@@ -657,6 +692,27 @@ sc_err_t sc_misc_get_boot_type(sc_ipc_t ipc, sc_misc_bt_t *type)
     return (sc_err_t) result;
 }
 
+sc_err_t sc_misc_get_boot_container(sc_ipc_t ipc, uint8_t *idx)
+{
+    sc_rpc_msg_t msg;
+    uint8_t result;
+
+    RPC_VER(&msg) = SC_RPC_VERSION;
+    RPC_SVC(&msg) = U8(SC_RPC_SVC_MISC);
+    RPC_FUNC(&msg) = U8(MISC_FUNC_GET_BOOT_CONTAINER);
+    RPC_SIZE(&msg) = 1U;
+
+    sc_call_rpc(ipc, &msg, SC_FALSE);
+
+    result = RPC_R8(&msg);
+    if (idx != NULL)
+    {
+        *idx = RPC_U8(&msg, 0U);
+    }
+
+    return (sc_err_t) result;
+}
+
 void sc_misc_get_button_status(sc_ipc_t ipc, sc_bool_t *status)
 {
     sc_rpc_msg_t msg;
@@ -693,6 +749,29 @@ sc_err_t sc_misc_rompatch_checksum(sc_ipc_t ipc, uint32_t *checksum)
         *checksum = RPC_U32(&msg, 0U);
     }
 
+    result = RPC_R8(&msg);
+    return (sc_err_t) result;
+}
+
+sc_err_t sc_misc_board_ioctl(sc_ipc_t ipc, uint32_t *parm1,
+    uint32_t *parm2, uint32_t *parm3)
+{
+    sc_rpc_msg_t msg;
+    uint8_t result;
+
+    RPC_VER(&msg) = SC_RPC_VERSION;
+    RPC_SVC(&msg) = U8(SC_RPC_SVC_MISC);
+    RPC_FUNC(&msg) = U8(MISC_FUNC_BOARD_IOCTL);
+    RPC_U32(&msg, 0U) = *PTR_U32(parm1);
+    RPC_U32(&msg, 4U) = *PTR_U32(parm2);
+    RPC_U32(&msg, 8U) = *PTR_U32(parm3);
+    RPC_SIZE(&msg) = 4U;
+
+    sc_call_rpc(ipc, &msg, SC_FALSE);
+
+    *parm1 = RPC_U32(&msg, 0U);
+    *parm2 = RPC_U32(&msg, 4U);
+    *parm3 = RPC_U32(&msg, 8U);
     result = RPC_R8(&msg);
     return (sc_err_t) result;
 }

@@ -211,7 +211,8 @@ typedef uint8_t sc_pm_wake_src_t;
 
 /*!
  * This function sets the system power mode. Only the owner of the
- * SC_R_SYSTEM resource can do this.
+ * SC_R_SYSTEM resource or a partition with access permissions to
+ * SC_R_SYSTEM can do this.
  *
  * @param[in]     ipc         IPC handle
  * @param[in]     mode        power mode to apply
@@ -220,7 +221,7 @@ typedef uint8_t sc_pm_wake_src_t;
  *
  * Return errors:
  * - SC_ERR_PARM if invalid mode,
- * - SC_ERR_NOACCESS if caller not the owner of SC_R_SYSTEM
+ * - SC_ERR_NOACCESS if caller does not have SC_R_SYSTEM access
  *
  * @see sc_pm_set_sys_power_mode().
  */
@@ -574,7 +575,8 @@ sc_err_t sc_pm_get_clock_parent(sc_ipc_t ipc, sc_rsrc_t resource,
 
 /*!
  * This function is used to reset the system. Only the owner of the
- * SC_R_SYSTEM resource can do this.
+ * SC_R_SYSTEM resource or a partition with access permissions to
+ * SC_R_SYSTEM can do this.
  *
  * @param[in]     ipc         IPC handle
  * @param[in]     type        reset type
@@ -583,7 +585,7 @@ sc_err_t sc_pm_get_clock_parent(sc_ipc_t ipc, sc_rsrc_t resource,
  *
  * Return errors:
  * - SC_ERR_PARM if invalid type,
- * - SC_ERR_NOACCESS if caller not the owner of SC_R_SYSTEM
+ * - SC_ERR_NOACCESS if caller cannot access SC_R_SYSTEM
  *
  * If this function returns, then the reset did not occur due to an
  * invalid parameter.
@@ -594,7 +596,7 @@ sc_err_t sc_pm_reset(sc_ipc_t ipc, sc_pm_reset_type_t type);
  * This function gets a caller's reset reason.
  *
  * @param[in]     ipc         IPC handle
- * @param[out]    reason      pointer to return reset reason
+ * @param[out]    reason      pointer to return the reset reason
  *
  * This function returns the reason a partition was reset. If the reason
  * is POR, then the system reset reason will be returned.
@@ -606,6 +608,24 @@ sc_err_t sc_pm_reset(sc_ipc_t ipc, sc_pm_reset_type_t type);
  * @return Returns an error code (SC_ERR_NONE = success).
  */
 sc_err_t sc_pm_reset_reason(sc_ipc_t ipc, sc_pm_reset_reason_t *reason);
+
+/*!
+ * This function gets the partition that caused a reset.
+ *
+ * @param[in]     ipc         IPC handle
+ * @param[out]    pt          pointer to return the resetting partition
+ *
+ * If the reset reason obtained via sc_pm_reset_reason() is POR then the
+ * result from this function will be 0. Some SECO causes of reset will
+ * also return 0.
+ *
+ * Note depending on the connection of the WDOG_OUT signal and the OTP
+ * programming of the PMIC, some resets may trigger a system POR
+ * and the partition info will be lost.
+ *
+ * @return Returns an error code (SC_ERR_NONE = success).
+ */
+sc_err_t sc_pm_get_reset_part(sc_ipc_t ipc, sc_rm_pt_t *pt);
 
 /*!
  * This function is used to boot a partition.
@@ -633,6 +653,28 @@ sc_err_t sc_pm_boot(sc_ipc_t ipc, sc_rm_pt_t pt,
     sc_rsrc_t resource_mu, sc_rsrc_t resource_dev);
 
 /*!
+ * This function is used to change the boot parameters for a partition.
+ *
+ * @param[in]     ipc          IPC handle
+ * @param[in]     resource_cpu ID of the CPU resource to start
+ * @param[in]     boot_addr    64-bit boot address
+ * @param[in]     resource_mu  ID of the MU that must be powered (0=none)
+ * @param[in]     resource_dev ID of the boot device that must be powered (0=none)
+ *
+ * @return Returns an error code (SC_ERR_NONE = success).
+ *
+ * Return errors:
+ * - SC_ERR_PARM if invalid resource, or addr
+ *
+ * This function can be used to change the boot parameters for a partition.
+ * This can be useful if a partitions reboots differently from the initial
+ * boot done via sc_pm_boot() or via ROM.
+ */
+sc_err_t sc_pm_set_boot_parm(sc_ipc_t ipc,
+    sc_rsrc_t resource_cpu, sc_faddr_t boot_addr,
+    sc_rsrc_t resource_mu, sc_rsrc_t resource_dev);
+
+/*!
  * This function is used to reboot the caller's partition.
  *
  * @param[in]     ipc         IPC handle
@@ -643,12 +685,8 @@ sc_err_t sc_pm_boot(sc_ipc_t ipc, sc_rm_pt_t pt,
  * power, clocks, etc.) is reset. The boot SW of the booting CPU must be
  * able to handle peripherals that that are not reset.
  *
- * If \a type is SC_PM_RESET_TYPE_WARM, then only the boot CPU is reset.
- * SC state (partitions, power, clocks, etc.) are NOT reset. The boot SW
- * of the booting CPU must be able to handle peripherals and SC state that
- * that are not reset.
- *
- * If \a type is SC_PM_RESET_TYPE_BOARD, then return with no action.
+ * If \a type is SC_PM_RESET_TYPE_WARM or SC_PM_RESET_TYPE_BOARD, then
+ * returns SC_ERR_PARM as these are not supported.
  *
  * If this function returns, then the reset did not occur due to an
  * invalid parameter.
@@ -667,26 +705,40 @@ void sc_pm_reboot(sc_ipc_t ipc, sc_pm_reset_type_t type);
  * power, clocks, etc.) is reset. The boot SW of the booting CPU must be
  * able to handle peripherals that that are not reset.
  *
- * If \a type is SC_PM_RESET_TYPE_WARM, then only the boot CPU is reset.
- * SC state (partitions, power, clocks, etc.) are NOT reset. The boot SW
- * of the booting CPU must be able to handle peripherals and SC state that
- * that are not reset.
- *
- * If \a type is SC_PM_RESET_TYPE_BOARD, then return with no action.
+ * If \a type is SC_PM_RESET_TYPE_WARM or SC_PM_RESET_TYPE_BOARD, then
+ * returns SC_ERR_PARM as these are not supported.
  *
  * @return Returns an error code (SC_ERR_NONE = success).
  *
  * Return errors:
  * - SC_ERR_PARM if invalid partition or type
- * - SC_ERR_NOACCESS if caller's partition is not the parent of \a pt,
+ * - SC_ERR_NOACCESS if caller's partition is not the parent of \a pt
+ *   and the caller does not have access to SC_R_SYSTEM
  *
  * Most peripherals owned by the partition will be reset if
  * possible. SC state (partitions, power, clocks, etc.) is reset. The
  * boot SW of the booting CPU must be able to handle peripherals that
  * that are not reset.
+ *
+ * If board_reboot_part() returns a non-0 mask, then the reboot will
+ * be delayed until all partitions indicated in the mask have called
+ * sc_pm_reboot_continue() to continue the boot.
  */
 sc_err_t sc_pm_reboot_partition(sc_ipc_t ipc, sc_rm_pt_t pt,
     sc_pm_reset_type_t type);
+
+/*!
+ * This function is used to continue the reboot a partition.
+ *
+ * @param[in]     ipc         IPC handle
+ * @param[in]     pt          handle of partition to continue
+ *
+ * @return Returns an error code (SC_ERR_NONE = success).
+ *
+ * Return errors:
+ * - SC_ERR_PARM if invalid partition
+ */
+sc_err_t sc_pm_reboot_continue(sc_ipc_t ipc, sc_rm_pt_t pt);
 
 /*!
  * This function is used to start/stop a CPU.
@@ -725,15 +777,28 @@ sc_err_t sc_pm_cpu_start(sc_ipc_t ipc, sc_rsrc_t resource, sc_bool_t enable,
  *
  * This function does not return anything as the calling core may have been
  * reset. It can still fail if the resource or address is invalid. It can also
- * fail if the caller's partition is not the owner of the CPU or not the
- * parent of the CPU resource owner. Will also fail if the resource is not
- * powered on. No indication of failure is returned.
+ * fail if the caller's partition is not the owner of the CPU, not the parent
+ * of the CPU resource owner, or has access to SC_R_SYSTEM. Will also fail if
+ * the resource is not powered on. No indication of failure is returned.
  *
  * Note this just resets the CPU. None of the peripherals or bus fabric used by
  * the CPU is reset. State configured in the SCFW is not reset. The SW running
  * on the core has to understand and deal with this.
  */
 void sc_pm_cpu_reset(sc_ipc_t ipc, sc_rsrc_t resource, sc_faddr_t address);
+
+/*!
+ * This function returns a bool indicating if a partition was started.
+ *
+ * @param[in]     ipc         IPC handle
+ * @param[in]     pt          handle of partition to check
+ *
+ * @return Returns a bool (SC_TRUE = started).
+ *
+ * Note this indicates if a partition was started. It does not indicate if a
+ * partition is currently running or in a low power state.
+ */
+sc_bool_t sc_pm_is_partition_started(sc_ipc_t ipc, sc_rm_pt_t pt);
 
 /* @} */
 

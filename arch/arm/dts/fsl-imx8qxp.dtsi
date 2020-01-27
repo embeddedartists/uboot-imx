@@ -99,6 +99,14 @@
 			(GIC_CPU_MASK_SIMPLE(6) | IRQ_TYPE_LEVEL_HIGH)>;
 	};
 
+	mu8: mu@5d230000 {
+		compatible = "fsl,imx-m4-mu";
+		reg = <0x0 0x5d230000 0x0 0x10000>;
+		interrupts = <GIC_SPI 187 IRQ_TYPE_LEVEL_HIGH>;
+		power-domains = <&pd_lsio_mu8a>;
+		status = "okay";
+	};
+
 	mu: mu@5d1b0000 {
 		compatible = "fsl,imx8-mu";
 		reg = <0x0 0x5d1b0000 0x0 0x10000>;
@@ -145,7 +153,7 @@
 
 		pd_lsio: PD_LSIO {
 			compatible = "nxp,imx8-pd";
-			reg = <SC_R_LAST>;
+			reg = <SC_R_NONE>;
 			#power-domain-cells = <0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -270,11 +278,16 @@
 				#power-domain-cells = <0>;
 				power-domains = <&pd_lsio>;
 			};
+			pd_lsio_mu8a: PD_LSIO_MU8A {
+				reg = <SC_R_MU_8A>;
+				#power-domain-cells = <0>;
+				power-domains = <&pd_lsio>;
+			};
 		};
 
 		pd_conn: PD_CONN {
 			compatible = "nxp,imx8-pd";
-			reg = <SC_R_LAST>;
+			reg = <SC_R_NONE>;
 			#power-domain-cells = <0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -368,7 +381,7 @@
 
 		pd_audio: PD_AUDIO {
 			compatible = "nxp,imx8-pd";
-			reg = <SC_R_LAST>;
+			reg = <SC_R_NONE>;
 			#power-domain-cells = <0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -507,7 +520,7 @@
 
 		pd_dma: PD_DMA {
 			compatible = "nxp,imx8-pd";
-			reg = <SC_R_LAST>;
+			reg = <SC_R_NONE>;
 			#power-domain-cells = <0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -616,7 +629,7 @@
 
 		pd_gpu: gpu-power-domain {
 			compatible = "nxp,imx8-pd";
-			reg = <SC_R_LAST>;
+			reg = <SC_R_NONE>;
 			#power-domain-cells = <0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -648,7 +661,7 @@
 
 		pd_hsio: hsio-power-domain {
 			compatible = "nxp,imx8-pd";
-			reg = <SC_R_LAST>;
+			reg = <SC_R_NONE>;
 			#power-domain-cells = <0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -675,7 +688,7 @@
 
 		pd_cm40: PD_CM40 {
 			compatible = "nxp,imx8-pd";
-			reg = <SC_R_LAST>;
+			reg = <SC_R_NONE>;
 			#power-domain-cells = <0>;
 			#address-cells = <1>;
 			#size-cells = <0>;

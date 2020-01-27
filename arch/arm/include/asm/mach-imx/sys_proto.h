@@ -18,7 +18,7 @@
 #define is_soc_rev(rev) (soc_rev() == rev)
 
 /* returns MXC_CPU_ value */
-#define cpu_type(rev) (((rev) >> 12) & 0xff)
+#define cpu_type(rev) (((rev) >> 12) & 0x1ff)
 #define soc_type(rev) (((rev) >> 12) & 0xf0)
 /* both macros return/take MXC_CPU_ constants */
 #define get_cpu_type() (cpu_type(get_cpu_rev()))
@@ -55,9 +55,20 @@
 #define is_imx8mmdl() (is_cpu_type(MXC_CPU_IMX8MMDL))
 #define is_imx8mms() (is_cpu_type(MXC_CPU_IMX8MMS))
 #define is_imx8mmsl() (is_cpu_type(MXC_CPU_IMX8MMSL))
+#define is_imx8mn() (is_cpu_type(MXC_CPU_IMX8MN) || is_cpu_type(MXC_CPU_IMX8MND) || \
+	is_cpu_type(MXC_CPU_IMX8MNS) || is_cpu_type(MXC_CPU_IMX8MNL) || \
+	is_cpu_type(MXC_CPU_IMX8MNDL) || is_cpu_type(MXC_CPU_IMX8MNSL))
+#define is_imx8mnd() (is_cpu_type(MXC_CPU_IMX8MND))
+#define is_imx8mns() (is_cpu_type(MXC_CPU_IMX8MNS))
+#define is_imx8mnl() (is_cpu_type(MXC_CPU_IMX8MNL))
+#define is_imx8mndl() (is_cpu_type(MXC_CPU_IMX8MNDL))
+#define is_imx8mnsl() (is_cpu_type(MXC_CPU_IMX8MNSL))
 #define is_imx8qm() (is_cpu_type(MXC_CPU_IMX8QM))
 #define is_imx8qxp() (is_cpu_type(MXC_CPU_IMX8QXP))
 #define is_imx8dx() (is_cpu_type(MXC_CPU_IMX8DX))
+
+ /* gd->flags reserves high 16 bits for arch-specific flags */
+#define GD_FLG_ARCH_IMX_USB_BOOT		0x80000000	 /* Only used for MX6/7, If set, the u-boot is booting from USB serial download */
 
 #ifdef CONFIG_MX6
 #define IMX6_SRC_GPR10_BMODE		BIT(28)

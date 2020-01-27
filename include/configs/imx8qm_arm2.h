@@ -11,13 +11,15 @@
 #include <asm/arch/imx-regs.h>
 
 #ifdef CONFIG_SPL_BUILD
+
+#define CONFIG_PARSE_CONTAINER
 #define CONFIG_SPL_TEXT_BASE           0x0
 #define CONFIG_SPL_MAX_SIZE            (124 * 1024)
 #define CONFIG_SYS_MONITOR_LEN         (1024 * 1024)
 #define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_USE_SECTOR
 #define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR                0x1040 /* (flash.bin_offset + 2Mb)/sector_size */
 #define CONFIG_SYS_MMCSD_FS_BOOT_PARTITION             0
-
+#define CONFIG_SYS_UBOOT_BASE 0x08281000
 
 #define CONFIG_SPL_WATCHDOG_SUPPORT
 #define CONFIG_SPL_DRIVERS_MISC_SUPPORT
@@ -29,7 +31,7 @@
 #define CONFIG_SPL_BSS_START_ADDR      0x00128000
 #define CONFIG_SPL_BSS_MAX_SIZE        0x1000  /* 4 KB */
 #define CONFIG_SYS_SPL_MALLOC_START    0x00120000
-#define CONFIG_SYS_SPL_MALLOC_SIZE     0x3000  /* 12 KB */
+#define CONFIG_SYS_SPL_MALLOC_SIZE     0x18000  /* 12 KB */
 #define CONFIG_SERIAL_LPUART_BASE      0x5a060000
 #define CONFIG_SYS_ICACHE_OFF
 #define CONFIG_SYS_DCACHE_OFF
@@ -77,17 +79,17 @@
 
 #define CONFIG_ENV_OVERWRITE
 
+#ifdef CONFIG_SATA_IMX
 #define CONFIG_SCSI
 #define CONFIG_SCSI_AHCI
 #define CONFIG_SCSI_AHCI_PLAT
 #define CONFIG_SYS_SCSI_MAX_SCSI_ID 1
 #define CONFIG_CMD_SCSI
-#define CONFIG_LIBATA
 #define CONFIG_SYS_SCSI_MAX_LUN 1
 #define CONFIG_SYS_SCSI_MAX_DEVICE      (CONFIG_SYS_SCSI_MAX_SCSI_ID * CONFIG_SYS_SCSI_MAX_LUN)
 #define CONFIG_SYS_SCSI_MAXDEVICE       CONFIG_SYS_SCSI_MAX_DEVICE
 #define CONFIG_SYS_SATA_MAX_DEVICE	1
-#define CONFIG_SATA_IMX
+#endif
 
 #define CONFIG_FSL_HSIO
 #define CONFIG_PCIE_IMX8X
@@ -170,7 +172,7 @@
 		MFG_NAND_PARTITION \
 		"clk_ignore_unused "\
 		"\0" \
-	"initrd_addr=0x83800000\0" \
+	"initrd_addr=0x83100000\0" \
 	"initrd_high=0xffffffffffffffff\0" \
 	"bootcmd_mfg=run mfgtool_args;booti ${loadaddr} ${initrd_addr} ${fdt_addr};\0" \
 
@@ -215,20 +217,17 @@
 	"image=Image\0" \
 	"panel=NULL\0" \
 	"console=ttyLP0\0" \
-	"earlycon=lpuart32,0x5a060000\0" \
 	"fdt_addr=0x83000000\0"			\
 	"fdt_high=0xffffffffffffffff\0"		\
-	"cntr_addr=0x88000000\0"			\
+	"cntr_addr=0x98000000\0"			\
 	"cntr_file=os_cntr_signed.bin\0" \
 	"boot_fdt=try\0" \
 	"fdt_file="__stringify(CONFIG_DEFAULT_DEVICE_TREE)".dtb\0" \
-	"initrd_addr=0x83800000\0"		\
-	"initrd_high=0xffffffffffffffff\0" \
 	"mmcdev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0" \
 	"mmcpart=" __stringify(CONFIG_SYS_MMC_IMG_LOAD_PART) "\0" \
 	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
 	"mmcautodetect=yes\0" \
-	"mmcargs=setenv bootargs console=${console},${baudrate} earlycon=${earlycon},${baudrate} root=${mmcroot}\0 " \
+	"mmcargs=setenv bootargs console=${console},${baudrate} earlycon root=${mmcroot}\0 " \
 	"loadbootscript=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${script};\0" \
 	"bootscript=echo Running bootscript from mmc ...; " \
 		"source\0" \
@@ -259,7 +258,7 @@
 				"echo wait for boot; " \
 			"fi;" \
 		"fi;\0" \
-	"netargs=setenv bootargs console=${console},${baudrate} earlycon=${earlycon},${baudrate} " \
+	"netargs=setenv bootargs console=${console},${baudrate} earlycon " \
 		"root=/dev/nfs " \
 		"ip=dhcp nfsroot=${serverip}:${nfsroot},v3,tcp\0" \
 	"netboot=echo Booting from net ...; " \
@@ -437,7 +436,5 @@
 #endif
 
 #define CONFIG_OF_SYSTEM_SETUP
-#define BOOTAUX_RESERVED_MEM_BASE 0x88000000
-#define BOOTAUX_RESERVED_MEM_SIZE 0x08000000 /* Reserve from second 128MB */
 
 #endif /* __IMX8QM_ARM2_H */

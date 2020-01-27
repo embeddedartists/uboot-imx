@@ -29,6 +29,7 @@
 #include <power-domain.h>
 #include "../common/tcpc.h"
 #include <cdns3-uboot.h>
+#include <asm/arch/lpcg.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -66,8 +67,10 @@ int board_early_init_f(void)
 	sc_err_t sciErr = 0;
 
 	/* When start u-boot in XEN VM, directly return */
-	if (IS_ENABLED(CONFIG_XEN))
+	if (IS_ENABLED(CONFIG_XEN)) {
+		writel(0xF53535F5, (void __iomem *)0x80000000);
 		return 0;
+	}
 
 	ipcHndl = gd->arch.ipc_channel_handle;
 
@@ -86,6 +89,8 @@ int board_early_init_f(void)
 	sciErr = sc_pm_clock_enable(ipcHndl, SC_R_UART_0, 2, true, false);
 	if (sciErr != SC_ERR_NONE)
 		return 0;
+
+	LPCG_AllClockOn(LPUART_0_LPCG);
 
 	setup_iomux_uart();
 
@@ -267,6 +272,19 @@ static void imx8qm_hsio_initialize(void)
 			 printf("hsio_gpio Power up failed! (error = %d)\n", ret);
 	}
 
+	LPCG_AllClockOn(HSIO_PCIE_X2_LPCG);
+	LPCG_AllClockOn(HSIO_PCIE_X1_LPCG);
+	LPCG_AllClockOn(HSIO_SATA_LPCG);
+	LPCG_AllClockOn(HSIO_PHY_X2_LPCG);
+	LPCG_AllClockOn(HSIO_PHY_X1_LPCG);
+	LPCG_AllClockOn(HSIO_PHY_X2_CRR0_LPCG);
+	LPCG_AllClockOn(HSIO_PHY_X1_CRR1_LPCG);
+	LPCG_AllClockOn(HSIO_PCIE_X2_CRR2_LPCG);
+	LPCG_AllClockOn(HSIO_PCIE_X1_CRR3_LPCG);
+	LPCG_AllClockOn(HSIO_SATA_CRR4_LPCG);
+	LPCG_AllClockOn(HSIO_MISC_LPCG);
+	LPCG_AllClockOn(HSIO_GPIO_LPCG);
+
 	imx8_iomux_setup_multiple_pads(board_pcie_pins, ARRAY_SIZE(board_pcie_pins));
 }
 
@@ -326,9 +344,9 @@ static struct cdns3_device cdns3_device_data = {
 	.index = 1,
 };
 
-int usb_gadget_handle_interrupts(void)
+int usb_gadget_handle_interrupts(int index)
 {
-	cdns3_uboot_handle_interrupt(1);
+	cdns3_uboot_handle_interrupt(index);
 	return 0;
 }
 #endif
@@ -344,6 +362,19 @@ int board_usb_init(int index, enum usb_init_type init)
 #endif
 #ifdef CONFIG_USB_CDNS3_GADGET
 		} else {
+#ifdef CONFIG_SPL_BUILD
+			sc_ipc_t ipcHndl = 0;
+
+			ipcHndl = gd->arch.ipc_channel_handle;
+
+			ret = sc_pm_set_resource_power_mode(ipcHndl, SC_R_USB_2, SC_PM_PW_MODE_ON);
+			if (ret != SC_ERR_NONE)
+				printf("conn_usb2 Power up failed! (error = %d)\n", ret);
+
+			ret = sc_pm_set_resource_power_mode(ipcHndl, SC_R_USB_2_PHY, SC_PM_PW_MODE_ON);
+			if (ret != SC_ERR_NONE)
+				printf("conn_usb2_phy Power up failed! (error = %d)\n", ret);
+#else
 			struct power_domain pd;
 			int ret;
 
@@ -359,6 +390,7 @@ int board_usb_init(int index, enum usb_init_type init)
 				if (ret)
 					printf("conn_usb2_phy Power up failed! (error = %d)\n", ret);
 			}
+#endif
 
 #ifdef CONFIG_USB_TCPC
 			ret = tcpc_setup_ufp_mode(&port);
@@ -384,23 +416,37 @@ int board_usb_cleanup(int index, enum usb_init_type init)
 #endif
 #ifdef CONFIG_USB_CDNS3_GADGET
 		} else {
+			cdns3_uboot_exit(1);
+
+#ifdef CONFIG_SPL_BUILD
+			sc_ipc_t ipcHndl = 0;
+
+			ipcHndl = gd->arch.ipc_channel_handle;
+
+			ret = sc_pm_set_resource_power_mode(ipcHndl, SC_R_USB_2, SC_PM_PW_MODE_OFF);
+			if (ret != SC_ERR_NONE)
+				printf("conn_usb2 Power down failed! (error = %d)\n", ret);
+
+			ret = sc_pm_set_resource_power_mode(ipcHndl, SC_R_USB_2_PHY, SC_PM_PW_MODE_OFF);
+			if (ret != SC_ERR_NONE)
+				printf("conn_usb2_phy Power down failed! (error = %d)\n", ret);
+#else
 			struct power_domain pd;
 			int ret;
-
-			cdns3_uboot_exit(1);
 
 			/* Power off usb */
 			if (!power_domain_lookup_name("conn_usb2", &pd)) {
 				ret = power_domain_off(&pd);
 				if (ret)
-					printf("conn_usb2 Power up failed! (error = %d)\n", ret);
+					printf("conn_usb2 Power down failed! (error = %d)\n", ret);
 			}
 
 			if (!power_domain_lookup_name("conn_usb2_phy", &pd)) {
 				ret = power_domain_off(&pd);
 				if (ret)
-					printf("conn_usb2_phy Power up failed! (error = %d)\n", ret);
+					printf("conn_usb2_phy Power down failed! (error = %d)\n", ret);
 			}
+#endif
 #endif
 		}
 	}
@@ -412,10 +458,6 @@ int board_init(void)
 {
 	if (IS_ENABLED(CONFIG_XEN))
 		return 0;
-
-	/* Power up base board */
-	sc_pm_set_resource_power_mode(gd->arch.ipc_channel_handle,
-		SC_R_BOARD_R1, SC_PM_PW_MODE_ON);
 
 #ifdef CONFIG_MXC_GPIO
 	board_gpio_init();
@@ -441,8 +483,11 @@ void board_quiesce_devices(void)
 		"dma_lpuart0",
 	};
 
-	if (IS_ENABLED(CONFIG_XEN))
+	if (IS_ENABLED(CONFIG_XEN)) {
+		/* Clear magic number to let xen know uboot is over */
+		writel(0x0, (void __iomem *)0x80000000);
 		return;
+	}
 
 	power_off_pd_devices(power_on_devices, ARRAY_SIZE(power_on_devices));
 }
@@ -491,6 +536,9 @@ int mmc_map_to_kernel_blk(int dev_no)
 extern uint32_t _end_ofs;
 int board_late_init(void)
 {
+	char *fdt_file;
+	bool m4_boot;
+
 #ifdef CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
 	env_set("board_name", "MEK");
 	env_set("board_rev", "iMX8QM");
@@ -500,6 +548,16 @@ int board_late_init(void)
 #ifdef CONFIG_AHAB_BOOT
 	env_set("sec_boot", "yes");
 #endif
+
+	fdt_file = env_get("fdt_file");
+	m4_boot = check_m4_parts_boot();
+
+	if (fdt_file && !strcmp(fdt_file, "undefined")) {
+		if (m4_boot)
+			env_set("fdt_file", "fsl-imx8qm-mek-rpmsg.dtb");
+		else
+			env_set("fdt_file", "fsl-imx8qm-mek.dtb");
+	}
 
 #ifdef CONFIG_ENV_IS_IN_MMC
 	board_late_mmc_env_init();
@@ -512,7 +570,7 @@ int board_late_init(void)
 	end_of_uboot += 9;
 
 	/* load hdmitxfw.bin and hdmirxfw.bin*/
-	memcpy(IMX_HDMI_FIRMWARE_LOAD_ADDR, end_of_uboot,
+	memcpy((void *)IMX_HDMI_FIRMWARE_LOAD_ADDR, end_of_uboot,
 			IMX_HDMITX_FIRMWARE_SIZE + IMX_HDMIRX_FIRMWARE_SIZE);
 
 	sprintf(command, "hdp load 0x%x", IMX_HDMI_FIRMWARE_LOAD_ADDR);

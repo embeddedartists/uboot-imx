@@ -397,6 +397,27 @@ sc_err_t sc_pm_reset_reason(sc_ipc_t ipc, sc_pm_reset_reason_t *reason)
     return (sc_err_t) result;
 }
 
+sc_err_t sc_pm_get_reset_part(sc_ipc_t ipc, sc_rm_pt_t *pt)
+{
+    sc_rpc_msg_t msg;
+    uint8_t result;
+
+    RPC_VER(&msg) = SC_RPC_VERSION;
+    RPC_SVC(&msg) = U8(SC_RPC_SVC_PM);
+    RPC_FUNC(&msg) = U8(PM_FUNC_GET_RESET_PART);
+    RPC_SIZE(&msg) = 1U;
+
+    sc_call_rpc(ipc, &msg, SC_FALSE);
+
+    result = RPC_R8(&msg);
+    if (pt != NULL)
+    {
+        *pt = RPC_U8(&msg, 0U);
+    }
+
+    return (sc_err_t) result;
+}
+
 sc_err_t sc_pm_boot(sc_ipc_t ipc, sc_rm_pt_t pt,
     sc_rsrc_t resource_cpu, sc_faddr_t boot_addr,
     sc_rsrc_t resource_mu, sc_rsrc_t resource_dev)
@@ -413,6 +434,29 @@ sc_err_t sc_pm_boot(sc_ipc_t ipc, sc_rm_pt_t pt,
     RPC_U16(&msg, 10U) = U16(resource_mu);
     RPC_U16(&msg, 12U) = U16(resource_dev);
     RPC_U8(&msg, 14U) = U8(pt);
+    RPC_SIZE(&msg) = 5U;
+
+    sc_call_rpc(ipc, &msg, SC_FALSE);
+
+    result = RPC_R8(&msg);
+    return (sc_err_t) result;
+}
+
+sc_err_t sc_pm_set_boot_parm(sc_ipc_t ipc,
+    sc_rsrc_t resource_cpu, sc_faddr_t boot_addr,
+    sc_rsrc_t resource_mu, sc_rsrc_t resource_dev)
+{
+    sc_rpc_msg_t msg;
+    uint8_t result;
+
+    RPC_VER(&msg) = SC_RPC_VERSION;
+    RPC_SVC(&msg) = U8(SC_RPC_SVC_PM);
+    RPC_FUNC(&msg) = U8(PM_FUNC_SET_BOOT_PARM);
+    RPC_U32(&msg, 0U) = U32(boot_addr >> 32ULL);
+    RPC_U32(&msg, 4U) = U32(boot_addr);
+    RPC_U16(&msg, 8U) = U16(resource_cpu);
+    RPC_U16(&msg, 10U) = U16(resource_mu);
+    RPC_U16(&msg, 12U) = U16(resource_dev);
     RPC_SIZE(&msg) = 5U;
 
     sc_call_rpc(ipc, &msg, SC_FALSE);
@@ -447,6 +491,23 @@ sc_err_t sc_pm_reboot_partition(sc_ipc_t ipc, sc_rm_pt_t pt,
     RPC_FUNC(&msg) = U8(PM_FUNC_REBOOT_PARTITION);
     RPC_U8(&msg, 0U) = U8(pt);
     RPC_U8(&msg, 1U) = U8(type);
+    RPC_SIZE(&msg) = 2U;
+
+    sc_call_rpc(ipc, &msg, SC_FALSE);
+
+    result = RPC_R8(&msg);
+    return (sc_err_t) result;
+}
+
+sc_err_t sc_pm_reboot_continue(sc_ipc_t ipc, sc_rm_pt_t pt)
+{
+    sc_rpc_msg_t msg;
+    uint8_t result;
+
+    RPC_VER(&msg) = SC_RPC_VERSION;
+    RPC_SVC(&msg) = U8(SC_RPC_SVC_PM);
+    RPC_FUNC(&msg) = U8(PM_FUNC_REBOOT_CONTINUE);
+    RPC_U8(&msg, 0U) = U8(pt);
     RPC_SIZE(&msg) = 2U;
 
     sc_call_rpc(ipc, &msg, SC_FALSE);
@@ -491,6 +552,23 @@ void sc_pm_cpu_reset(sc_ipc_t ipc, sc_rsrc_t resource, sc_faddr_t address)
     sc_call_rpc(ipc, &msg, SC_TRUE);
 
     return;
+}
+
+sc_bool_t sc_pm_is_partition_started(sc_ipc_t ipc, sc_rm_pt_t pt)
+{
+    sc_rpc_msg_t msg;
+    sc_bool_t result;
+
+    RPC_VER(&msg) = SC_RPC_VERSION;
+    RPC_SVC(&msg) = U8(SC_RPC_SVC_PM);
+    RPC_FUNC(&msg) = U8(PM_FUNC_IS_PARTITION_STARTED);
+    RPC_U8(&msg, 0U) = U8(pt);
+    RPC_SIZE(&msg) = 2U;
+
+    sc_call_rpc(ipc, &msg, SC_FALSE);
+
+    result = U2B(RPC_R8(&msg));
+    return result;
 }
 
 /**@}*/

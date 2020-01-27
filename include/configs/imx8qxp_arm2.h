@@ -14,6 +14,8 @@
 
 #ifdef CONFIG_SPL_BUILD
 
+#define CONFIG_PARSE_CONTAINER
+
 #ifdef CONFIG_QSPI_BOOT
 #define CONFIG_SPL_SPI_LOAD
 #endif
@@ -23,11 +25,13 @@
 #define CONFIG_SYS_MONITOR_LEN          (1024 * 1024)
 
 #ifdef CONFIG_NAND_BOOT
+#ifndef CONFIG_PARSE_CONTAINER
 #define CONFIG_SPL_NAND_RAW_ONLY
+#endif
 #define CONFIG_SPL_NAND_SUPPORT
 #define CONFIG_SPL_DMA_SUPPORT
 #define CONFIG_SPL_NAND_MXS
-#define CONFIG_SYS_NAND_U_BOOT_OFFS     (0x4000000)  /*Put the FIT out of first 64MB boot area */
+#define CONFIG_SYS_NAND_U_BOOT_OFFS     (0x8000000)  /*Put the FIT out of first 128MB boot area */
 #define CONFIG_SPL_NAND_BOOT
 #define CONFIG_SYS_NAND_U_BOOT_DST		0x80000000
 #define CONFIG_SYS_NAND_U_BOOT_SIZE     (1024 * 1024 )
@@ -162,9 +166,7 @@
 	"m4boot_0=run loadm4image_0; dcache flush; bootaux ${loadaddr} 0\0" \
 
 #ifdef CONFIG_NAND_BOOT
-#define MFG_NAND_PARTITION "mtdparts=gpmi-nand:128m(nandboot),32m(nandkernel),16m(nanddtb),8m(nandtee),-(nandrootfs) "
-#else
-#define MFG_NAND_PARTITION ""
+#define MFG_NAND_PARTITION "mtdparts=gpmi-nand:128m(nandboot),16m(nandfit),32m(nandkernel),16m(nanddtb),8m(nandtee),-(nandrootfs) "
 #endif
 
 #define CONFIG_MFG_ENV_SETTINGS \
@@ -175,17 +177,17 @@
 	"initrd_high=0xffffffffffffffff\0" \
 	"emmc_dev=0\0" \
 	"sd_dev=1\0" \
-	"mtdparts=mtdparts=gpmi-nand:128m(nandboot),32m(nandkernel),16m(nanddtb),8m(nandtee),-(nandrootfs)\0"
 
 /* Initial environment variables */
 #ifdef CONFIG_NAND_BOOT
 #define CONFIG_EXTRA_ENV_SETTINGS		\
 	CONFIG_MFG_ENV_SETTINGS \
-	"bootargs=console=ttyLP0,115200 ubi.mtd=5 "  \
+	"bootargs=console=ttyLP0,115200 ubi.mtd=6 "  \
 		"root=ubi0:nandrootfs rootfstype=ubifs "		     \
 		MFG_NAND_PARTITION \
 		"\0"\
-	"console=ttyLP0,115200 earlycon=lpuart32,0x5a060000,115200\0" \
+	"console=ttyLP0,115200 earlycon\0" \
+	"mtdparts=" MFG_NAND_PARTITION "\0" \
 	"fdt_addr=0x83000000\0"
 #else
 #define CONFIG_EXTRA_ENV_SETTINGS		\
@@ -196,18 +198,17 @@
 	"image=Image\0" \
 	"panel=NULL\0" \
 	"console=ttyLP0\0" \
-	"earlycon=lpuart32,0x5a060000\0" \
 	"fdt_addr=0x83000000\0"			\
 	"fdt_high=0xffffffffffffffff\0"		\
-	"cntr_addr=0x88000000\0"			\
+	"cntr_addr=0x98000000\0"			\
 	"cntr_file=os_cntr_signed.bin\0" \
 	"boot_fdt=try\0" \
-	"fdt_file=fsl-imx8qxp-lpddr4-arm2.dtb\0" \
+	"fdt_file=" CONFIG_DEFAULT_FDT_FILE "\0" \
 	"mmcdev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0" \
 	"mmcpart=" __stringify(CONFIG_SYS_MMC_IMG_LOAD_PART) "\0" \
 	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
 	"mmcautodetect=yes\0" \
-	"mmcargs=setenv bootargs console=${console},${baudrate} earlycon=${earlycon},${baudrate} root=${mmcroot}\0 " \
+	"mmcargs=setenv bootargs console=${console},${baudrate} earlycon root=${mmcroot}\0 " \
 	"loadbootscript=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${script};\0" \
 	"bootscript=echo Running bootscript from mmc ...; " \
 		"source\0" \
@@ -234,7 +235,7 @@
 				"echo wait for boot; " \
 			"fi;" \
 		"fi;\0" \
-	"netargs=setenv bootargs console=${console},${baudrate} earlycon=${earlycon},${baudrate} " \
+	"netargs=setenv bootargs console=${console},${baudrate} earlycon " \
 		"root=/dev/nfs " \
 		"ip=dhcp nfsroot=${serverip}:${nfsroot},v3,tcp\0" \
 	"netboot=echo Booting from net ...; " \
@@ -267,8 +268,8 @@
 
 #ifdef CONFIG_NAND_BOOT
 #define CONFIG_BOOTCOMMAND \
-	"nand read ${loadaddr} 0x8000000 0x2000000;"\
-	"nand read ${fdt_addr} 0xA000000 0x100000;"\
+	"nand read ${loadaddr} 0x9000000 0x2000000;"\
+	"nand read ${fdt_addr} 0xB000000 0x100000;"\
 	"booti ${loadaddr} - ${fdt_addr}"
 #else
 #define CONFIG_BOOTCOMMAND \
@@ -320,7 +321,7 @@
 
 /* On LPDDR4 board, USDHC1 is for eMMC, USDHC2 is for SD on CPU board
   */
-#ifdef CONFIG_TARGET_IMX8DX_DDR3_ARM2
+#ifdef CONFIG_TARGET_IMX8X_17X17_VAL
 #define CONFIG_SYS_MMC_ENV_DEV		0   /* USDHC1 */
 #define CONFIG_MMCROOT			"/dev/mmcblk0p2"  /* USDHC1 */
 #define CONFIG_SYS_FSL_USDHC_NUM	1
@@ -337,9 +338,8 @@
 #define CONFIG_NR_DRAM_BANKS		4
 #define PHYS_SDRAM_1			0x80000000
 #define PHYS_SDRAM_2			0x880000000
-#if defined(CONFIG_TARGET_IMX8QXP_DDR3_ARM2) || defined(CONFIG_TARGET_IMX8DX_DDR3_ARM2)
-#define PHYS_SDRAM_1_SIZE		0x40000000	/* 1 GB */
-/* LPDDR4 board total DDR is 3GB */
+#if defined(CONFIG_TARGET_IMX8QXP_DDR3_ARM2) || defined(CONFIG_TARGET_IMX8X_17X17_VAL)
+#define PHYS_SDRAM_1_SIZE		0x40000000	/* 1 GB totally */
 #define PHYS_SDRAM_2_SIZE		0x00000000
 #else
 #define PHYS_SDRAM_1_SIZE		0x80000000	/* 2 GB */
@@ -435,8 +435,6 @@
 #endif
 
 #define CONFIG_OF_SYSTEM_SETUP
-#define BOOTAUX_RESERVED_MEM_BASE 0x88000000
-#define BOOTAUX_RESERVED_MEM_SIZE 0x08000000 /* Reserve from second 128MB */
 
 #define CONFIG_CMD_READ
 #define CONFIG_SERIAL_TAG

@@ -65,7 +65,7 @@ DECLARE_GLOBAL_DATA_PTR;
 
 static struct fsl_esdhc_cfg usdhc_cfg[CONFIG_SYS_FSL_USDHC_NUM] = {
 	{USDHC1_BASE_ADDR, 0, 8},
-#ifndef CONFIG_TARGET_IMX8DX_DDR3_ARM2
+#ifndef CONFIG_TARGET_IMX8X_17X17_VAL
 	{USDHC2_BASE_ADDR, 0, 4},
 #endif
 };
@@ -134,7 +134,7 @@ int board_mmc_init(bd_t *bis)
 	                ret = sc_pm_set_resource_power_mode(ipcHndl, SC_R_SDHC_1, SC_PM_PW_MODE_ON);
                         if (ret != SC_ERR_NONE)
                                 return ret;
-                        ret = sc_pm_set_resource_power_mode(ipcHndl, SC_R_GPIO_3, SC_PM_PW_MODE_ON);
+                        ret = sc_pm_set_resource_power_mode(ipcHndl, SC_R_GPIO_4, SC_PM_PW_MODE_ON);
                         if (ret != SC_ERR_NONE)
                                 return ret;
 
@@ -208,8 +208,8 @@ void spl_board_prepare_for_boot(void)
 
 void board_init_f(ulong dummy)
 {
-        /* Clear global data */
-        memset((void *)gd, 0, sizeof(gd_t));
+        /* Clear the BSS. */
+        memset(__bss_start, 0, __bss_end - __bss_start);
 
         arch_cpu_init();
 
@@ -218,9 +218,6 @@ void board_init_f(ulong dummy)
         timer_init();
 
         preloader_console_init();
-
-        /* Clear the BSS. */
-        memset(__bss_start, 0, __bss_end - __bss_start);
 
         board_init_r(NULL, 0);
 }
