@@ -200,7 +200,7 @@
 /* MMC Configuration */
 #define CONFIG_SYS_FSL_USDHC_NUM	2
 #define CONFIG_SYS_MMC_ENV_DEV		0  /* USDHC3 / eMMC */
-#define CONFIG_SYS_MMC_ENV_PART		0  /* user area */
+#define CONFIG_SYS_MMC_ENV_PART		1  /* 0=user area, 1=1st MMC boot part., 2=2nd MMC boot part. */
 #define CONFIG_MMCROOT			"/dev/mmcblk2p2"  /* USDHC3 / eMMC */
 
 #define CONFIG_SYS_FSL_ESDHC_ADDR	USDHC3_BASE_ADDR
@@ -263,7 +263,7 @@
 
 #define CONFIG_ENV_SIZE			SZ_8K
 #if defined(CONFIG_ENV_IS_IN_MMC)
-#define CONFIG_ENV_OFFSET		(8 * SZ_64K)
+#define CONFIG_ENV_OFFSET		(SZ_2M - CONFIG_ENV_SIZE)
 #elif defined(CONFIG_ENV_IS_IN_SPI_FLASH)
 #define CONFIG_ENV_OFFSET		(768 * 1024)
 #define CONFIG_ENV_SECT_SIZE		(64 * 1024)

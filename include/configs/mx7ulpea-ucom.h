@@ -48,11 +48,11 @@
 
 #define CONFIG_SYS_FSL_ESDHC_ADDR       0
 #define CONFIG_SYS_MMC_ENV_DEV          0	/* USDHC1 */
-#define CONFIG_SYS_MMC_ENV_PART         0	/* user area */
+#define CONFIG_SYS_MMC_ENV_PART		1       /* 0=user area, 1=1st MMC boot part., 2=2nd MMC boot part. */
 #define CONFIG_MMCROOT                  "/dev/mmcblk0p2"  /* USDHC1 */
 #define CONFIG_SYS_MMC_IMG_LOAD_PART    1
 
-#define CONFIG_ENV_OFFSET		(14 * SZ_64K)
+#define CONFIG_ENV_OFFSET		(SZ_2M - CONFIG_ENV_SIZE)
 #define CONFIG_ENV_SIZE			SZ_8K
 
 /* EA TODO: ---> */
