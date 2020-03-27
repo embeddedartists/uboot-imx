@@ -272,6 +272,9 @@ static void adv7535_init(void)
 	int ret;
 	uint8_t val;
 
+	unsigned int htotal, vtotal;
+	const struct  fb_videomode *mode = &displays[0].mode;
+
 	ret = uclass_get_device_by_seq(UCLASS_I2C, i2c_bus, &bus);
 	if (ret) {
 		printf("%s: No bus %d\n", __func__, i2c_bus);
@@ -320,24 +323,28 @@ static void adv7535_init(void)
 
 	/* Enable Internal Timing Generator */
 	adv7535_i2c_reg_write(cec_dev, 0x27, 0xff, 0xCB);
-	/* 1920 x 1080p 60Hz */
-	adv7535_i2c_reg_write(cec_dev, 0x28, 0xff, 0x89); /* total width */
-	adv7535_i2c_reg_write(cec_dev, 0x29, 0xff, 0x80); /* total width */
-	adv7535_i2c_reg_write(cec_dev, 0x2A, 0xff, 0x02); /* hsync */
-	adv7535_i2c_reg_write(cec_dev, 0x2B, 0xff, 0xC0); /* hsync */
-	adv7535_i2c_reg_write(cec_dev, 0x2C, 0xff, 0x05); /* hfp */
-	adv7535_i2c_reg_write(cec_dev, 0x2D, 0xff, 0x80); /* hfp */
-	adv7535_i2c_reg_write(cec_dev, 0x2E, 0xff, 0x09); /* hbp */
-	adv7535_i2c_reg_write(cec_dev, 0x2F, 0xff, 0x40); /* hbp */
 
-	adv7535_i2c_reg_write(cec_dev, 0x30, 0xff, 0x46); /* total height */
-	adv7535_i2c_reg_write(cec_dev, 0x31, 0xff, 0x50); /* total height */
-	adv7535_i2c_reg_write(cec_dev, 0x32, 0xff, 0x00); /* vsync */
-	adv7535_i2c_reg_write(cec_dev, 0x33, 0xff, 0x50); /* vsync */
-	adv7535_i2c_reg_write(cec_dev, 0x34, 0xff, 0x00); /* vfp */
-	adv7535_i2c_reg_write(cec_dev, 0x35, 0xff, 0x40); /* vfp */
-	adv7535_i2c_reg_write(cec_dev, 0x36, 0xff, 0x02); /* vbp */
-	adv7535_i2c_reg_write(cec_dev, 0x37, 0xff, 0x40); /* vbp */
+	/* horizontal porch params */
+	htotal = mode->xres+mode->left_margin+mode->right_margin+mode->hsync_len;
+	adv7535_i2c_reg_write(cec_dev, 0x28, 0xff, htotal>>4 ); /* total width */
+	adv7535_i2c_reg_write(cec_dev, 0x29, 0xff, (htotal<<4)&0xff ); /* total width */
+	adv7535_i2c_reg_write(cec_dev, 0x2A, 0xff, mode->hsync_len>>4 ); /* hsync */
+	adv7535_i2c_reg_write(cec_dev, 0x2B, 0xff, (mode->hsync_len<<4)&0xff); /* hsync */
+	adv7535_i2c_reg_write(cec_dev, 0x2C, 0xff, mode->right_margin>>4); /* hfp */
+	adv7535_i2c_reg_write(cec_dev, 0x2D, 0xff, (mode->right_margin<<4)&0xff); /* hfp */
+	adv7535_i2c_reg_write(cec_dev, 0x2E, 0xff, mode->left_margin>>4); /* hbp */
+	adv7535_i2c_reg_write(cec_dev, 0x2F, 0xff, (mode->left_margin<<4)&0xff); /* hbp */
+
+	/* vertical porch params */
+	vtotal = mode->yres+mode->upper_margin+mode->lower_margin+mode->vsync_len;
+	adv7535_i2c_reg_write(cec_dev, 0x30, 0xff, vtotal>>4); /* total height */
+	adv7535_i2c_reg_write(cec_dev, 0x31, 0xff, (vtotal<<4)&0xff); /* total height */
+	adv7535_i2c_reg_write(cec_dev, 0x32, 0xff, mode->vsync_len>>4); /* vsync */
+	adv7535_i2c_reg_write(cec_dev, 0x33, 0xff, (mode->vsync_len<<4)&0xff); /* vsync */
+	adv7535_i2c_reg_write(cec_dev, 0x34, 0xff, mode->lower_margin>>4); /* vfp */
+	adv7535_i2c_reg_write(cec_dev, 0x35, 0xff, (mode->lower_margin<<4)&0xff); /* vfp */
+	adv7535_i2c_reg_write(cec_dev, 0x36, 0xff, mode->upper_margin>>4); /* vbp */
+	adv7535_i2c_reg_write(cec_dev, 0x37, 0xff, (mode->upper_margin<<4)&0xff); /* vbp */
 
 	/* Reset Internal Timing Generator */
 	adv7535_i2c_reg_write(cec_dev, 0x27, 0xff, 0xCB);
