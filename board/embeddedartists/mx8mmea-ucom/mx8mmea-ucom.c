@@ -411,14 +411,6 @@ struct mipi_dsi_client_dev adv7535_dev = {
 	.name = "ADV7535",
 };
 
-struct mipi_dsi_client_dev rm67191_dev = {
-	.channel	= 0,
-	.lanes = 4,
-	.format  = MIPI_DSI_FMT_RGB888,
-	.mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
-			  MIPI_DSI_MODE_EOT_PACKET | MIPI_DSI_MODE_VIDEO_HSE,
-};
-
 #define FSL_SIP_GPC			0xC2000000
 #define FSL_SIP_CONFIG_GPC_PM_DOMAIN	0x3
 #define DISPMIX				9
@@ -442,38 +434,8 @@ void do_enable_mipi2hdmi(struct display_info_t const *dev)
 	imx_mipi_dsi_bridge_attach(&adv7535_dev); /* attach adv7535 device */
 }
 
-void do_enable_mipi_led(struct display_info_t const *dev)
-{
-/*
-TODO EA: Do we need something similar?
-	gpio_request(IMX_GPIO_NR(1, 8), "DSI EN");
-	gpio_direction_output(IMX_GPIO_NR(1, 8), 0);
-	mdelay(100);
-	gpio_direction_output(IMX_GPIO_NR(1, 8), 1);
-*/
-
-	/* enable the dispmix & mipi phy power domain */
-	call_imx_sip(FSL_SIP_GPC, FSL_SIP_CONFIG_GPC_PM_DOMAIN, DISPMIX, true, 0);
-	call_imx_sip(FSL_SIP_GPC, FSL_SIP_CONFIG_GPC_PM_DOMAIN, MIPI, true, 0);
-
-	/* Put lcdif out of reset */
-	disp_mix_bus_rstn_reset(imx8mm_mipi_dsim_plat_data.gpr_base, false);
-	disp_mix_lcdif_clks_enable(imx8mm_mipi_dsim_plat_data.gpr_base, true);
-
-	/* Setup mipi dsim */
-	sec_mipi_dsim_setup(&imx8mm_mipi_dsim_plat_data);
-
-	rm67191_init();
-	rm67191_dev.name = displays[1].mode.name;
-	imx_mipi_dsi_bridge_attach(&rm67191_dev); /* attach rm67191 device */
-}
-
 void board_quiesce_devices(void)
 {
-/* TODO EA: Do we need this?
-	gpio_request(IMX_GPIO_NR(1, 8), "DSI EN");
-	gpio_direction_output(IMX_GPIO_NR(1, 8), 0);
-*/
 }
 
 struct display_info_t const displays[] = {{
@@ -497,28 +459,8 @@ struct display_info_t const displays[] = {{
 		.sync			= FB_SYNC_EXT,
 		.vmode			= FB_VMODE_NONINTERLACED
 
-} }, {
-	.bus = LCDIF_BASE_ADDR,
-	.addr = 0,
-	.pixfmt = 24,
-	.detect = NULL,
-	.enable	= do_enable_mipi_led,
-	.mode	= {
-		.name			= "RM67191_OLED",
-		.refresh		= 60,
-		.xres			= 1080,
-		.yres			= 1920,
-		.pixclock		= 7575, /* 132000000 */
-		.left_margin	= 34,
-		.right_margin	= 20,
-		.upper_margin	= 4,
-		.lower_margin	= 10,
-		.hsync_len		= 2,
-		.vsync_len		= 2,
-		.sync			= FB_SYNC_EXT,
-		.vmode			= FB_VMODE_NONINTERLACED
-
 } } };
+
 size_t display_count = ARRAY_SIZE(displays);
 #endif
 
