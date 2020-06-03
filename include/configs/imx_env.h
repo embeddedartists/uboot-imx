@@ -12,10 +12,17 @@
     #define MFG_BOOT_CMD "bootz "
 #endif
 
+#ifdef CONFIG_EA_IMX_PTP
+    #define EXTRA_MFGTOOL_ARGS	"drm_kms_helper.edid_firmware=edid/800x480.bin "
+#else
+    #define EXTRA_MFGTOOL_ARGS  " "
+#endif
+
 #define CONFIG_MFG_ENV_SETTINGS_DEFAULT \
 	"mfgtool_args=setenv bootargs console=${console},${baudrate} " \
 		"rdinit=/linuxrc " \
 		"clk_ignore_unused "\
+                EXTRA_MFGTOOL_ARGS \
 		"\0" \
 	"kboot="MFG_BOOT_CMD"\0"\
 	"bootcmd_mfg=run mfgtool_args;" \

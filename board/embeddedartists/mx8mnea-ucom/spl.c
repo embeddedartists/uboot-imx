@@ -215,6 +215,11 @@ static void spl_dram_init(uint32_t *size)
         /* set default value, will be replaced if  eeprom cfg is valid */
         *size = (PHYS_SDRAM_SIZE >> 20);
 
+#ifdef CONFIG_EA_IMX_PTP
+	/* Skip reading eeprom */
+	(void)cfg;
+	(void)ret;
+#else
         ret = ea_eeprom_get_config(&cfg);
 
         /* If eeprom is valid read ddr config; otherwise use default */
@@ -229,6 +234,7 @@ static void spl_dram_init(uint32_t *size)
                         ret = spl_ddr_unpack_data(&cfg);
                 }
         }
+#endif
 
 	ddr_init(&dram_timing);
 }
