@@ -419,6 +419,19 @@ void get_board_serial(struct tag_serialnr *serialnr)
 #endif
 
 #ifdef CONFIG_OF_SYSTEM_SETUP
+bool check_fdt_new_path(void *blob)
+{
+	const char *soc_path = "/soc@0";
+	int nodeoff;
+
+	nodeoff = fdt_path_offset(blob, soc_path);
+	if (nodeoff < 0) {
+		return false;
+	}
+
+	return true;
+}
+
 static int ft_add_optee_node(void *fdt, bd_t *bd)
 {
 	const char *path, *subpath;
@@ -666,11 +679,17 @@ int ft_system_setup(void *blob, bd_t *bd)
 
 		disable_dcss_nodes(blob);
 
-		const char *usb_dwc3_path = "/usb@38100000/dwc3";
-		nodeoff = fdt_path_offset(blob, usb_dwc3_path);
+		bool new_path = check_fdt_new_path(blob);
+		int v = new_path? 1 : 0;
+		const char *usb_dwc3_path[] = {
+			"/usb@38100000/dwc3",
+			"/soc@0/usb@38100000"
+		};
+
+		nodeoff = fdt_path_offset(blob, usb_dwc3_path[v]);
 		if (nodeoff >= 0) {
 			const char *speed = "high-speed";
-			printf("Found %s node\n", usb_dwc3_path);
+			printf("Found %s node\n", usb_dwc3_path[v]);
 
 usb_modify_speed:
 
@@ -682,13 +701,13 @@ usb_modify_speed:
 						goto usb_modify_speed;
 				}
 				printf("Unable to set property %s:%s, err=%s\n",
-					usb_dwc3_path, "maximum-speed", fdt_strerror(rc));
+					usb_dwc3_path[v], "maximum-speed", fdt_strerror(rc));
 			} else {
 				printf("Modify %s:%s = %s\n",
-					usb_dwc3_path, "maximum-speed", speed);
+					usb_dwc3_path[v], "maximum-speed", speed);
 			}
 		}else {
-			printf("Can't found %s node\n", usb_dwc3_path);
+			printf("Can't found %s node\n", usb_dwc3_path[v]);
 		}
 	}
 
