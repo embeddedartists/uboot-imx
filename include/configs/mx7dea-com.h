@@ -278,10 +278,6 @@
 /*#define CONFIG_IMX_VIDEO_SKIP*/
 #endif
 
-#define CONFIG_ENV_SIZE			SZ_8K
-#define CONFIG_ENV_OFFSET		(SZ_2M - CONFIG_ENV_SIZE)
-/*#define CONFIG_ENV_OFFSET		(8 * SZ_64K)*/
-
 #if defined(CONFIG_ANDROID_SUPPORT)
 #include "mx7dsabresdandroid.h"
 #elif defined(CONFIG_ANDROID_THINGS_SUPPORT)

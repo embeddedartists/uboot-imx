@@ -213,16 +213,12 @@
 
 #define CONFIG_ENV_OVERWRITE
 
-/* Default ENV offset is 4MB for SD/EMMC/FSPI, but NAND uses 60MB offset, overridden by env_get_offset */
-#define CONFIG_ENV_OFFSET		(SZ_2M - CONFIG_ENV_SIZE)
-
 #define CONFIG_ENV_SECT_SIZE		(64 * 1024)
 #define CONFIG_ENV_SPI_BUS		CONFIG_SF_DEFAULT_BUS
 #define CONFIG_ENV_SPI_CS		CONFIG_SF_DEFAULT_CS
 #define CONFIG_ENV_SPI_MODE		CONFIG_SF_DEFAULT_MODE
 #define CONFIG_ENV_SPI_MAX_HZ		CONFIG_SF_DEFAULT_SPEED
 
-#define CONFIG_ENV_SIZE			SZ_8K
 #define CONFIG_SYS_MMC_ENV_DEV		1   /* USDHC2 */
 #define CONFIG_SYS_MMC_ENV_PART		1   /* 0=user area, 1=1st MMC boot part., 2=2nd MMC boot part. */
 #define CONFIG_MMCROOT			"/dev/mmcblk1p2"  /* USDHC2 */
