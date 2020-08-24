@@ -626,6 +626,7 @@ dtb-y += \
 	imx6dl-sabresd.dtb \
 	imx6dl-arm2.dtb \
 	imx6dl-wandboard-revb1.dtb \
+	imx6dlea-com-kit.dtb \
 
 endif
 
@@ -662,6 +663,7 @@ dtb-y += \
 	imx6q-pop-arm2.dtb \
 	imx6q-tbs2910.dtb \
 	imx6q-wandboard-revb1.dtb \
+	imx6qea-com-kit.dtb \
 	imx6qp-sabreauto.dtb \
 	imx6qp-sabreauto-ecspi.dtb \
 	imx6qp-sabreauto-gpmi-weim.dtb \
@@ -688,6 +690,7 @@ dtb-$(CONFIG_MX6SX) += \
 	imx6sx-sabreauto.dtb \
 	imx6sx-sdb.dtb \
 	imx6sx-sdb-emmc.dtb \
+	imx6sxea-com-kit.dtb \
 	imx6sx-softing-vining-2000.dtb
 
 dtb-$(CONFIG_MX6UL) += \
@@ -747,7 +750,9 @@ dtb-$(CONFIG_MX7) += imx7d-sdb.dtb \
 	imx7d-12x12-ddr3-val.dtb \
 	imx7d-19x19-ddr3-val.dtb \
 	imx7d-19x19-lpddr2-val.dtb \
-	imx7d-19x19-lpddr3-val.dtb
+	imx7d-19x19-lpddr3-val.dtb \
+	imx7dea-com-kit.dtb \
+        imx7dea-ucom-kit.dtb
 
 
 dtb-$(CONFIG_ARCH_MX7ULP) += imx7ulp-com.dtb \
@@ -755,7 +760,8 @@ dtb-$(CONFIG_ARCH_MX7ULP) += imx7ulp-com.dtb \
 	imx7ulp-14x14-val.dtb \
 	imx7ulp-evk.dtb \
 	imx7ulp-evk-emmc.dtb \
-	imx7ulp-evk-qspi.dtb
+	imx7ulp-evk-qspi.dtb \
+	imx7ulpea-ucom-kit_v2.dtb
 
 dtb-$(CONFIG_ARCH_IMX8) += \
 	fsl-imx8qm-apalis.dtb \
@@ -795,7 +801,10 @@ dtb-$(CONFIG_ARCH_IMX8M) += \
 	imx8mp-evk.dtb \
 	imx8mm-ab2.dtb \
 	imx8mn-ddr4-ab2.dtb \
-	imx8mn-ab2.dtb
+	imx8mn-ab2.dtb \
+	imx8mq-ea-com-kit_v2.dtb \
+	imx8mm-ea-ucom-kit_v2.dtb \
+	imx8mn-ea-ucom-kit_v2.dtb
 
 dtb-$(CONFIG_ARCH_IMXRT) += imxrt1050-evk.dtb
 

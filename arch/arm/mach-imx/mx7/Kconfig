@@ -114,6 +114,24 @@ config TARGET_COLIBRI_IMX7
 	select DM_THERMAL
 	imply CMD_DM
 
+config TARGET_MX7DEA_UCOM
+	bool "Support mx7dea-ucom"
+	select MX7D
+	select DM
+	select DM_THERMAL
+	select BOARD_EARLY_INIT_F
+	select BOARD_LATE_INIT
+	select SUPPORT_SPL
+
+config TARGET_MX7DEA_COM
+	bool "Support mx7dea-com"
+	select MX7D
+	select DM
+	select DM_THERMAL
+	select BOARD_EARLY_INIT_F
+	select BOARD_LATE_INIT
+	select SUPPORT_SPL
+
 endchoice
 
 config SYS_SOC
@@ -129,5 +147,6 @@ source "board/novtech/meerkat96/Kconfig"
 source "board/technexion/pico-imx7d/Kconfig"
 source "board/toradex/colibri_imx7/Kconfig"
 source "board/warp7/Kconfig"
+source "board/embeddedartists/mx7dea-com/Kconfig"
 
 endif

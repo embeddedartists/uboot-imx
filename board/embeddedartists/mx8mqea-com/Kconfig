@@ -1,0 +1,12 @@
+if TARGET_MX8MQEA_COM
+
+config SYS_BOARD
+	default "mx8mqea-com"
+
+config SYS_VENDOR
+	default "embeddedartists"
+
+config SYS_CONFIG_NAME
+	default "mx8mqea-com"
+
+endif

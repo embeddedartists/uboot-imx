@@ -835,6 +835,45 @@ config TARGET_BRPPT2
           Support
           B&R BRPPT2 platform
           based on Freescale's iMX6 SoC
+
+config TARGET_MX6SXEA_COM
+	bool "Support mx6sxea-com"
+	select MX6SX
+	select SUPPORT_SPL
+	select DM
+	select DM_THERMAL
+	select BOARD_EARLY_INIT_F
+	select BOARD_LATE_INIT
+
+config TARGET_MX6QEA_COM
+	bool "Support mx6qea-com"
+	select MX6Q
+	select SUPPORT_SPL
+	select DM
+	select DM_THERMAL
+	select BOARD_EARLY_INIT_F
+	select BOARD_LATE_INIT
+
+config TARGET_MX6DLEA_COM
+	bool "Support mx6dlea-com"
+	select MX6DL
+	select SUPPORT_SPL
+	select DM
+	select DM_THERMAL
+	select BOARD_EARLY_INIT_F
+	select BOARD_LATE_INIT
+
+
+config TARGET_MX6ULEA_COM
+	bool "Support mx6ulea-com"
+	select MX6UL
+	select SUPPORT_SPL
+	select DM
+	select DM_THERMAL
+	select BOARD_EARLY_INIT_F
+	select BOARD_LATE_INIT
+
+
 endchoice
 
 config SYS_SOC
@@ -900,5 +939,9 @@ source "board/udoo/neo/Kconfig"
 source "board/wandboard/Kconfig"
 source "board/warp/Kconfig"
 source "board/BuR/brppt2/Kconfig"
+source "board/embeddedartists/common/Kconfig"
+source "board/embeddedartists/mx6sxea-com/Kconfig"
+source "board/embeddedartists/mx6qea-com/Kconfig"
+source "board/embeddedartists/mx6ulea-com/Kconfig"
 
 endif
