@@ -14,7 +14,7 @@
 
 /dts-v1/;
 
-#include "fsl-imx8mm.dtsi"
+#include "imx8mm.dtsi"
 
 / {
 	model = "Embedded Artists i.MX8MM COM Kit";
@@ -397,7 +397,7 @@
 	status = "okay";
 };
 
-&flexspi0 {
+&flexspi {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_flexspi0>;
 	status = "okay";
