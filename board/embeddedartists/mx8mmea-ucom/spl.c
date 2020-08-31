@@ -5,21 +5,24 @@
  */
 
 #include <common.h>
+#include <cpu_func.h>
+#include <hang.h>
 #include <spl.h>
 #include <asm/io.h>
-#include <errno.h>
 #include <asm/io.h>
 #include <asm/mach-imx/iomux-v3.h>
+#include <asm/arch/clock.h>
 #include <asm/arch/imx8mm_pins.h>
 #include <asm/arch/sys_proto.h>
 #include <power/pmic.h>
 #include <power/bd71837.h>
-#include <asm/arch/clock.h>
 #include <asm/mach-imx/gpio.h>
 #include <asm/mach-imx/mxc_i2c.h>
-#include <fsl_esdhc.h>
+#include <fsl_esdhc_imx.h>
 #include <mmc.h>
-#include <asm/arch/imx8m_ddr.h>
+#include <asm/mach-imx/boot_mode.h>
+#include <asm/arch/ddr.h>
+#include <gzip.h>
 
 #include "../common/ea_common.h"
 #include "../common/ea_eeprom.h"
@@ -234,6 +237,27 @@ static void spl_dram_init(uint32_t *size)
 	ddr_init(&dram_timing);
 }
 
+
+int spl_board_boot_device(enum boot_device boot_dev_spl)
+{
+	switch (boot_dev_spl) {
+	case SD2_BOOT:
+	case MMC2_BOOT:
+		return BOOT_DEVICE_MMC1;
+	case SD3_BOOT:
+	case MMC3_BOOT:
+		return BOOT_DEVICE_MMC2;
+	case QSPI_BOOT:
+		return BOOT_DEVICE_NOR;
+	case NAND_BOOT:
+		return BOOT_DEVICE_NAND;
+	case USB_BOOT:
+		return BOOT_DEVICE_BOARD;
+	default:
+		return BOOT_DEVICE_NONE;
+	}
+}
+
 void spl_board_init(void)
 {
 #ifndef CONFIG_SPL_USB_SDP_SUPPORT
@@ -247,8 +271,8 @@ void spl_board_init(void)
 }
 
 static struct fsl_esdhc_cfg usdhc_cfg[2] = {
-	{USDHC2_BASE_ADDR, 0, 1}, /* required as SPL wants to boot from device 1 */
-	{USDHC3_BASE_ADDR, 0, 1},
+	{USDHC2_BASE_ADDR, 0, 4}, /* required as SPL wants to boot from device 1 */
+	{USDHC3_BASE_ADDR, 0, 8},
 };
 
 int board_mmc_getcd(struct mmc *mmc)
@@ -267,6 +291,7 @@ int board_mmc_init(bd_t *bis)
 
 	fsl_esdhc_initialize(bis, &usdhc_cfg[0]);
 
+	init_clk_usdhc(2);
 	usdhc_cfg[1].sdhc_clk = mxc_get_clock(MXC_ESDHC3_CLK);
 	imx_iomux_v3_setup_multiple_pads(
 		usdhc3_pads, ARRAY_SIZE(usdhc3_pads));
@@ -368,3 +393,13 @@ void board_init_f(ulong dummy)
 
 	board_init_r(NULL, 0);
 }
+
+int do_reset(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+        puts ("resetting ...\n");
+
+        reset_cpu(WDOG1_BASE_ADDR);
+
+        return 0;
+}
+
