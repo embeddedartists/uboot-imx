@@ -5,22 +5,23 @@
  */
 
 #include <common.h>
+#include <cpu_func.h>
+#include <hang.h>
 #include <spl.h>
 #include <asm/io.h>
-#include <errno.h>
-#include <asm/io.h>
 #include <asm/mach-imx/iomux-v3.h>
+#include <asm/arch/clock.h>
 #include <asm/arch/imx8mn_pins.h>
 #include <asm/arch/sys_proto.h>
+#include <asm/mach-imx/boot_mode.h>
+#include <asm/arch/ddr.h>
 #include <power/pmic.h>
 #include <power/bd71837.h>
-#include <asm/arch/clock.h>
 #include <asm/mach-imx/gpio.h>
-#include <asm/gpio.h>
 #include <asm/mach-imx/mxc_i2c.h>
-#include <fsl_esdhc.h>
+#include <fsl_esdhc_imx.h>
 #include <mmc.h>
-#include <asm/arch/imx8m_ddr.h>
+#include <gzip.h>
 
 #include "../common/ea_common.h"
 #include "../common/ea_eeprom.h"
@@ -239,14 +240,40 @@ static void spl_dram_init(uint32_t *size)
 	ddr_init(&dram_timing);
 }
 
+int spl_board_boot_device(enum boot_device boot_dev_spl)
+{
+#ifdef CONFIG_SPL_BOOTROM_SUPPORT
+	return BOOT_DEVICE_BOOTROM;
+#else
+	switch (boot_dev_spl) {
+	case SD1_BOOT:
+	case MMC1_BOOT:
+	case SD2_BOOT:
+	case MMC2_BOOT:
+		return BOOT_DEVICE_MMC1;
+	case SD3_BOOT:
+	case MMC3_BOOT:
+		return BOOT_DEVICE_MMC2;
+	case QSPI_BOOT:
+		return BOOT_DEVICE_NOR;
+	case NAND_BOOT:
+		return BOOT_DEVICE_NAND;
+	case USB_BOOT:
+		return BOOT_DEVICE_BOARD;
+	default:
+		return BOOT_DEVICE_NONE;
+	}
+#endif
+}
+
 void spl_board_init(void)
 {
 	puts("Normal Boot\n");
 }
 
 static struct fsl_esdhc_cfg usdhc_cfg[2] = {
-	{USDHC2_BASE_ADDR, 0, 1},
-	{USDHC3_BASE_ADDR, 0, 1},
+	{USDHC2_BASE_ADDR, 0, 4},
+	{USDHC3_BASE_ADDR, 0, 8},
 };
 
 int board_mmc_getcd(struct mmc *mmc)
@@ -265,6 +292,7 @@ int board_mmc_init(bd_t *bis)
 
 	fsl_esdhc_initialize(bis, &usdhc_cfg[0]);
 
+	init_clk_usdhc(2);
 	usdhc_cfg[1].sdhc_clk = mxc_get_clock(MXC_ESDHC3_CLK);
 	imx_iomux_v3_setup_multiple_pads(
 		usdhc3_pads, ARRAY_SIZE(usdhc3_pads));
@@ -373,3 +401,29 @@ void board_init_f(ulong dummy)
 	board_init_r(NULL, 0);
 }
 
+
+int do_reset(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	puts("resetting ...\n");
+
+	reset_cpu(WDOG1_BASE_ADDR);
+
+	return 0;
+}
+
+
+#ifdef CONFIG_SPL_MMC_SUPPORT
+
+#define UBOOT_RAW_SECTOR_OFFSET 0x40
+unsigned long spl_mmc_get_uboot_raw_sector(struct mmc *mmc)
+{
+	u32 boot_dev = spl_boot_device();
+	switch (boot_dev) {
+		case BOOT_DEVICE_MMC1:
+			return CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR;
+		case BOOT_DEVICE_MMC2:
+			return CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR - UBOOT_RAW_SECTOR_OFFSET;
+	}
+	return CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR;
+}
+#endif

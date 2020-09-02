@@ -27,6 +27,8 @@
 
 	reg_usdhc2_vmmc: regulator-usdhc2 {
 		compatible = "regulator-fixed";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_reg_usdhc2_vmmc>;
 		regulator-name = "VSD_3V3";
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
@@ -34,6 +36,12 @@
 		enable-active-high;
 		startup-delay-us = <100>;
 		off-on-delay-us = <12000>;
+	};
+
+
+	dsi_host: dsi-host {
+		compatible = "samsung,sec-mipi-dsi";
+		status = "okay";
 	};
 };
 
@@ -126,6 +134,13 @@
 		pinctrl_pmic: pmicirq {
 			fsl,pins = <
 				MX8MN_IOMUXC_GPIO1_IO03_GPIO1_IO3		0x41
+			>;
+		};
+
+
+		pinctrl_reg_usdhc2_vmmc: regusdhc2vmmc {
+			fsl,pins = <
+				MX8MN_IOMUXC_SD2_RESET_B_GPIO2_IO19     0x41
 			>;
 		};
 
@@ -406,6 +421,21 @@
 	scl-gpios = <&gpio5 16 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpio5 17 GPIO_ACTIVE_HIGH>;
 	status = "okay";
+
+	adv_bridge: adv7535@3d {
+		compatible = "adi,adv7533";
+		reg = <0x3d>;
+		adi,addr-cec = <0x3c>;
+		adi,dsi-lanes = <4>;
+		status = "okay";
+
+		port {
+			adv7535_from_dsim: endpoint {
+				remote-endpoint = <&dsim_to_adv7535>;
+			};
+		};
+	};
+
 };
 
 &i2c3 {
@@ -439,6 +469,28 @@
 		};
 	};
 };
+
+&lcdif {
+	display = <&display0>;
+	status = "okay";
+
+	display0: display@0 {
+		bits-per-pixel = <24>;
+		bus-width = <24>;
+	};
+};
+
+&mipi_dsi {
+	status = "okay";
+
+	port@1 {
+		dsim_to_adv7535: endpoint {
+			remote-endpoint = <&adv7535_from_dsim>;
+		};
+	};
+
+};
+
 
 &uart2 { /* console */
 	pinctrl-names = "default";
@@ -487,3 +539,4 @@
 	status = "okay";
 };
 
+#include "imx8mn-ddr4-evk-u-boot.dtsi"
