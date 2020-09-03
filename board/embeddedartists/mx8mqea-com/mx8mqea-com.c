@@ -6,6 +6,8 @@
  */
 
 #include <common.h>
+#include <env.h>
+#include <init.h>
 #include <malloc.h>
 #include <errno.h>
 #include <asm/io.h>
@@ -13,15 +15,13 @@
 #include <netdev.h>
 #include <asm/mach-imx/iomux-v3.h>
 #include <asm-generic/gpio.h>
-#include <fsl_esdhc.h>
+#include <fsl_esdhc_imx.h>
 #include <mmc.h>
 #include <asm/arch/imx8mq_pins.h>
 #include <asm/arch/sys_proto.h>
 #include <asm/mach-imx/gpio.h>
 #include <asm/mach-imx/mxc_i2c.h>
 #include <asm/arch/clock.h>
-#include <asm/mach-imx/video.h>
-#include <asm/arch/video_common.h>
 #include <spl.h>
 #include <dm.h>
 #include <usb.h>
@@ -58,31 +58,19 @@ int board_early_init_f(void)
 	return 0;
 }
 
-int dram_init(void)
+int board_phys_sdram_size(phys_size_t *size)
 {
 	ea_config_t *ea_conf = (ea_config_t *)EA_SHARED_CONFIG_MEM;
 
 	// default size from configuration file
-	gd->ram_size = PHYS_SDRAM_SIZE;
+	*size = PHYS_SDRAM_SIZE;
 
 	if (ea_conf->magic == EA_CONFIG_MAGIC) {
-		gd->ram_size = (ea_conf->ddr_size << 20);
+		*size = (ea_conf->ddr_size << 20);
 	}
 
-	/* rom_pointer[1] contains the size of TEE occupies */
-	if (rom_pointer[1])
-		gd->ram_size = gd->ram_size - rom_pointer[1];
-
-
 	return 0;
 }
-
-#ifdef CONFIG_OF_BOARD_SETUP
-int ft_board_setup(void *blob, bd_t *bd)
-{
-	return 0;
-}
-#endif
 
 #ifdef CONFIG_FEC_MXC
 #define FEC_RST_PAD IMX_GPIO_NR(1, 9)
@@ -260,49 +248,4 @@ int board_late_init(void)
 	return 0;
 }
 
-#if defined(CONFIG_VIDEO_IMXDCSS)
-
-struct display_info_t const displays[] = {{
-	.bus	= 0, /* Unused */
-	.addr	= 0, /* Unused */
-	.pixfmt	= GDF_32BIT_X888RGB,
-	.detect	= NULL,
-	.enable	= NULL,
-#ifndef CONFIG_VIDEO_IMXDCSS_1080P
-	.mode	= {
-		.name           = "HDMI", /* 720P60 */
-		.refresh        = 60,
-		.xres           = 1280,
-		.yres           = 720,
-		.pixclock       = 13468, /* 74250  kHz */
-		.left_margin    = 110,
-		.right_margin   = 220,
-		.upper_margin   = 5,
-		.lower_margin   = 20,
-		.hsync_len      = 40,
-		.vsync_len      = 5,
-		.sync           = FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
-		.vmode          = FB_VMODE_NONINTERLACED
-	}
-#else
-	.mode	= {
-		.name           = "HDMI", /* 1080P60 */
-		.refresh        = 60,
-		.xres           = 1920,
-		.yres           = 1080,
-		.pixclock       = 6734, /* 148500 kHz */
-		.left_margin    = 148,
-		.right_margin   = 88,
-		.upper_margin   = 36,
-		.lower_margin   = 4,
-		.hsync_len      = 44,
-		.vsync_len      = 5,
-		.sync           = FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
-		.vmode          = FB_VMODE_NONINTERLACED
-	}
-#endif
-} };
-size_t display_count = ARRAY_SIZE(displays);
-
-#endif /* CONFIG_VIDEO_IMXDCSS */
 

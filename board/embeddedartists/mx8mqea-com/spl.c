@@ -5,22 +5,23 @@
  */
 
 #include <common.h>
-#include <spl.h>
+#include <cpu_func.h>
+#include <hang.h>
 #include <asm/io.h>
 #include <errno.h>
-#include <asm/io.h>
-#include <asm/mach-imx/iomux-v3.h>
 #include <asm/arch/ddr.h>
 #include <asm/arch/imx8mq_pins.h>
 #include <asm/arch/sys_proto.h>
-#include <power/pmic.h>
-#include <power/bd71837.h>
 #include <asm/arch/clock.h>
+#include <asm/mach-imx/iomux-v3.h>
 #include <asm/mach-imx/gpio.h>
 #include <asm/mach-imx/mxc_i2c.h>
-#include <fsl_esdhc.h>
+#include <fsl_esdhc_imx.h>
 #include <mmc.h>
-#include <asm/arch/imx8m_ddr.h>
+#include <power/pmic.h>
+#include <power/bd71837.h>
+#include <spl.h>
+#include <gzip.h>
 
 #include "../common/ea_common.h"
 #include "../common/ea_eeprom.h"
@@ -269,7 +270,8 @@ int board_mmc_init(bd_t *bis)
 
 	/* we always boot from eMMC so only one mmc device is supported */
 
-	usdhc_cfg[0].sdhc_clk = mxc_get_clock(USDHC1_CLK_ROOT);
+	init_clk_usdhc(0);
+	usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC_CLK);
 	imx_iomux_v3_setup_multiple_pads(
 		usdhc1_pads, ARRAY_SIZE(usdhc1_pads));
 	gpio_request(USDHC1_PWR_GPIO, "usdhc1_reset");

@@ -336,36 +336,6 @@
 	status = "okay";
 };
 
-&lcdif {
-	status = "okay";
-	disp-dev = "mipi_dsi_northwest";
-	display = <&display0>;
-
-	display0: display@0 {
-		bits-per-pixel = <24>;
-		bus-width = <24>;
-
-		display-timings {
-			native-mode = <&timing0>;
-			timing0: timing0 {
-			clock-frequency = <9200000>;
-			hactive = <480>;
-			vactive = <272>;
-			hfront-porch = <8>;
-			hback-porch = <4>;
-			hsync-len = <41>;
-			vback-porch = <2>;
-			vfront-porch = <4>;
-			vsync-len = <10>;
-
-			hsync-active = <0>;
-			vsync-active = <0>;
-			de-active = <1>;
-			pixelclk-active = <0>;
-			};
-		};
-	};
-};
 
 &usdhc1 {
 	pinctrl-names = "default", "state_100mhz", "state_200mhz";
@@ -400,4 +370,40 @@
 	pinctrl-0 = <&pinctrl_wdog>;
 	fsl,ext-reset-output;
 	status = "okay";
+};
+
+&dcss {
+	status = "okay";
+	port@0 {
+		dcss_out: endpoint {
+			remote-endpoint = <&hdmi_in>;
+		};
+	};
+};
+
+&hdmi {
+	compatible = "fsl,imx8mq-hdmi";
+	status = "okay";
+
+	display-timings {
+		native-mode = <&timing1>;
+
+		timing1: timing1 {
+			clock-frequency = <74250000>;
+			hactive = <1280>;
+			vactive = <720>;
+			hfront-porch = <220>;
+			hback-porch = <110>;
+			hsync-len = <40>;
+			vback-porch = <5>;
+			vfront-porch = <20>;
+			vsync-len = <5>;
+		};
+	};
+
+	port@0 {
+		hdmi_in: endpoint {
+			remote-endpoint = <&dcss_out>;
+		};
+	};
 };
