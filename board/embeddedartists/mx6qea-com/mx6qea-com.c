@@ -38,7 +38,7 @@
 #include <power/pfuze100_pmic.h>
 #include <usb.h>
 #ifdef CONFIG_FSL_FASTBOOT
-#include <fsl_fastboot.h>
+#include <fb_fsl.h>
 #ifdef CONFIG_ANDROID_RECOVERY
 #include <recovery.h>
 #endif
@@ -696,7 +696,13 @@ int board_video_skip(void)
 
 	return 0;
 }
+
 #endif  /* CONFIG_CMD_EADISP */
+
+int ipu_displays_init(void)
+{
+        return board_video_skip();
+}
 
 static void setup_display(void)
 {
@@ -820,7 +826,6 @@ int board_init(void)
 	gpio_request(IMX_GPIO_NR(1, 0), "USB5V");
 	gpio_direction_output(IMX_GPIO_NR(1, 0), 1);
 
-
 #if defined(CONFIG_VIDEO_IPUV3)
 	setup_display();
 #endif
@@ -844,7 +849,7 @@ int power_init_board(void)
 	unsigned char offset, i, switch_num;
 	int ret;
 
-	ret = pmic_get("pfuze100", &dev);
+	ret = pmic_get("pfuze100@8", &dev);
 	if (ret) {
 		printf("%s: failed to get pmic\n", __func__);
 		return ret;

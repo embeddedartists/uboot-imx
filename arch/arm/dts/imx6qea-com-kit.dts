@@ -164,9 +164,22 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_enet>;
 	phy-mode = "rgmii";
-	phy-reset-gpios = <&gpio1 25 GPIO_ACTIVE_HIGH>;
+	phy-reset-gpios = <&gpio1 25 GPIO_ACTIVE_LOW>;
 	fsl,magic-packet;
+	phy-handle = <&ethphy1>;
 	status = "okay";
+
+
+	mdio {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ethphy1: ethernet-phy@1 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <1>;
+		};
+        };
+
 };
 
 &gpc {
@@ -213,7 +226,7 @@
 	sda-gpios = <&gpio5 26 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 
-	pmic: pfuze100@08 {
+	pmic: pfuze100@8 {
 		compatible = "fsl,pfuze100";
 		reg = <0x08>;
 
@@ -669,3 +682,4 @@
 &wdog2 {
 	status = "disabled";
 };
+
