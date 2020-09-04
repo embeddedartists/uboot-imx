@@ -235,3 +235,8 @@ config IMX_TRUSTY_OS
 
 config SYS_ARM_CACHE_WRITEALLOC
 	bool "support cache write alloc"
+
+config CMD_EADISP
+        bool "Support Embedded Artists Display commands"
+        depends on ARCH_MX6 || ARCH_MX7
+
