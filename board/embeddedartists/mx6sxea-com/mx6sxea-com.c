@@ -4,6 +4,7 @@
  * SPDX-License-Identifier:	GPL-2.0+
  */
 
+#include <init.h>
 #include <asm/arch/clock.h>
 #include <asm/arch/crm_regs.h>
 #include <asm/arch/iomux.h>
@@ -20,7 +21,7 @@
 #include <asm/io.h>
 #include <linux/sizes.h>
 #include <common.h>
-#include <fsl_esdhc.h>
+#include <fsl_esdhc_imx.h>
 #include <mmc.h>
 #include <miiphy.h>
 #include <netdev.h>
@@ -43,10 +44,6 @@
 #include <linux/fb.h>
 #include <mxsfb.h>
 #endif
-
-#ifdef CONFIG_FSL_FASTBOOT
-#include <fsl_fastboot.h>
-#endif /*CONFIG_FSL_FASTBOOT*/
 
 #include <dm.h>
 #include <fdt_support.h>
@@ -478,7 +475,7 @@ int power_init_board(void)
 	int ret;
 	unsigned char offset, i, switch_num;
 
-	ret = pmic_get("pfuze100", &dev);
+	ret = pmic_get("pfuze100@8", &dev);
 	if (ret)
 		return ret;
 
@@ -585,50 +582,6 @@ void ldo_mode_set(int ldo_bypass)
 	}
 }
 #endif
-
-int mmc_map_to_kernel_blk(int dev_no)
-{
-	/* eMMC device is available at mmcblk2 in Linux */
-	return 2;
-}
-
-int board_mmc_get_env_dev(int devno)
-{
-	int no = devno;
-	bool is_v2 = true;
-	ea_config_t *ea_conf = (ea_config_t *)EA_SHARED_CONFIG_MEM;
-
-	if (ea_conf->magic == EA_CONFIG_MAGIC) {
-		is_v2 = ea_conf->is_carrier_v2;
-	}
-
-	/*
-	 * This function is used to get the MMC device used for
-	 * the u-boot environment. The devno argument specifies the
-	 * boot device as defined in BOOT_CFG2 (see SD/eSD Boot Fusemap in
-	 * NXP's User's Manual).
-	 *
-	 * For the SoloX COM board eMMC is on USDHC3 which gives devno=2.
-	 *
-	 * When using the Device Module (dts) USDHC devices are added
-	 * in the order they are defined in the dts file. Depending on
-	 * which carrier board being used either USDHC2 or USDHC4 is
-	 * enabled in board_fix_fdt (SD card is on either USDHC2 or USDHC4).
-	 * This however effects which device number being assigned to eMMC.
-	 * When USDHC2 is enabled it will eMMC will be on mmc1 (since USDHC2
-	 * is on mmc0). When USDHC4 is enabled eMMC will be on mmc0 (and
-	 * USDHC4 on mmc1).
-	 */
-
-	if (is_v2) {
-		no = 0;
-	}
-	else {
-		no = 1;
-	}
-
-	return no;
-}
 
 #ifdef CONFIG_IMX_RDC
 static rdc_peri_cfg_t const shared_resources[] = {

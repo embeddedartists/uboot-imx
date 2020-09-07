@@ -18,18 +18,6 @@
 #include "imx6_spl.h"
 #endif
 
-/* uncomment for PLUGIN mode support */
-/* #define CONFIG_USE_PLUGIN */
-
-/* uncomment for SECURE mode support */
-/* #define CONFIG_SECURE_BOOT */
-
-#ifdef CONFIG_SECURE_BOOT
-#ifndef CONFIG_CSF_SIZE
-#define CONFIG_CSF_SIZE 0x2000
-#endif
-#endif
-
 /* Size of malloc() pool */
 #define CONFIG_SYS_MALLOC_LEN		(32 * SZ_1M)
 
@@ -78,7 +66,7 @@
 	CONFIG_MFG_ENV_SETTINGS_DEFAULT \
 	"initrd_addr=0x83800000\0" \
 	"initrd_high=0xffffffff\0" \
-	"emmc_dev=0\0"\
+	"emmc_dev=2\0"\
 
 #ifdef EA_IMX_PTP
 /*		"earlyprintk loglevel=7 debug initcall_debug " */
@@ -86,6 +74,9 @@
 #else
 #define EA_IMX_PTP_ENV_SETTINGS ""
 #endif
+
+/*	"mmcdev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0"*/
+
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	CONFIG_MFG_ENV_SETTINGS \
@@ -101,7 +92,7 @@
 	"boot_fdt=try\0" \
 	"ip_dyn=yes\0" \
 	"panel=Hannstar-XGA\0" \
-	"mmcdev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0" \
+	"mmcdev=2\0" \
 	"mmcpart=1\0" \
 	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
 	"mmcautodetect=yes\0" \
@@ -172,7 +163,6 @@
 #define CONFIG_SYS_MEMTEST_END		(CONFIG_SYS_MEMTEST_START + 0x10000)
 
 /* Physical Memory Map */
-#define CONFIG_NR_DRAM_BANKS		1
 #define PHYS_SDRAM			MMDC0_ARB_BASE_ADDR
 #define PHYS_SDRAM_SIZE			SZ_1G
 
@@ -191,15 +181,12 @@
 #define FSL_QSPI_FLASH_SIZE             SZ_16M
 
 
-#define	CONFIG_SF_DEFAULT_BUS		0
 #define	CONFIG_SF_DEFAULT_CS		0
-#define	CONFIG_SF_DEFAULT_SPEED		40000000
-#define	CONFIG_SF_DEFAULT_MODE		SPI_MODE_0
 #endif
 
 /* MMC Configuration */
 #define CONFIG_SYS_FSL_USDHC_NUM	2
-#define CONFIG_SYS_MMC_ENV_DEV		0  /* USDHC3 / eMMC */
+#define CONFIG_SYS_MMC_ENV_DEV		2  /* USDHC3 / eMMC */
 #define CONFIG_SYS_MMC_ENV_PART		1  /* 0=user area, 1=1st MMC boot part., 2=2nd MMC boot part. */
 #define CONFIG_MMCROOT			"/dev/mmcblk2p2"  /* USDHC3 / eMMC */
 
@@ -215,8 +202,6 @@
 #define CONFIG_SYS_I2C_SPEED		  100000
 
 /* Network */
-#define CONFIG_FEC_MXC
-#define CONFIG_MII
 
 #define CONFIG_FEC_ENET_DEV 0
 
@@ -233,9 +218,6 @@
 #endif
 
 #define CONFIG_FEC_XCV_TYPE             RGMII
-
-
-#define CONFIG_PHY_ATHEROS
 #define CONFIG_FEC_MXC_MDIO_BASE        ENET_BASE_ADDR
 
 #ifdef CONFIG_CMD_USB
@@ -251,7 +233,6 @@
 #define CONFIG_VIDEO_LOGO
 #define CONFIG_SPLASH_SCREEN
 #define CONFIG_SPLASH_SCREEN_ALIGN
-#define CONFIG_CMD_BMP
 #define CONFIG_BMP_16BPP
 #define CONFIG_VIDEO_BMP_RLE8
 #define CONFIG_VIDEO_BMP_LOGO
