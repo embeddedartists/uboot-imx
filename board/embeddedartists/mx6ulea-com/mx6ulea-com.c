@@ -4,6 +4,7 @@
  * SPDX-License-Identifier:	GPL-2.0+
  */
 
+#include <init.h>
 #include <asm/arch/clock.h>
 #include <asm/arch/iomux.h>
 #include <asm/arch/imx-regs.h>
@@ -21,7 +22,8 @@
 #endif
 #include <asm/io.h>
 #include <common.h>
-#include <fsl_esdhc.h>
+#include <env.h>
+#include <fsl_esdhc_imx.h>
 #include <i2c.h>
 #include <linux/sizes.h>
 #include <linux/fb.h>
@@ -33,13 +35,6 @@
 #include <usb/ehci-ci.h>
 #include <power/pmic.h>
 #include <power/pfuze3000_pmic.h>
-
-#ifdef CONFIG_FSL_FASTBOOT
-#include <fsl_fastboot.h>
-#ifdef CONFIG_ANDROID_RECOVERY
-#include <recovery.h>
-#endif
-#endif /*CONFIG_FSL_FASTBOOT*/
 
 #include <dm.h>
 #include <fdt_support.h>
@@ -143,6 +138,7 @@ int board_mmc_get_env_dev(int devno)
 #endif
 
 #ifdef CONFIG_VIDEO_MXS
+
 static iomux_v3_cfg_t const lcd_pads[] = {
 	MX6_PAD_LCD_CLK__LCDIF_CLK | MUX_PAD_CTRL(LCD_PAD_CTRL),
 	MX6_PAD_LCD_ENABLE__LCDIF_ENABLE | MUX_PAD_CTRL(LCD_PAD_CTRL),
@@ -221,6 +217,7 @@ static const struct display_info_t displays[] = {
 };
 
 #else /* CONFIG_CMD_EADISP */
+
 struct lcd_panel_info_t {
 	unsigned int lcdif_base_addr;
 	int depth;
@@ -306,35 +303,30 @@ int board_video_skip(void)
 
 #ifdef CONFIG_FEC_MXC
 
-static int setup_fec(int fec_id)
+static int setup_fec(void)
 {
 	struct iomuxc *const iomuxc_regs = (struct iomuxc *)IOMUXC_BASE_ADDR;
 	int ret;
-	if (0 == fec_id) {
-                if (check_module_fused(MX6_MODULE_ENET1))
-                        return -1;
 
-		/*
-		 * Use 50M anatop loopback REF_CLK1 for ENET1,
-		 * clear gpr1[13], set gpr1[17]
-		 */
-		clrsetbits_le32(&iomuxc_regs->gpr[1], IOMUX_GPR1_FEC1_MASK,
-				IOMUX_GPR1_FEC1_CLOCK_MUX1_SEL_MASK);
-	} else {
-                if (check_module_fused(MX6_MODULE_ENET2))
-                        return -1;
+	/*
+	 * Use 50M anatop loopback REF_CLK1 for ENET1,
+	 * clear gpr1[13], set gpr1[17]
+	 */
+	clrsetbits_le32(&iomuxc_regs->gpr[1], IOMUX_GPR1_FEC1_MASK,
+			IOMUX_GPR1_FEC1_CLOCK_MUX1_SEL_MASK);
+	clrsetbits_le32(&iomuxc_regs->gpr[1], IOMUX_GPR1_FEC2_MASK,
+			IOMUX_GPR1_FEC2_CLOCK_MUX1_SEL_MASK);
 
-		/*
-		 * Use 50M anatop loopback REF_CLK2 for ENET2,
-		 * clear gpr1[14], set gpr1[18]
-		 */
-		clrsetbits_le32(&iomuxc_regs->gpr[1], IOMUX_GPR1_FEC2_MASK,
-				IOMUX_GPR1_FEC2_CLOCK_MUX1_SEL_MASK);
-	}
-
-	ret = enable_fec_anatop_clock(fec_id, ENET_50MHZ);
+	ret = enable_fec_anatop_clock(0, ENET_50MHZ);
 	if (ret)
 		return ret;
+
+
+	if (!check_module_fused(MX6_MODULE_ENET2)) {
+		ret = enable_fec_anatop_clock(1, ENET_50MHZ);
+		if (ret)
+			return ret;
+	}
 
 	enable_enet_clk(1);
 
@@ -366,7 +358,7 @@ int power_init_board(void)
 	struct udevice *dev;
 	int ret, dev_id, rev_id;
 
-	ret = pmic_get("pfuze3000", &dev);
+	ret = pmic_get("pfuze3000@8", &dev);
 	if (ret == -ENODEV)
 		return 0;
 	if (ret != 0)
@@ -387,7 +379,7 @@ void ldo_mode_set(int ldo_bypass)
 	struct udevice *dev;
 	int ret;
 
-	ret = pmic_get("pfuze3000", &dev);
+	ret = pmic_get("pfuze3000@8", &dev);
 	if (ret == -ENODEV) {
 		printf("No PMIC found!\n");
 		return;
@@ -458,9 +450,8 @@ int board_init(void)
 	board_init_common();
 
 #ifdef	CONFIG_FEC_MXC
-	setup_fec(CONFIG_FEC_ENET_DEV);
+	setup_fec();
 #endif
-
 
 #ifdef CONFIG_CMD_EADISP
 	eadisp_setup_display(displays, ARRAY_SIZE(displays));

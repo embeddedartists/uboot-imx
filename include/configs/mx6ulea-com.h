@@ -19,15 +19,6 @@
 /* uncomment for PLUGIN mode support */
 /* #define CONFIG_USE_PLUGIN */
 
-/* uncomment for SECURE mode support */
-/* #define CONFIG_SECURE_BOOT */
-
-#ifdef CONFIG_SECURE_BOOT
-#ifndef CONFIG_CSF_SIZE
-#define CONFIG_CSF_SIZE 0x2000
-#endif
-#endif
-
 /* Size of malloc() pool */
 #define CONFIG_SYS_MALLOC_LEN		(16 * SZ_1M)
 
@@ -72,7 +63,7 @@
 	"mmcpart=1\0" \
 	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
 	"mmcautodetect=yes\0" \
-  "fmac_txrx_opt=brcmfmac.sdio_wq_highpri=1\0" \
+	"fmac_txrx_opt=brcmfmac.sdio_wq_highpri=1\0" \
 	"mmcargs=setenv bootargs console=${console},${baudrate} " \
 		"root=${mmcroot} ${fmac_txrx_opt} ${args_from_script}\0" \
 	"loadbootscript=" \
@@ -139,7 +130,6 @@
 #define CONFIG_SYS_MEMTEST_END		(CONFIG_SYS_MEMTEST_START + 0x10000)
 
 /* Physical Memory Map */
-#define CONFIG_NR_DRAM_BANKS		1
 #define PHYS_SDRAM			MMDC0_ARB_BASE_ADDR
 #define PHYS_SDRAM_SIZE			SZ_512M
 
@@ -170,9 +160,6 @@
 #define CONFIG_SYS_I2C_SPEED		  100000
 
 /* Network */
-#define CONFIG_FEC_MXC
-#define CONFIG_MII
-
 #define CONFIG_FEC_ENET_DEV 1
 
 #if (CONFIG_FEC_ENET_DEV == 0)
@@ -186,8 +173,6 @@
 #endif
 
 #define CONFIG_FEC_XCV_TYPE             RMII
-
-#define CONFIG_PHY_MICREL
 
 /* USB configs */
 #ifdef CONFIG_CMD_USB
@@ -203,7 +188,6 @@
 #define CONFIG_SPLASH_SCREEN_ALIGN
 #define CONFIG_BMP_16BPP
 #define CONFIG_VIDEO_BMP_LOGO
-/*#define CONFIG_IMX_VIDEO_SKIP*/
 
 #ifndef CONFIG_SPL
 #define CONFIG_USBD_HS

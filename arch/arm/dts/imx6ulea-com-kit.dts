@@ -31,7 +31,8 @@
 		stdout-path = &uart1;
 	};
 
-	memory {
+	memory@80000000 {
+		device_type = "memory";
 		reg = <0x80000000 0x20000000>;
 	};
 
@@ -80,28 +81,6 @@
 };
 
 
-&cpu0 {
-	/*
-	 * on i.MX6UL, no seperated VDD_ARM_IN and VDD_SOC_IN,
-	 * to align with other platform and use the same cpufreq
-	 * driver, still use the seperated OPP define for arm
-	 * and soc.
-	 */
-	operating-points = <
-		/* kHz	uV */
-		528000	1175000
-		396000	1175000
-		198000	1175000
-	>;
-	fsl,soc-operating-points = <
-		/* KHz	uV */
-		528000	1175000
-		396000	1175000
-		198000	1175000
-	>;
-	fsl,arm-soc-shared = <1>;
-};
-
 &reg_arm {
 	vin-supply = <&sw1c_reg>;
 	regulator-allow-bypass;
@@ -132,13 +111,17 @@
 		#size-cells = <0>;
 
 		ethphy0: ethernet-phy@2 {
-			compatible = "ethernet-phy-ieee802.3-c22";
 			reg = <2>;
+			micrel,led-mode = <1>;
+			clocks = <&clks IMX6UL_CLK_ENET_REF>;
+			clock-names = "rmii-ref";
 		};
 
 		ethphy1: ethernet-phy@1 {
-			compatible = "ethernet-phy-ieee802.3-c22";
 			reg = <1>;
+			micrel,led-mode = <1>;
+			clocks = <&clks IMX6UL_CLK_ENET2_REF>;
+			clock-names = "rmii-ref";
 		};
 	};
 };
@@ -448,7 +431,7 @@
 	display = <&display0>;
 	status = "okay";
 
-	display0: display {
+	display0: display@0 {
 		bits-per-pixel = <32>;
 		bus-width = <24>;
 
@@ -478,10 +461,6 @@
 &pwm1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_pwm1>;
-	status = "okay";
-};
-
-&pxp {
 	status = "okay";
 };
 
@@ -528,3 +507,5 @@
 	pinctrl-0 = <&pinctrl_wdog>;
 	fsl,wdog_b;
 };
+
+#include "imx6ul-14x14-evk-u-boot.dtsi"
