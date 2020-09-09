@@ -12,7 +12,7 @@
 #include <asm/gpio.h>
 #include <asm/mach-imx/iomux-v3.h>
 #include <asm/arch/mx7d_pins.h>
-#include <fsl_esdhc.h>
+#include <fsl_esdhc_imx.h>
 #include <mmc.h>
 #include <i2c.h>
 #include <asm/mach-imx/mxc_i2c.h>

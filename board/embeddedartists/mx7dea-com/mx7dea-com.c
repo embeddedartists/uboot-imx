@@ -18,7 +18,7 @@
 #include <asm/io.h>
 #include <linux/sizes.h>
 #include <common.h>
-#include <fsl_esdhc.h>
+#include <fsl_esdhc_imx.h>
 #include <mmc.h>
 #include <miiphy.h>
 #include <netdev.h>
@@ -35,10 +35,6 @@
 #include <linux/fb.h>
 #include <mxsfb.h>
 #endif
-
-#ifdef CONFIG_FSL_FASTBOOT
-#include <fsl_fastboot.h>
-#endif /*CONFIG_FSL_FASTBOOT*/
 
 #include <dm.h>
 #include <fdt_support.h>
@@ -364,7 +360,7 @@ int power_init_board(void)
 	int ret, dev_id, rev_id;
 	u32 sw3mode;
 
-	ret = pmic_get("pfuze3000", &dev);
+	ret = pmic_get("pfuze3000@8", &dev);
 	if (ret == -ENODEV)
 		return 0;
 	if (ret != 0)

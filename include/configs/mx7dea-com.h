@@ -16,20 +16,6 @@
 #include "imx7_spl.h"
 #endif
 
-#define CONFIG_DBG_MONITOR
-
-/* uncomment for PLUGIN mode support */
-/* #define CONFIG_USE_PLUGIN */
-
-/* uncomment for SECURE mode support */
-/* #define CONFIG_SECURE_BOOT */
-
-#ifdef CONFIG_SECURE_BOOT
-#ifndef CONFIG_CSF_SIZE
-#define CONFIG_CSF_SIZE 0x2000
-#endif
-#endif
-
 #define CONFIG_MXC_UART_BASE            UART1_IPS_BASE_ADDR
 
 /* Size of malloc() pool */
@@ -200,7 +186,6 @@
 #define CONFIG_SYS_HZ                   1000
 
 /* Physical Memory Map */
-#define CONFIG_NR_DRAM_BANKS		1
 #define PHYS_SDRAM			MMDC0_ARB_BASE_ADDR
 #define PHYS_SDRAM_SIZE			SZ_1G
 
@@ -244,22 +229,15 @@
 #define CONFIG_SYS_I2C_MXC
 #define CONFIG_SYS_I2C_SPEED		  100000
 
-#define CONFIG_SUPPORT_EMMC_BOOT        /* eMMC specific */
-
 /* Network */
 
-#if CONFIG_DM_ETH
-
-#define CONFIG_FEC_MXC
-#define CONFIG_MII
+#ifdef CONFIG_DM_ETH
 
 #define IMX_FEC_BASE			ENET_IPS_BASE_ADDR
 #define CONFIG_FEC_MXC_PHYADDR          0x1
 
 #define CONFIG_FEC_XCV_TYPE             RGMII
 #define CONFIG_ETHPRIME                 "eth0"
-
-#define CONFIG_PHY_BROADCOM
 
 #endif
 
@@ -271,19 +249,9 @@
 #define CONFIG_VIDEO_LOGO
 #define CONFIG_SPLASH_SCREEN
 #define CONFIG_SPLASH_SCREEN_ALIGN
-#define CONFIG_CMD_BMP
 #define CONFIG_BMP_16BPP
 #define CONFIG_VIDEO_BMP_RLE8
 #define CONFIG_VIDEO_BMP_LOGO
-/*#define CONFIG_IMX_VIDEO_SKIP*/
-#endif
-
-#if defined(CONFIG_ANDROID_SUPPORT)
-#include "mx7dsabresdandroid.h"
-#elif defined(CONFIG_ANDROID_THINGS_SUPPORT)
-#include "mx7dsabresd_androidthings.h"
-#else
-#define CONFIG_USBD_HS
 #endif
 
 #define EA_SHARED_CONFIG_MEM (CONFIG_SYS_SPL_MALLOC_START + CONFIG_SYS_SPL_MALLOC_SIZE)
