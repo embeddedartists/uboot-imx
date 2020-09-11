@@ -405,7 +405,7 @@
         flash0: n25q256a@0 {
                 #address-cells = <1>;
                 #size-cells = <1>;
-                compatible = "micron,n25q256a", "issi,is25lp256d";
+                compatible = "jedec,spi-nor";
                 spi-max-frequency = <40000000>;
 		spi-nor,ddr-quad-read-dummy = <6>;
                 reg = <0>;
