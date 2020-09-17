@@ -55,7 +55,7 @@
 	CONFIG_MFG_ENV_SETTINGS_DEFAULT \
 	"initrd_addr=0x12C00000\0" \
 	"initrd_high=0xffffffff\0" \
-	"emmc_dev=1\0"\
+	"emmc_dev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0"\
 
 #ifdef CONFIG_MX6DL
 #define FDT_FILE "imx6dlea-com-kit_v2.dtb"

@@ -75,7 +75,7 @@
 	CONFIG_MFG_ENV_SETTINGS_DEFAULT \
 	"initrd_addr=0x43800000\0" \
 	"initrd_high=0xffffffffffffffff\0" \
-	"emmc_dev=2\0"\
+	"emmc_dev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0"\
 	"sd_dev=0\0" \
 
 /* Initial environment variables */
