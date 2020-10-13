@@ -54,9 +54,14 @@ DECLARE_GLOBAL_DATA_PTR;
 
 int dram_init(void)
 {
-	gd->ram_size = imx_ddr_size();
-	if (gd->ram_size == 0)
-		gd->ram_size = PHYS_SDRAM_SIZE;
+	ea_config_t *ea_conf = (ea_config_t *)EA_SHARED_CONFIG_MEM;
+
+	// default size from configuration file
+	gd->ram_size = PHYS_SDRAM_SIZE;
+
+	if (ea_conf->magic == EA_CONFIG_MAGIC) {
+		gd->ram_size = (ea_conf->ddr_size << 20);
+	}
 
 	return 0;
 }
