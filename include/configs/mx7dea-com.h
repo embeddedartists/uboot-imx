@@ -210,7 +210,7 @@
 
 /* MMC Configuration */
 #define CONFIG_SYS_FSL_USDHC_NUM	2
-#define CONFIG_SYS_MMC_ENV_DEV		1  /* USDHC3/eMMC */
+#define CONFIG_SYS_MMC_ENV_DEV		2  /* USDHC3/eMMC */
 #define CONFIG_SYS_MMC_ENV_PART		1  /* 0=user area, 1=1st MMC boot part., 2=2nd MMC boot part. */
 #define CONFIG_MMCROOT			"/dev/mmcblk2p2"  /* USDHC3/eMMC */
 
