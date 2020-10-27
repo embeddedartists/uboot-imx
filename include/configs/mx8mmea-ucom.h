@@ -185,7 +185,7 @@
 #define CONFIG_ENV_OVERWRITE
 #define CONFIG_SYS_MMC_ENV_DEV		2   /* USDHC2 */
 #define CONFIG_SYS_MMC_ENV_PART		1   /* 0=user area, 1=1st MMC boot part., 2=2nd MMC boot part. */
-#define CONFIG_MMCROOT			"/dev/mmcblk1p2"  /* USDHC2 */
+#define CONFIG_MMCROOT			"/dev/mmcblk2p2"  /* USDHC2 */
 
 /* Size of malloc() pool */
 #define CONFIG_SYS_MALLOC_LEN		((CONFIG_ENV_SIZE + (2*1024) + (16*1024)) * 1024)
