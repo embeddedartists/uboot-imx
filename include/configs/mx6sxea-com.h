@@ -23,15 +23,18 @@
 
 #define CONFIG_MXC_UART_BASE		UART1_BASE
 
-#define CONFIG_SYS_AUXCORE_BOOTDATA 0x78000000 /* Set to QSPI2 B flash at default */
+/* Set to QSPI2 B flash at default */
+#define CONFIG_SYS_AUXCORE_BOOTDATA 0x78000000
+#define SF_QSPI2_B_CS_NUM 2
 
 /* When using M4 fastup demo, no need these M4 env, since QSPI is used by M4 */
 #ifndef CONFIG_SYS_AUXCORE_FASTUP
 #define UPDATE_M4_ENV \
 	"m4image=m4_qspi.bin\0" \
+	"m4_qspi_cs="__stringify(SF_QSPI2_B_CS_NUM)"\0" \
 	"loadm4image=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${m4image}\0" \
 	"update_m4_from_sd=" \
-		"if sf probe 1:0; then " \
+		"if sf probe 1:${m4_qspi_cs}; then " \
 			"if run loadm4image; then " \
 				"setexpr fw_sz ${filesize} + 0xffff; " \
 				"setexpr fw_sz ${fw_sz} / 0x10000; "	\
@@ -40,7 +43,7 @@
 				"sf write ${loadaddr} 0x0 ${filesize}; " \
 			"fi; " \
 		"fi\0" \
-	"m4boot=sf probe 1:0; bootaux "__stringify(CONFIG_SYS_AUXCORE_BOOTDATA)"\0"
+	"m4boot=sf probe 1:${m4_qspi_cs}; bootaux "__stringify(CONFIG_SYS_AUXCORE_BOOTDATA)"\0"
 #else
 #define UPDATE_M4_ENV ""
 #endif
