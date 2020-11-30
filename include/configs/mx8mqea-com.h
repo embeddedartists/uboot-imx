@@ -79,10 +79,17 @@
 	"emmc_dev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0"\
 	"sd_dev=1\0" \
 
+#define M_CORE_ENV \
+	"cm_addr=0x7e0000\0" \
+	"cm_image=cm_TCM_hello_world.bin\0" \
+	"cm_loadimage=fatload mmc ${mmcdev} ${loadaddr} ${cm_image}\0" \
+	"cm_boot=run cm_loadimage; cp.b ${loadaddr} ${cm_addr} ${filesize}; dcache flush; bootaux ${cm_addr}\0"
+
 /* Initial environment variables */
 #define CONFIG_EXTRA_ENV_SETTINGS		\
 	CONFIG_MFG_ENV_SETTINGS \
 	JAILHOUSE_ENV \
+	M_CORE_ENV \
 	"script=boot.scr\0" \
 	"image=Image\0" \
 	"splashimage=0x50000000\0" \
