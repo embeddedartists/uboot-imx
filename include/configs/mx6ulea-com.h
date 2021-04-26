@@ -47,6 +47,14 @@
 	"initrd_high=0xffffffff\0" \
 	"emmc_dev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0"\
 
+
+#ifdef CONFIG_MX6UL
+#define FDT_FILE "imx6ulea-com-kit_v2.dtb"
+#else
+#define FDT_FILE "imx6ullea-com-kit_v2.dtb"
+#endif
+
+
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	CONFIG_MFG_ENV_SETTINGS \
 	"script=boot.scr\0" \
@@ -54,7 +62,7 @@
 	"console=ttymxc0\0" \
 	"fdt_high=0xffffffff\0" \
 	"initrd_high=0xffffffff\0" \
-	"fdt_file=imx6ulea-com-kit_v2.dtb\0" \
+	"fdt_file=" FDT_FILE "\0" \
 	"fdt_addr=0x83000000\0" \
 	"boot_fdt=try\0" \
 	"ip_dyn=yes\0" \

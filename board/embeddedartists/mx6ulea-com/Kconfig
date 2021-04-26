@@ -1,4 +1,4 @@
-if TARGET_MX6ULEA_COM
+if TARGET_MX6ULEA_COM || TARGET_MX6ULLEA_COM
 
 config SYS_BOARD
 	default "mx6ulea-com"

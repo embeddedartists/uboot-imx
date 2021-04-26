@@ -19,7 +19,7 @@
 #include <malloc.h>
 #include <video_fb.h>
 #include <stdlib.h>
-#if defined(CONFIG_MX6SX) || defined(CONFIG_MX6UL) || defined(CONFIG_MX7D)
+#if defined(CONFIG_MX6SX) || defined(CONFIG_MX6UL) || defined(CONFIG_MX6ULL) || defined(CONFIG_MX7D)
   #include <linux/fb.h>
   #include <mxsfb.h>
 #endif
@@ -94,7 +94,7 @@ static const char *const short_names[] = {
 #elif defined(CONFIG_MX6DL)
   #define DISPTYPES  "(hdmi|rgb|lvds0|lvds1)"
   #define NUM_FBS    4
-#elif defined(CONFIG_MX6UL)
+#elif defined(CONFIG_MX6UL) || defined(CONFIG_MX6ULL)
   #define DISPTYPES  "rgb"
   #define NUM_FBS    1  /* Only have 1x RGB on UltraLite */
 #elif defined(CONFIG_MX7D)
@@ -388,7 +388,7 @@ static void setup_cmd_fb(unsigned fb, const struct display_info_t *di, char *buf
 		fmt = rgb666;
 
 	if (di && ((fb == FB_RGB) || (fb == FB_LVDS0) || (fb == FB_LVDS1))) {
-#if defined(CONFIG_MX6SX) || defined(CONFIG_MX6UL) || defined(CONFIG_MX7D)
+#if defined(CONFIG_MX6SX) || defined(CONFIG_MX6UL) || defined(CONFIG_MX6ULL) || defined(CONFIG_MX7D)
 		sz = snprintf(buf, size, "fdt set %s bus-width <%u>;", short_names[fb],
 				(di->pixfmt == IPU_PIX_FMT_RGB24) ? 24 : 18);
 
@@ -724,7 +724,7 @@ void board_video_enable(void)
 
 static int init_display(const struct display_info_t *di)
 {
-#if defined(CONFIG_MX6SX) || defined(CONFIG_MX6UL) || defined(CONFIG_MX7D)
+#if defined(CONFIG_MX6SX) || defined(CONFIG_MX6UL) || defined(CONFIG_MX6ULL) || defined(CONFIG_MX7D)
     #if defined(CONFIG_MX7D)
 	uint32_t lcdif_base_addr =  ELCDIF1_IPS_BASE_ADDR;
     #else

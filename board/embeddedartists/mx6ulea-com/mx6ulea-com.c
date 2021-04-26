@@ -9,7 +9,11 @@
 #include <asm/arch/iomux.h>
 #include <asm/arch/imx-regs.h>
 #include <asm/arch/crm_regs.h>
+#if defined(MX6UL)
 #include <asm/arch/mx6ul_pins.h>
+#elif defined(MX6ULL)
+#include <asm/arch/mx6ull_pins.h>
+#endif
 #include <asm/arch/mx6-pins.h>
 #include <asm/arch/sys_proto.h>
 #include <asm/gpio.h>

@@ -40,7 +40,7 @@
 #elif defined(CONFIG_MX6DL)
   #define CONNECTORS        "(rgb|lvds0|lvds1)"
   #define NUM_CONNECTORS    3
-#elif defined(CONFIG_MX6UL)
+#elif defined(CONFIG_MX6UL) || defined(CONFIG_MX6ULL)
   #define CONNECTORS        "rgb"
   #define NUM_CONNECTORS    1  /* Only have 1x RGB on UltraLite */
 #elif defined(CONFIG_MX7D)

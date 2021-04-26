@@ -863,10 +863,18 @@ config TARGET_MX6DLEA_COM
 	select BOARD_EARLY_INIT_F
 	select BOARD_LATE_INIT
 
-
 config TARGET_MX6ULEA_COM
 	bool "Support mx6ulea-com"
 	select MX6UL
+	select SUPPORT_SPL
+	select DM
+	select DM_THERMAL
+	select BOARD_EARLY_INIT_F
+	select BOARD_LATE_INIT
+
+config TARGET_MX6ULLEA_COM
+	bool "Support mx6ullea-com"
+	select MX6ULL
 	select SUPPORT_SPL
 	select DM
 	select DM_THERMAL
