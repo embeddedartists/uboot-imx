@@ -906,7 +906,7 @@ config TARGET_BRPPT2
 
 config TARGET_MX6SXEA_COM
 	bool "Support mx6sxea-com"
-	select MX6SX
+	depends on MX6SX
 	select SUPPORT_SPL
 	select DM
 	select DM_THERMAL
@@ -915,7 +915,7 @@ config TARGET_MX6SXEA_COM
 
 config TARGET_MX6QEA_COM
 	bool "Support mx6qea-com"
-	select MX6Q
+	depends on MX6Q
 	select SUPPORT_SPL
 	select DM
 	select DM_THERMAL
@@ -924,7 +924,7 @@ config TARGET_MX6QEA_COM
 
 config TARGET_MX6DLEA_COM
 	bool "Support mx6dlea-com"
-	select MX6DL
+	depends on MX6DL
 	select SUPPORT_SPL
 	select DM
 	select DM_THERMAL
@@ -933,7 +933,7 @@ config TARGET_MX6DLEA_COM
 
 config TARGET_MX6ULEA_COM
 	bool "Support mx6ulea-com"
-	select MX6UL
+	depends on MX6UL
 	select SUPPORT_SPL
 	select DM
 	select DM_THERMAL
@@ -942,7 +942,7 @@ config TARGET_MX6ULEA_COM
 
 config TARGET_MX6ULLEA_COM
 	bool "Support mx6ullea-com"
-	select MX6ULL
+	depends on MX6ULL
 	select SUPPORT_SPL
 	select DM
 	select DM_THERMAL
