@@ -235,5 +235,9 @@ source "board/beacon/imx8mm/Kconfig"
 source "board/beacon/imx8mn/Kconfig"
 source "board/phytec/phycore_imx8mm/Kconfig"
 source "board/phytec/phycore_imx8mp/Kconfig"
+source "board/embeddedartists/common/Kconfig"
+source "board/embeddedartists/mx8mqea-com/Kconfig"
+source "board/embeddedartists/mx8mmea-ucom/Kconfig"
+source "board/embeddedartists/mx8mnea-ucom/Kconfig"
 
 endif
