@@ -691,6 +691,7 @@ dtb-y += \
 	imx6dl-sabresd.dtb \
 	imx6dl-arm2.dtb \
 	imx6dl-wandboard-revd1.dtb \
+	imx6dlea-com-kit.dtb \
 
 endif
 
@@ -730,6 +731,7 @@ dtb-y += \
 	imx6q-pop-arm2.dtb \
 	imx6q-tbs2910.dtb \
 	imx6q-wandboard-revd1.dtb \
+	imx6qea-com-kit.dtb \
 	imx6qp-sabreauto.dtb \
 	imx6qp-sabreauto-ecspi.dtb \
 	imx6qp-sabreauto-gpmi-weim.dtb \
@@ -756,6 +758,7 @@ dtb-$(CONFIG_MX6SX) += \
 	imx6sx-sabreauto.dtb \
 	imx6sx-sdb.dtb \
 	imx6sx-sdb-emmc.dtb \
+	imx6sxea-com-kit.dtb \
 	imx6sx-softing-vining-2000.dtb
 
 dtb-$(CONFIG_MX6UL) += \
@@ -774,7 +777,8 @@ dtb-$(CONFIG_MX6UL) += \
 	imx6ul-liteboard.dtb \
 	imx6ul-phytec-segin-ff-rdk-nand.dtb \
 	imx6ul-pico-hobbit.dtb \
-	imx6ul-pico-pi.dtb
+	imx6ul-pico-pi.dtb \
+	imx6ulea-com-kit.dtb
 
 dtb-$(CONFIG_MX6ULL) += \
 	imx6ull-14x14-ddr3-val.dtb \
@@ -793,7 +797,8 @@ dtb-$(CONFIG_MX6ULL) += \
 	imx6ull-somlabs-visionsom.dtb \
 	imx6ulz-14x14-evk.dtb \
 	imx6ulz-14x14-evk-emmc.dtb \
-	imx6ulz-14x14-evk-gpmi-weim.dtb
+	imx6ulz-14x14-evk-gpmi-weim.dtb \
+	imx6ullea-com-kit.dtb
 
 dtb-$(CONFIG_ARCH_MX6) += \
 	imx6-apalis.dtb \
@@ -816,7 +821,9 @@ dtb-$(CONFIG_MX7) += imx7d-sdb.dtb \
 	imx7d-12x12-ddr3-val.dtb \
 	imx7d-19x19-ddr3-val.dtb \
 	imx7d-19x19-lpddr2-val.dtb \
-	imx7d-19x19-lpddr3-val.dtb
+	imx7d-19x19-lpddr3-val.dtb \
+	imx7dea-com-kit.dtb \
+	imx7dea-ucom-kit.dtb
 
 
 dtb-$(CONFIG_ARCH_MX7ULP) += imx7ulp-com.dtb \
@@ -824,7 +831,8 @@ dtb-$(CONFIG_ARCH_MX7ULP) += imx7ulp-com.dtb \
 	imx7ulp-14x14-val.dtb \
 	imx7ulp-evk.dtb \
 	imx7ulp-evk-emmc.dtb \
-	imx7ulp-evk-qspi.dtb
+	imx7ulp-evk-qspi.dtb \
+	imx7ulpea-ucom-kit_v2.dtb
 
 dtb-$(CONFIG_ARCH_IMX8) += \
 	fsl-imx8qm-apalis.dtb \
@@ -875,7 +883,10 @@ dtb-$(CONFIG_ARCH_IMX8M) += \
 	imx8mp-ddr4-evk.dtb \
 	imx8mp-evk.dtb \
 	imx8mp-phyboard-pollux-rdk.dtb \
-	imx8mq-pico-pi.dtb
+	imx8mq-pico-pi.dtb \
+	imx8mq-ea-com-kit_v2.dtb \
+	imx8mm-ea-ucom-kit_v2.dtb \
+	imx8mn-ea-ucom-kit_v2.dtb
 
 dtb-$(CONFIG_ARCH_IMXRT) += imxrt1050-evk.dtb \
 	imxrt1020-evk.dtb

@@ -1,0 +1,6 @@
+MX6ULEA-COM BOARD
+M:	Andreas Rebert <imx@embeddedartists.com>
+S:	Maintained
+F:	board/embeddedartists/mx6qea-com/
+F:	include/configs/mx6qea-com.h
+F:	configs/mx6qea-com_defconfig

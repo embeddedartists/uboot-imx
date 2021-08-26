@@ -1,0 +1,12 @@
+if TARGET_MX8MMEA_UCOM
+
+config SYS_BOARD
+	default "mx8mmea-ucom"
+
+config SYS_VENDOR
+	default "embeddedartists"
+
+config SYS_CONFIG_NAME
+	default "mx8mmea-ucom"
+
+endif
