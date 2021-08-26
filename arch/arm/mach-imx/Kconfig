@@ -341,3 +341,8 @@ config BOOTLOADER_MENU
 	bool "Enable bootloader menu for android device"
 	help
 	bootloader menu feature for android device.
+
+config CMD_EADISP
+        bool "Support Embedded Artists Display commands"
+        depends on ARCH_MX6 || ARCH_MX7
+
