@@ -23,6 +23,8 @@
 #include <asm/mach-imx/boot_mode.h>
 #include <asm/arch/ddr.h>
 #include <gzip.h>
+#include <init.h>
+#include <timer.h>
 
 #include "../common/ea_common.h"
 #include "../common/ea_eeprom.h"
@@ -281,7 +283,7 @@ int board_mmc_getcd(struct mmc *mmc)
 	return 1;
 }
 
-int board_mmc_init(bd_t *bis)
+int board_mmc_init(struct bd_info *bis)
 {
 	/* Dummy code - Needed as SPL wants to boot from MMC1 so there
 	   must be a MMC0. */
@@ -315,21 +317,21 @@ int power_init_board(void)
 
 
 	/* decrease RESET key long push time from the default 10s to 10ms */
-	pmic_reg_write(p, BD71837_PWRONCONFIG1, 0x0);
+	pmic_reg_write(p, BD718XX_PWRONCONFIG1, 0x0);
 
 	/* unlock the PMIC regs */
-	pmic_reg_write(p, BD71837_REGLOCK, 0x1);
+	pmic_reg_write(p, BD718XX_REGLOCK, 0x1);
 
 	/* increase VDD_DRAM to 0.9v for 3Ghz DDR */
-	pmic_reg_write(p, BD71837_BUCK5_VOLT, 0x2);
+	pmic_reg_write(p, BD718XX_1ST_NODVS_BUCK_VOLT, 0x2);
 
 #ifndef CONFIG_IMX8M_LPDDR4
 	/* increase NVCC_DRAM_1V2 to 1.2v for DDR4 */
-	pmic_reg_write(p, BD71837_BUCK8_VOLT, 0x28);
+	pmic_reg_write(p, BD718XX_4TH_NODVS_BUCK_VOLT, 0x28);
 #endif
 
 	/* lock the PMIC regs */
-	pmic_reg_write(p, BD71837_REGLOCK, 0x11);
+	pmic_reg_write(p, BD718XX_REGLOCK, 0x11);
 
 	return 0;
 }
@@ -392,14 +394,5 @@ void board_init_f(ulong dummy)
         ea_conf->ddr_size = size;
 
 	board_init_r(NULL, 0);
-}
-
-int do_reset(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
-{
-        puts ("resetting ...\n");
-
-        reset_cpu(WDOG1_BASE_ADDR);
-
-        return 0;
 }
 

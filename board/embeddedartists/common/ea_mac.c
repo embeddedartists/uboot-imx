@@ -7,6 +7,7 @@
 #include <common.h>
 #include "ea_common.h"
 #include "ea_eeprom.h"
+#include <net.h>
 
 int ea_load_ethaddr(void)
 {
