@@ -29,6 +29,7 @@
 #include "../common/ea_eeprom.h"
 #include "../common/ea_common.h"
 #include "../common/ea_gpio_expander.h"
+#include <linux/delay.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 

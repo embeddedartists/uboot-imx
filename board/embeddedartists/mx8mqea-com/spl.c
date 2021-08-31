@@ -22,6 +22,9 @@
 #include <power/bd71837.h>
 #include <spl.h>
 #include <gzip.h>
+#include <init.h>
+#include <timer.h>
+#include <linux/delay.h>
 
 #include "../common/ea_common.h"
 #include "../common/ea_eeprom.h"
@@ -265,7 +268,7 @@ int board_mmc_getcd(struct mmc *mmc)
 	return 1;
 }
 
-int board_mmc_init(bd_t *bis)
+int board_mmc_init(struct bd_info *bis)
 {
 
 	/* we always boot from eMMC so only one mmc device is supported */
@@ -297,21 +300,21 @@ int power_init_board(void)
 	pmic_probe(p);
 
 	/* decrease RESET key long push time from the default 10s to 10ms */
-	pmic_reg_write(p, BD71837_PWRONCONFIG1, 0x0);
+	pmic_reg_write(p, BD718XX_PWRONCONFIG1, 0x0);
 
 	/* unlock the PMIC regs */
-	pmic_reg_write(p, BD71837_REGLOCK, 0x1);
+	pmic_reg_write(p, BD718XX_REGLOCK, 0x1);
 
 	/* increase VDD_DRAM to 0.9v for 3Ghz DDR */
-	pmic_reg_write(p, BD71837_BUCK5_VOLT, 0x2);
+	pmic_reg_write(p, BD718XX_1ST_NODVS_BUCK_VOLT, 0x2);
 
 #ifndef CONFIG_IMX8M_LPDDR4
 	/* increase NVCC_DRAM_1V2 to 1.2v for DDR4 */
-	pmic_reg_write(p, BD71837_BUCK8_VOLT, 0x28);
+	pmic_reg_write(p, BD718XX_4TH_NODVS_BUCK_VOLT, 0x28);
 #endif
 
 	/* lock the PMIC regs */
-	pmic_reg_write(p, BD71837_REGLOCK, 0x11);
+	pmic_reg_write(p, BD718XX_REGLOCK, 0x11);
 
 	return 0;
 }
