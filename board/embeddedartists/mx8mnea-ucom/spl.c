@@ -22,6 +22,8 @@
 #include <fsl_esdhc_imx.h>
 #include <mmc.h>
 #include <gzip.h>
+#include <init.h>
+#include <timer.h>
 
 #include "../common/ea_common.h"
 #include "../common/ea_eeprom.h"
@@ -282,7 +284,7 @@ int board_mmc_getcd(struct mmc *mmc)
 	return 1;
 }
 
-int board_mmc_init(bd_t *bis)
+int board_mmc_init(struct bd_info *bis)
 {
 	/* Dummy code - Needed as SPL wants to boot from MMC1 so there
 	   must be a MMC0. */
@@ -316,27 +318,27 @@ int power_init_board(void)
 
 
 	/* decrease RESET key long push time from the default 10s to 10ms */
-	pmic_reg_write(p, BD71837_PWRONCONFIG1, 0x0);
+	pmic_reg_write(p, BD718XX_PWRONCONFIG1, 0x0);
 
 	/* unlock the PMIC regs */
-	pmic_reg_write(p, BD71837_REGLOCK, 0x1);
+	pmic_reg_write(p, BD718XX_REGLOCK, 0x1);
 
 	/* increase VDD_ARM to typical value 0.85v for 1.2Ghz */
-	pmic_reg_write(p, BD71837_BUCK2_VOLT_RUN, 0xf);
+	pmic_reg_write(p, BD718XX_BUCK2_VOLT_RUN, 0xf);
 
 	/* increase VDD_SOC/VDD_DRAM to typical value 0.85v for nominal mode */
-	pmic_reg_write(p, BD71837_BUCK1_VOLT_RUN, 0xf);
+	pmic_reg_write(p, BD718XX_BUCK1_VOLT_RUN, 0xf);
 
 	/* increase VDD_DRAM to 0.975v for 3Ghz DDR */
-	pmic_reg_write(p, BD71837_BUCK5_VOLT, 0x83);
+	pmic_reg_write(p, BD718XX_1ST_NODVS_BUCK_VOLT, 0x83);
 
 #ifdef CONFIG_IMX8M_DDR4
 	/* increase NVCC_DRAM_1V2 to 1.2v for DDR4 */
-	pmic_reg_write(p, BD71837_BUCK8_VOLT, 0x28);
+	pmic_reg_write(p, BD718XX_4TH_NODVS_BUCK_VOLT, 0x28);
 #endif
 
 	/* lock the PMIC regs */
-	pmic_reg_write(p, BD71837_REGLOCK, 0x11);
+	pmic_reg_write(p, BD718XX_REGLOCK, 0x11);
 
 	return 0;
 }

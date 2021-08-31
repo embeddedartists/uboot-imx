@@ -17,6 +17,9 @@
 #include <i2c.h>
 #include <asm/io.h>
 #include <usb.h>
+#include <imx_sip.h>
+#include <linux/arm-smccc.h>
+#include <linux/delay.h>
 
 #include "../common/ea_eeprom.h"
 #include "../common/ea_common.h"
@@ -134,19 +137,20 @@ int board_ehci_usb_phy_mode(struct udevice *dev)
 	return USB_INIT_DEVICE;
 }
 
-#define FSL_SIP_GPC			0xC2000000
-#define FSL_SIP_CONFIG_GPC_PM_DOMAIN	0x3
 #define DISPMIX				9
 #define MIPI 				10
 
 int board_init(void)
 {
+	struct arm_smccc_res res;
 #ifdef CONFIG_FEC_MXC
 	setup_fec();
 #endif
 
-	call_imx_sip(FSL_SIP_GPC, FSL_SIP_CONFIG_GPC_PM_DOMAIN, DISPMIX, true, 0);
-	call_imx_sip(FSL_SIP_GPC, FSL_SIP_CONFIG_GPC_PM_DOMAIN, MIPI, true, 0);
+	arm_smccc_smc(IMX_SIP_GPC, IMX_SIP_GPC_PM_DOMAIN,
+		      DISPMIX, true, 0, 0, 0, 0, &res);
+	arm_smccc_smc(IMX_SIP_GPC, IMX_SIP_GPC_PM_DOMAIN,
+		      MIPI, true, 0, 0, 0, 0, &res);
 
 	ea_print_board();
 
