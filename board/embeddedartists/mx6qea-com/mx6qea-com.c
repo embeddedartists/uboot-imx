@@ -46,6 +46,8 @@
 
 #include <dm.h>
 #include <fdt_support.h>
+#include <linux/delay.h>
+#include <keyboard.h>
 
 #include "../common/ea_eeprom.h"
 #include "../common/ea_common.h"
@@ -770,7 +772,7 @@ int overwrite_console(void)
 	return 1;
 }
 
-int board_eth_init(bd_t *bis)
+int board_eth_init(struct bd_info *bis)
 {
 	setup_iomux_enet();
 	return cpu_eth_init(bis);
@@ -806,7 +808,7 @@ int board_init_common(void)
  	 */
         udelay(5000);
         while (tstc()) {
-                (void)getc();
+                (void)getchar();
         }
 #endif
 

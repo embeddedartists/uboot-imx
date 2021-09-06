@@ -11,6 +11,7 @@
 #include <i2c.h>
 #include <malloc.h>
 #include <stdlib.h>
+#include <command.h>
 
 /*
  * The board file should call eatouch_init() to
@@ -215,7 +216,7 @@ static void update_commands(void)
 	free(buf);
 }
 
-static int do_eatouch(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+static int do_eatouch(struct cmd_tbl *cmdtp, int flag, int argc, char * const argv[])
 {
 	int i;
 	const char *cmd;

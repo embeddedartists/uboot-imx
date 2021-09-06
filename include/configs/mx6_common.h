@@ -60,7 +60,10 @@
 #define PHY_ANEG_TIMEOUT 20000
 
 /* MMC */
+/*
+ EA: removed since should be enabled in defconfig
 #define CONFIG_SUPPORT_EMMC_BOOT
+*/
 
 #ifdef CONFIG_SPL_BUILD
 #define CONFIG_SPL_DRIVERS_MISC_SUPPORT

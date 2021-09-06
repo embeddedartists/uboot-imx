@@ -23,6 +23,8 @@
   #include <linux/fb.h>
   #include <mxsfb.h>
 #endif
+#include <env.h>
+#include <command.h>
 
 /*
  * The board file should call eadisp_setup_display to register a list of
@@ -781,7 +783,7 @@ static void set_defaults(void)
 	}
 }
 
-static int do_eadisp(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+static int do_eadisp(struct cmd_tbl *cmdtp, int flag, int argc, char * const argv[])
 {
 	int i;
 	int fb = -1;
