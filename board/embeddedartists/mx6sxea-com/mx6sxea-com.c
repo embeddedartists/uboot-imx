@@ -47,6 +47,7 @@
 
 #include <dm.h>
 #include <fdt_support.h>
+#include <linux/delay.h>
 
 #include "../common/ea_eeprom.h"
 #include "../common/ea_common.h"
@@ -413,17 +414,16 @@ int board_video_skip(void)
 #ifdef CONFIG_FEC_MXC
 static int setup_fec(int fec_id)
 {
-	struct iomuxc_gpr_base_regs *const iomuxc_gpr_regs
-		= (struct iomuxc_gpr_base_regs *) IOMUXC_GPR_BASE_ADDR;
+	struct iomuxc *iomuxc_regs = (struct iomuxc *)IOMUXC_BASE_ADDR;
 	struct anatop_regs *anatop = (struct anatop_regs *)ANATOP_BASE_ADDR;
 	int reg, ret;
 
 	if (0 == fec_id)
 		/* Use 125M anatop loopback REF_CLK1 for ENET1, clear gpr1[13], gpr1[17]*/
-		clrsetbits_le32(&iomuxc_gpr_regs->gpr[1], IOMUX_GPR1_FEC1_MASK, 0);
+		clrsetbits_le32(&iomuxc_regs->gpr[1], IOMUX_GPR1_FEC1_MASK, 0);
 	else
 		/* Use 125M anatop loopback REF_CLK1 for ENET2, clear gpr1[14], gpr1[18]*/
-		clrsetbits_le32(&iomuxc_gpr_regs->gpr[1], IOMUX_GPR1_FEC2_MASK, 0);
+		clrsetbits_le32(&iomuxc_regs->gpr[1], IOMUX_GPR1_FEC2_MASK, 0);
 
         ret = enable_fec_anatop_clock(fec_id, ENET_125MHZ);
         if (ret)
@@ -621,7 +621,7 @@ int board_init_common(void)
 	 */
 	udelay(5000);
 	while (tstc()) {
-		(void)getc();
+		(void)getchar();
 	}
 #endif
 
