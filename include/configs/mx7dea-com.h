@@ -179,9 +179,6 @@
 	   "else run netboot; fi"
 
 /* Miscellaneous configurable options */
-#define CONFIG_SYS_MEMTEST_START	0x80000000
-#define CONFIG_SYS_MEMTEST_END		(CONFIG_SYS_MEMTEST_START + 0x10000)
-
 #define CONFIG_SYS_LOAD_ADDR            CONFIG_LOADADDR
 #define CONFIG_SYS_HZ                   1000
 
@@ -199,7 +196,6 @@
 	(CONFIG_SYS_INIT_RAM_ADDR + CONFIG_SYS_INIT_SP_OFFSET)
 
 #ifdef CONFIG_FSL_QSPI
-#define CONFIG_SYS_FSL_QSPI_AHB
 #define FSL_QSPI_FLASH_NUM              1
 #define FSL_QSPI_FLASH_SIZE             SZ_32M
 #define QSPI0_BASE_ADDR                 QSPI1_IPS_BASE_ADDR
@@ -210,8 +206,6 @@
 
 /* MMC Configuration */
 #define CONFIG_SYS_FSL_USDHC_NUM	2
-#define CONFIG_SYS_MMC_ENV_DEV		2  /* USDHC3/eMMC */
-#define CONFIG_SYS_MMC_ENV_PART		1  /* 0=user area, 1=1st MMC boot part., 2=2nd MMC boot part. */
 #define CONFIG_MMCROOT			"/dev/mmcblk2p2"  /* USDHC3/eMMC */
 
 #define CONFIG_SYS_FSL_ESDHC_ADDR	0

@@ -17,7 +17,9 @@
 #include <i2c.h>
 #include <asm/mach-imx/mxc_i2c.h>
 #include <asm/arch-mx7/mx7-ddr.h>
-
+#include <init.h>
+#include <timer.h>
+#include <linux/delay.h>
 
 #include "../common/ea_common.h"
 #include "../common/ea_eeprom.h"
@@ -351,7 +353,7 @@ int board_mmc_getcd(struct mmc *mmc)
 	return 1;
 }
 
-int board_mmc_init(bd_t *bis)
+int board_mmc_init(struct bd_info *bis)
 {
 	int ret;
 

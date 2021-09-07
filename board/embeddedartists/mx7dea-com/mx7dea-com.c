@@ -38,6 +38,7 @@
 
 #include <dm.h>
 #include <fdt_support.h>
+#include <linux/delay.h>
 
 #include "../common/ea_eeprom.h"
 #include "../common/ea_common.h"
