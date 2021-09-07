@@ -133,10 +133,6 @@
 		   "fi; " \
 	   "else run netboot; fi"
 
-/* Miscellaneous configurable options */
-#define CONFIG_SYS_MEMTEST_START	0x80000000
-#define CONFIG_SYS_MEMTEST_END		(CONFIG_SYS_MEMTEST_START + 0x10000)
-
 /* Physical Memory Map */
 #define PHYS_SDRAM			MMDC0_ARB_BASE_ADDR
 #define PHYS_SDRAM_SIZE			SZ_512M
@@ -152,8 +148,6 @@
 
 /* MMC Configuration */
 #define CONFIG_SYS_FSL_USDHC_NUM	2
-#define CONFIG_SYS_MMC_ENV_DEV		1  /* USDHC2/eMMC */
-#define CONFIG_SYS_MMC_ENV_PART		1  /* 0=user area, 1=1st MMC boot part., 2=2nd MMC boot part. */
 #define CONFIG_MMCROOT			"/dev/mmcblk1p2"  /* USDHC2/eMMC */
 
 #define CONFIG_SYS_FSL_ESDHC_ADDR	USDHC2_BASE_ADDR

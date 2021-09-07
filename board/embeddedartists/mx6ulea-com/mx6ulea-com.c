@@ -42,6 +42,7 @@
 
 #include <dm.h>
 #include <fdt_support.h>
+#include <linux/delay.h>
 
 #include "../common/ea_eeprom.h"
 #include "../common/ea_common.h"
@@ -326,7 +327,7 @@ static int setup_fec(void)
 		return ret;
 
 
-	if (!check_module_fused(MX6_MODULE_ENET2)) {
+	if (!check_module_fused(MODULE_ENET2)) {
 		ret = enable_fec_anatop_clock(1, ENET_50MHZ);
 		if (ret)
 			return ret;
@@ -437,7 +438,7 @@ int board_init_common(void)
 	 */
         udelay(5000);
         while (tstc()) {
-                (void)getc();
+                (void)getchar();
         }
 #endif
 
