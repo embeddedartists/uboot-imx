@@ -12,6 +12,7 @@
 #include <asm/gpio.h>
 #include <usb.h>
 #include <dm.h>
+#include <env.h>
 
 #include "../common/ea_common.h"
 

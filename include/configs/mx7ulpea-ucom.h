@@ -23,8 +23,6 @@
 
 #define CONFIG_SERIAL_TAG
 
-#define CONFIG_SYS_MMC_ENV_DEV          0	/* USDHC1 */
-#define CONFIG_SYS_MMC_ENV_PART		1       /* 0=user area, 1=1st MMC boot part., 2=2nd MMC boot part. */
 #define CONFIG_MMCROOT                  "/dev/mmcblk0p2"  /* USDHC1 */
 #define CONFIG_SYS_MMC_IMG_LOAD_PART    1
 
@@ -62,12 +60,9 @@
 
 #define PHYS_SDRAM			0x60000000ul
 #define PHYS_SDRAM_SIZE			SZ_1G
-#define CONFIG_SYS_MEMTEST_START	PHYS_SDRAM
 #define CONFIG_SYS_SDRAM_BASE		PHYS_SDRAM
 
 #define CONFIG_LOADADDR             0x60800000
-
-#define CONFIG_SYS_MEMTEST_END      (CONFIG_SYS_MEMTEST_START + (PHYS_SDRAM_SIZE >> 1))
 
 #define CONFIG_MFG_ENV_SETTINGS \
 	CONFIG_MFG_ENV_SETTINGS_DEFAULT  \
@@ -186,7 +181,6 @@
 
 /* QSPI configs */
 #ifdef CONFIG_FSL_QSPI
-#define CONFIG_SYS_FSL_QSPI_AHB
 #define FSL_QSPI_FLASH_NUM              1
 #define FSL_QSPI_FLASH_SIZE             SZ_8M
 #define QSPI0_BASE_ADDR                 0x410A5000
