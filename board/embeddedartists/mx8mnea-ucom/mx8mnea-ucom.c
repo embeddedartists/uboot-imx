@@ -159,6 +159,8 @@ int board_init(void)
 
 int board_late_init(void)
 {
+	char* fdt_file;
+	int carrier_version;
 #ifdef CONFIG_ENV_IS_IN_MMC
 	board_late_mmc_env_init();
 #endif
@@ -173,6 +175,28 @@ int board_late_init(void)
 		printf("Failed to load MAC addresses\n");
 	}
 #endif
+
+	/*
+	 * Detect which carrier board being used and
+	 * choose device tree file.
+	 * This functionality can be overridden by setting
+	 * the fdt_file variable in the u-boot environment.
+	 */
+	fdt_file = env_get("fdt_file");
+	if (fdt_file == NULL || strlen(fdt_file) == 0) {
+		carrier_version = ea_get_carrier_board_version(1);
+		if (carrier_version == 3) {
+			fdt_file = "imx8mn-ea-ucom-kit_v3.dtb";
+		}
+		else if (carrier_version == 2) {
+			fdt_file = "imx8mn-ea-ucom-kit_v2.dtb";
+		}
+		else {
+			fdt_file = CONFIG_DEFAULT_FDT_FILE;
+		}
+
+		env_set("fdt_file", fdt_file);
+	}
 
 	ea_gpio_exp_configure(1);
 
