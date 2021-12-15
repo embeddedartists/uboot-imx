@@ -109,6 +109,8 @@ int board_late_init(void)
 	board_late_mmc_env_init();
 #endif
 
+	ea_board_info_to_env();
+
 	return 0;
 }
 

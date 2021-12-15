@@ -200,6 +200,7 @@ int board_late_init(void)
 
 	ea_gpio_exp_configure(1);
 
+	ea_board_info_to_env();
 
 	return 0;
 }

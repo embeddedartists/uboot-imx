@@ -26,6 +26,12 @@ typedef struct {
 int ea_print_board(void);
 
 /*
+ * Set board information, such as part number in the
+ * u-boot environment
+ */
+int ea_board_info_to_env(void);
+
+/*
  * Load MAC addresses from eeprom
  */
 int ea_load_ethaddr(void);

@@ -691,6 +691,9 @@ int board_late_init(void)
 #ifdef CONFIG_SYS_I2C_MXC
 	ea_gpio_exp_configure(1);
 #endif
+
+	ea_board_info_to_env();
+
 	return 0;
 }
 

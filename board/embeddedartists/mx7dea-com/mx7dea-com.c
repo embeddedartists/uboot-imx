@@ -472,6 +472,8 @@ int board_late_init(void)
 
 	set_wdog_reset((struct wdog_regs *)WDOG1_BASE_ADDR);
 
+	ea_board_info_to_env();
+
 	return 0;
 }
 
@@ -499,6 +501,7 @@ int board_fix_fdt(void* rw_fdt_blob)
 	if (ret) {
 		printf("%s: failed to enable usdhc node, ret=%d\n", __func__, ret);
 	}
+
 
 	return ret;
 }

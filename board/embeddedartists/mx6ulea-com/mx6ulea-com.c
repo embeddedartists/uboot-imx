@@ -494,6 +494,8 @@ int board_late_init(void)
 #endif
 	set_wdog_reset((struct wdog_regs *)WDOG1_BASE_ADDR);
 
+	ea_board_info_to_env();
+
 	return 0;
 }
 
