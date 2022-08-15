@@ -306,16 +306,19 @@ static int setup_fec(void)
 
 int board_phy_config(struct phy_device *phydev)
 {
-	/* enable rgmii rxc skew and phy mode select to RGMII copper */
+	/* Initialization only for Atheros PHY */
+	if (phydev->phy_id == 0x4dd074) {
+		/* enable rgmii rxc skew and phy mode select to RGMII copper */
 
-	/* Enable 1.8V(SEL_1P5_1P8_POS_REG) on
-	   Phy control debug reg 0 */
-	phy_write(phydev, MDIO_DEVAD_NONE, 0x1d, 0x1f);
-	phy_write(phydev, MDIO_DEVAD_NONE, 0x1e, 0x8);
+		/* Enable 1.8V(SEL_1P5_1P8_POS_REG) on
+		   Phy control debug reg 0 */
+		phy_write(phydev, MDIO_DEVAD_NONE, 0x1d, 0x1f);
+		phy_write(phydev, MDIO_DEVAD_NONE, 0x1e, 0x8);
 
-	/* rgmii tx clock delay enable */
-	phy_write(phydev, MDIO_DEVAD_NONE, 0x1d, 0x05);
-	phy_write(phydev, MDIO_DEVAD_NONE, 0x1e, 0x100);
+		/* rgmii tx clock delay enable */
+		phy_write(phydev, MDIO_DEVAD_NONE, 0x1d, 0x05);
+		phy_write(phydev, MDIO_DEVAD_NONE, 0x1e, 0x100);
+	}
 
 	if (phydev->drv->config)
 		phydev->drv->config(phydev);

@@ -168,10 +168,6 @@
 	u-boot,dm-spl;
 };
 
-&fec1 {
-	phy-reset-gpios = <&gpio4 22 GPIO_ACTIVE_LOW>;
-};
-
 &ethphy0 {
 	vddio0: vddio-regulator {
 		regulator-name = "VDDIO";

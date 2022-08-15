@@ -439,7 +439,7 @@ static int setup_fec(int fec_id)
 	/* Reset AR8031 PHY */
 	gpio_request(IMX_GPIO_NR(2, 7), "ar8081 phy");
 	gpio_direction_output(IMX_GPIO_NR(2, 7) , 0);
-	udelay(500);
+	udelay(10000);
 	gpio_set_value(IMX_GPIO_NR(2, 7), 1);
 
         reg = readl(&anatop->pll_enet);
@@ -451,14 +451,17 @@ static int setup_fec(int fec_id)
 
 int board_phy_config(struct phy_device *phydev)
 {
-	/* Enable 1.8V(SEL_1P5_1P8_POS_REG) on
-	   Phy control debug reg 0 */
-	phy_write(phydev, MDIO_DEVAD_NONE, 0x1d, 0x1f);
-	phy_write(phydev, MDIO_DEVAD_NONE, 0x1e, 0x8);
+	/* Initialization only for Atheros PHY */
+	if (phydev->phy_id == 0x4dd074) {
+		/* Enable 1.8V(SEL_1P5_1P8_POS_REG) on
+		   Phy control debug reg 0 */
+		phy_write(phydev, MDIO_DEVAD_NONE, 0x1d, 0x1f);
+		phy_write(phydev, MDIO_DEVAD_NONE, 0x1e, 0x8);
 
-	/* rgmii tx clock delay enable */
-	phy_write(phydev, MDIO_DEVAD_NONE, 0x1d, 0x05);
-	phy_write(phydev, MDIO_DEVAD_NONE, 0x1e, 0x100);
+		/* rgmii tx clock delay enable */
+		phy_write(phydev, MDIO_DEVAD_NONE, 0x1d, 0x05);
+		phy_write(phydev, MDIO_DEVAD_NONE, 0x1e, 0x100);
+	}
 
 	if (phydev->drv->config)
 		phydev->drv->config(phydev);
