@@ -18,9 +18,6 @@
 #include "imx6_spl.h"
 #endif
 
-/* Size of malloc() pool */
-#define CONFIG_SYS_MALLOC_LEN		(32 * SZ_1M)
-
 #define CONFIG_MXC_UART_BASE		UART1_BASE
 
 /* Set to QSPI2 B flash at default */
