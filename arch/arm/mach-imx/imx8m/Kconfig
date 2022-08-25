@@ -88,6 +88,12 @@ config TARGET_IMX8MQ_DDR4_VAL
 	select IMX8MQ
 	select IMX8M_DDR4
 
+config TARGET_MX8MQEA_COM
+	bool "mx8mqea_com"
+	select IMX8MQ
+	select SUPPORT_SPL
+	select IMX8M_LPDDR4
+
 config TARGET_IMX8MM_DDR4_VAL
 	bool "imx8mm DDR4 validation board"
 	select IMX8MM
@@ -152,6 +158,12 @@ config TARGET_KONTRON_MX8MM
 	select SUPPORT_SPL
 	select IMX8M_LPDDR4
 
+config TARGET_MX8MMEA_UCOM
+	bool "mx8mmea_ucom"
+	select IMX8MM
+	select SUPPORT_SPL
+	select IMX8M_LPDDR4
+
 config TARGET_IMX8MN_EVK
 	bool "imx8mn LPDDR4 EVK board"
 	select IMX8MN
@@ -185,6 +197,12 @@ config TARGET_IMX8MN_VENICE
 	select IMX8MN
 	select SUPPORT_SPL
 	select IMX8M_LPDDR4
+
+config TARGET_MX8MNEA_UCOM
+	bool "mx8mnea_ucom"
+	select IMX8MN
+	select SUPPORT_SPL
+	select IMX8M_DDR4
 
 config TARGET_IMX8MP_EVK
 	bool "imx8mp LPDDR4 EVK board"
@@ -320,5 +338,8 @@ source "board/technexion/pico-imx8mq/Kconfig"
 source "board/variscite/imx8mn_var_som/Kconfig"
 source "board/toradex/verdin-imx8mm/Kconfig"
 source "board/toradex/verdin-imx8mp/Kconfig"
+source "board/embeddedartists/mx8mqea-com/Kconfig"
+source "board/embeddedartists/mx8mmea-ucom/Kconfig"
+source "board/embeddedartists/mx8mnea-ucom/Kconfig"
 
 endif

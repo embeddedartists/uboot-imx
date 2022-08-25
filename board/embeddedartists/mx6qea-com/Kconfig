@@ -1,0 +1,18 @@
+if TARGET_MX6QEA_COM || TARGET_MX6DLEA_COM
+
+config SYS_BOARD
+	default "mx6qea-com"
+
+config SYS_VENDOR
+	default "embeddedartists"
+
+config SYS_SOC
+	default "mx6"
+
+config SYS_CONFIG_NAME
+	default "mx6qea-com"
+
+config SYS_TEXT_BASE
+    default 0x17800000
+
+endif
