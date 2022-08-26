@@ -199,7 +199,6 @@
 
 /* Framebuffer */
 #define CONFIG_BMP_16BPP
-#define CONFIG_VIDEO_BMP_LOGO
 #define CONFIG_IMX_HDMI
 
 #ifndef CONFIG_SPL
