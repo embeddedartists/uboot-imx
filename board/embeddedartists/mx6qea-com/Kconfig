@@ -12,6 +12,9 @@ config SYS_SOC
 config SYS_CONFIG_NAME
 	default "mx6qea-com"
 
+config IMX_CONFIG
+	default "board/embeddedartists/mx6qea-com/imximage.cfg"
+
 config SYS_TEXT_BASE
     default 0x17800000
 

@@ -9,4 +9,7 @@ config SYS_VENDOR
 config SYS_CONFIG_NAME
 	default "mx7ulpea-ucom"
 
+config IMX_CONFIG
+	default "board/embeddedartists/mx7ulpea-ucom/imximage.cfg"
+
 endif

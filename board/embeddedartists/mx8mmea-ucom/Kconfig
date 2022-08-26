@@ -9,4 +9,7 @@ config SYS_VENDOR
 config SYS_CONFIG_NAME
 	default "mx8mmea-ucom"
 
+config IMX_CONFIG
+	default "board/embeddedartists/mx8mmea-ucom/imximage-8mm-lpddr4.cfg"
+
 endif

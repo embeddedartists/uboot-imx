@@ -9,4 +9,7 @@ config SYS_VENDOR
 config SYS_CONFIG_NAME
 	default "mx8mqea-com"
 
+config IMX_CONFIG
+	default "board/embeddedartists/mx8mqea-com/imximage.cfg"
+
 endif
