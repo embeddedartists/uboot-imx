@@ -403,7 +403,7 @@ void board_init_f(ulong dummy)
 	board_init_r(NULL, 0);
 }
 
-#ifdef CONFIG_SPL_MMC_SUPPORT
+#ifdef CONFIG_SPL_MMC
 
 #define UBOOT_RAW_SECTOR_OFFSET 0x40
 unsigned long spl_mmc_get_uboot_raw_sector(struct mmc *mmc)
