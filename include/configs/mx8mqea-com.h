@@ -229,13 +229,6 @@
 #define CONFIG_DM_PMIC
 #endif
 
-/* Framebuffer */
-#ifdef CONFIG_DM_VIDEO
-#define CONFIG_BMP_16BPP
-#define CONFIG_BMP_24BPP
-#define CONFIG_BMP_32BPP
-#endif
-
 #define EA_SHARED_CONFIG_MEM (CONFIG_SYS_SPL_MALLOC_START + CONFIG_SYS_SPL_MALLOC_SIZE)
 
 #endif
