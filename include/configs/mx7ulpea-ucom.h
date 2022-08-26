@@ -24,7 +24,6 @@
 #define CONFIG_SERIAL_TAG
 
 #define CONFIG_MMCROOT                  "/dev/mmcblk0p2"  /* USDHC1 */
-#define CONFIG_SYS_MMC_IMG_LOAD_PART    1
 
 
 #define CONFIG_SYS_I2C_SPEED              100000
@@ -83,7 +82,7 @@
 	"earlycon=lpuart32,0x402D0000\0" \
 	"ip_dyn=yes\0" \
 	"mmcdev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0" \
-	"mmcpart=" __stringify(CONFIG_SYS_MMC_IMG_LOAD_PART) "\0" \
+	"mmcpart=1\0" \
 	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
 	"mmcautodetect=yes\0" \
 	"mmcargs=setenv bootargs console=${console},${baudrate} " \
