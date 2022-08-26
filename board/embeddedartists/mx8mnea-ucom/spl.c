@@ -302,7 +302,7 @@ int board_mmc_init(struct bd_info *bis)
 	return fsl_esdhc_initialize(bis, &usdhc_cfg[1]);
 }
 
-#ifdef CONFIG_POWER
+#ifdef CONFIG_POWER_LEGACY
 #define I2C_PMIC	0
 int power_init_board(void)
 {
