@@ -37,8 +37,6 @@
 
 #define CONFIG_SYS_I2C
 
-#define CONFIG_POWER
-#define CONFIG_POWER_I2C
 #define CONFIG_POWER_BD71837
 
 #endif
