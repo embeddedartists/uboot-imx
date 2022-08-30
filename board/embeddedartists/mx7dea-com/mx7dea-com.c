@@ -76,7 +76,7 @@ static iomux_v3_cfg_t const uart1_pads[] = {
 	MX7D_PAD_UART1_RX_DATA__UART1_DCE_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
 };
 
-#ifdef CONFIG_VIDEO_MXS
+#if defined(CONFIG_VIDEO) || defined(CONFIG_CMD_EADISP)
 static iomux_v3_cfg_t const lcd_pads[] = {
 	MX7D_PAD_LCD_CLK__LCD_CLK | MUX_PAD_CTRL(LCD_PAD_CTRL),
 	MX7D_PAD_LCD_ENABLE__LCD_ENABLE | MUX_PAD_CTRL(LCD_PAD_CTRL),
@@ -161,7 +161,8 @@ static const struct display_info_t displays[] = {
 	EADISP_ROGIN_RX050A(RGB, 0, 0),
 };
 
-#else /* CONFIG_CMD_EADISP */
+/* CONFIG_CMD_EADISP */
+#elif defined(CONFIG_VIDEO)
 
 void do_enable_parallel_lcd(struct lcd_panel_info_t const *dev)
 {
