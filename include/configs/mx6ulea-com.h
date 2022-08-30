@@ -154,9 +154,11 @@
 #define CONFIG_SYS_I2C
 #define CONFIG_SYS_I2C_MXC_I2C1		/* enable I2C bus 1 */
 #define CONFIG_SYS_I2C_MXC_I2C2		/* enable I2C bus 2 */
+#define CONFIG_SYS_MXC_I2C1_SPEED       100000
+#define CONFIG_SYS_MXC_I2C2_SPEED       100000
+#define CONFIG_SYS_MXC_I2C1_SLAVE       0
+#define CONFIG_SYS_MXC_I2C2_SLAVE       0
 #endif
-#define CONFIG_SYS_I2C_MXC
-#define CONFIG_SYS_I2C_SPEED		  100000
 
 /* Network */
 #define CONFIG_FEC_ENET_DEV 1
@@ -179,6 +181,10 @@
 #define CONFIG_MXC_USB_PORTSC  (PORT_PTS_UTMI | PORT_PTS_PTW)
 #define CONFIG_MXC_USB_FLAGS   0
 #define CONFIG_USB_MAX_CONTROLLER_COUNT 2
+#endif
+
+#ifdef CONFIG_DM_VIDEO
+#define CONFIG_VIDEO_LINK
 #endif
 
 #define CONFIG_SPLASH_SCREEN
