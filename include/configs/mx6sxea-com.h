@@ -190,9 +190,11 @@
 #define CONFIG_SYS_I2C
 #define CONFIG_SYS_I2C_MXC_I2C1		/* enable I2C bus 1 */
 #define CONFIG_SYS_I2C_MXC_I2C2		/* enable I2C bus 2 */
+#define CONFIG_SYS_MXC_I2C1_SPEED       100000
+#define CONFIG_SYS_MXC_I2C2_SPEED       100000
+#define CONFIG_SYS_MXC_I2C1_SLAVE       0
+#define CONFIG_SYS_MXC_I2C2_SLAVE       0
 #endif
-#define CONFIG_SYS_I2C_MXC
-#define CONFIG_SYS_I2C_SPEED		  100000
 
 /* Network */
 
@@ -232,6 +234,10 @@
 
 #ifndef CONFIG_SPL
 #define CONFIG_USB_FUNCTION_MASS_STORAGE
+#endif
+
+#ifdef CONFIG_DM_VIDEO
+#define CONFIG_VIDEO_LINK
 #endif
 
 #define EA_SHARED_CONFIG_MEM (CONFIG_SYS_SPL_MALLOC_START + CONFIG_SYS_SPL_MALLOC_SIZE)

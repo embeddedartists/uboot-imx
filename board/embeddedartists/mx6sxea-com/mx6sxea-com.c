@@ -162,7 +162,7 @@ int board_qspi_init(void)
 }
 #endif
 
-#ifdef CONFIG_VIDEO_MXS
+#if defined(CONFIG_VIDEO) || defined(CONFIG_CMD_EADISP)
 static iomux_v3_cfg_t const lvds_ctrl_pads[] = {
 	/* CABC enable */
 	MX6_PAD_ENET1_CRS__GPIO2_IO_1 | MUX_PAD_CTRL(NO_PAD_CTRL),
@@ -289,7 +289,8 @@ static const struct display_info_t displays[] = {
 	EADISP_ROGIN_RX050A(RGB, 0, 0),
 };
 
-#else /* CONFIG_CMD_EADISP */
+/* CONFIG_CMD_EADISP */
+#elif defined(CONFIG_VIDEO)
 struct lcd_panel_info_t {
 	unsigned int lcdif_base_addr;
 	int depth;
