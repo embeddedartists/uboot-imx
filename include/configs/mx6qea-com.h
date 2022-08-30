@@ -176,9 +176,11 @@
 #define CONFIG_SYS_I2C
 #define CONFIG_SYS_I2C_MXC_I2C1		/* enable I2C bus 1 */
 #define CONFIG_SYS_I2C_MXC_I2C3		/* enable I2C bus 3 */
+#define CONFIG_SYS_MXC_I2C1_SPEED       100000
+#define CONFIG_SYS_MXC_I2C3_SPEED       100000
+#define CONFIG_SYS_MXC_I2C1_SLAVE       0
+#define CONFIG_SYS_MXC_I2C3_SLAVE       0
 #endif
-#define CONFIG_SYS_I2C_MXC
-#define CONFIG_SYS_I2C_SPEED		  100000
 
 
 /* Network */
