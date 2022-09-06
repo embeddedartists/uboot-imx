@@ -1705,6 +1705,15 @@ void do_error(struct pt_regs *pt_regs, unsigned int esr)
 #endif
 
 #if defined(CONFIG_IMX8MN) || defined(CONFIG_IMX8MP)
+/*
+ * EA: Removing this implementaiton of env_get_location and instead
+ *     using default implementation in env/env.c. On EA boards
+ *     environment is always in eMMC.
+ *     By removing this function CONFIG_ENV_IS_NOWHERE can also
+ *     be removed and thereby env can be set to default from uuu
+ *     script during USB boot.
+ */
+#if 0
 enum env_location env_get_location(enum env_operation op, int prio)
 {
 	enum boot_device dev = get_boot_device();
@@ -1738,7 +1747,7 @@ enum env_location env_get_location(enum env_operation op, int prio)
 		return ENVL_NOWHERE;
 	}
 }
-
+#endif
 #endif
 
 #ifdef CONFIG_IMX8MQ
