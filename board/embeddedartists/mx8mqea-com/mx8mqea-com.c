@@ -146,9 +146,9 @@ static struct dwc3_device dwc3_device_data = {
 	.power_down_scale = 2,
 };
 
-int usb_gadget_handle_interrupts(void)
+int usb_gadget_handle_interrupts(index)
 {
-	dwc3_uboot_handle_interrupt(0);
+	dwc3_uboot_handle_interrupt(index);
 	return 0;
 }
 

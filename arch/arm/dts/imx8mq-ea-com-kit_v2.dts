@@ -55,8 +55,17 @@
 
 &iomuxc {
 	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_usb1>;
 
 	imx8mqea-com-kit {
+
+		pinctrl_usb1: usb1grp {
+			fsl,pins = <
+				MX8MQ_IOMUXC_GPIO1_IO12_USB1_OTG_PWR		0x19
+				MX8MQ_IOMUXC_GPIO1_IO13_USB1_OTG_OC		0x19
+			>;
+		};
+
 		pinctrl_fec1: fec1grp {
 			fsl,pins = <
 				MX8MQ_IOMUXC_ENET_MDC_ENET1_MDC		0x3
@@ -374,7 +383,13 @@
 };
 
 &usb_dwc3_0 {
-	dr_mode = "peripheral";
+	dr_mode = "otg";
+	hnp-disable;
+	srp-disable;
+	adp-disable;
+	usb-role-switch;
+	snps,dis-u1-entry-quirk;
+	snps,dis-u2-entry-quirk;
 	status = "okay";
 };
 
