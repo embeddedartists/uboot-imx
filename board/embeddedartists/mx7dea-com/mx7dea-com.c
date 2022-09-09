@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
- 
+
 #include <asm/arch/clock.h>
 #include <asm/arch/imx-regs.h>
 #include <asm/arch/mx7-pins.h>
@@ -11,10 +11,6 @@
 #include <asm/gpio.h>
 #include <asm/mach-imx/iomux-v3.h>
 #include <asm/mach-imx/boot_mode.h>
-#if defined(CONFIG_CMD_EADISP)
-#include <asm/mach-imx/eadisp.h>
-#include <asm/mach-imx/eatouch.h>
-#endif
 #include <asm/io.h>
 #include <linux/sizes.h>
 #include <common.h>
@@ -76,37 +72,9 @@ static iomux_v3_cfg_t const uart1_pads[] = {
 	MX7D_PAD_UART1_RX_DATA__UART1_DCE_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
 };
 
-#if defined(CONFIG_VIDEO) || defined(CONFIG_CMD_EADISP)
-static iomux_v3_cfg_t const lcd_pads[] = {
-	MX7D_PAD_LCD_CLK__LCD_CLK | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX7D_PAD_LCD_ENABLE__LCD_ENABLE | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX7D_PAD_LCD_HSYNC__LCD_HSYNC | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX7D_PAD_LCD_VSYNC__LCD_VSYNC | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX7D_PAD_LCD_DATA00__LCD_DATA0 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX7D_PAD_LCD_DATA01__LCD_DATA1 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX7D_PAD_LCD_DATA02__LCD_DATA2 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX7D_PAD_LCD_DATA03__LCD_DATA3 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX7D_PAD_LCD_DATA04__LCD_DATA4 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX7D_PAD_LCD_DATA05__LCD_DATA5 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX7D_PAD_LCD_DATA06__LCD_DATA6 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX7D_PAD_LCD_DATA07__LCD_DATA7 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX7D_PAD_LCD_DATA08__LCD_DATA8 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX7D_PAD_LCD_DATA09__LCD_DATA9 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX7D_PAD_LCD_DATA10__LCD_DATA10 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX7D_PAD_LCD_DATA11__LCD_DATA11 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX7D_PAD_LCD_DATA12__LCD_DATA12 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX7D_PAD_LCD_DATA13__LCD_DATA13 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX7D_PAD_LCD_DATA14__LCD_DATA14 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX7D_PAD_LCD_DATA15__LCD_DATA15 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX7D_PAD_LCD_DATA16__LCD_DATA16 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX7D_PAD_LCD_DATA17__LCD_DATA17 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX7D_PAD_LCD_DATA18__LCD_DATA18 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX7D_PAD_LCD_DATA19__LCD_DATA19 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX7D_PAD_LCD_DATA20__LCD_DATA20 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX7D_PAD_LCD_DATA21__LCD_DATA21 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX7D_PAD_LCD_DATA22__LCD_DATA22 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX7D_PAD_LCD_DATA23__LCD_DATA23 | MUX_PAD_CTRL(LCD_PAD_CTRL),
+#ifdef CONFIG_DM_VIDEO
 
+static iomux_v3_cfg_t const lcd_pads[] = {
 	/*
 	 * Use GPIO for Brightness adjustment, duty cycle = period.
 	 */
@@ -118,124 +86,75 @@ static iomux_v3_cfg_t const lcd_pads[] = {
 	/* Backlight enable */
 	MX7D_PAD_EPDC_GDCLK__GPIO2_IO24 | MUX_PAD_CTRL(NO_PAD_CTRL),
 };
-
-#ifdef CONFIG_CMD_EADISP
-
-struct lcd_panel_info_t {
-	unsigned int lcdif_base_addr;
-	int depth;
-	void	(*enable)(struct lcd_panel_info_t const *dev);
-	struct fb_videomode mode;
-};
-
-void board_enable_rgb(const struct display_info_t *di, int enable)
+static int setup_lcd(void)
 {
-	if (enable) {
-		imx_iomux_v3_setup_multiple_pads(lcd_pads, ARRAY_SIZE(lcd_pads));
+	int ret;
+	struct gpio_desc desc;
 
-		mdelay(100); /* let panel sync up before enabling backlight */
-
-		/* Power up the LCD */
-		gpio_request(IMX_GPIO_NR(2, 25), "lcd pwr");
-		gpio_direction_output(IMX_GPIO_NR(2, 25) , 1);
-
-		/* Set Brightness to high */
-		gpio_request(IMX_GPIO_NR(1, 1), "lcd brightness");
-		gpio_direction_output(IMX_GPIO_NR(1, 1) , 1);
-
-		/* Backlight power enable */
-		gpio_request(IMX_GPIO_NR(2, 24), "backlight pwr");
-		gpio_direction_output(IMX_GPIO_NR(2, 24) , 1);
-	}
-}
-
-static const struct display_info_t displays[] = {
-	/* RGB */
-	EADISP_INNOLUX_AT070TN(RGB, 0, 0),
-	EADISP_NHD_43480272EF(RGB, 0, 0),
-	EADISP_NHD_50800480TF(RGB, 0, 0),
-	EADISP_NHD_70800480EF(RGB, 0, 0),
-	EADISP_UMSH_8864(RGB, 0, 0),
-	EADISP_UMSH_8596_30T(RGB, 0, 0),
-	EADISP_UMSH_8596_33T(RGB, 0, 0),
-	EADISP_ROGIN_RX050A(RGB, 0, 0),
-};
-
-/* CONFIG_CMD_EADISP */
-#elif defined(CONFIG_VIDEO)
-
-void do_enable_parallel_lcd(struct lcd_panel_info_t const *dev)
-{
 	imx_iomux_v3_setup_multiple_pads(lcd_pads, ARRAY_SIZE(lcd_pads));
 
-	mdelay(100); /* let panel sync up before enabling backlight */
+	/* let panel sync up before enabling backlight */
+	mdelay(100);
+
 
 	/* Power up the LCD */
-	gpio_direction_output(IMX_GPIO_NR(2, 25) , 1);
+
+	ret = dm_gpio_lookup_name("GPIO2_25", &desc);
+	if (ret) {
+		printf("%s lookup GPIO2_25 failed ret = %d\n", __func__, ret);
+		return -ENODEV;
+	}
+
+	ret = dm_gpio_request(&desc, "lcd power");
+	if (ret) {
+		printf("%s request lcd power failed ret = %d\n", __func__, ret);
+		return -ENODEV;
+	}
+
+	dm_gpio_set_dir_flags(&desc, GPIOD_IS_OUT);
+	dm_gpio_set_value(&desc, 1);
+
 
 	/* Set Brightness to high */
-	gpio_direction_output(IMX_GPIO_NR(1, 1) , 1);
+
+	ret = dm_gpio_lookup_name("GPIO1_1", &desc);
+	if (ret) {
+		printf("%s lookup GPIO1_1 failed ret = %d\n", __func__, ret);
+		return -ENODEV;
+	}
+
+	ret = dm_gpio_request(&desc, "lcd backlight");
+	if (ret) {
+		printf("%s request lcd backlight failed ret = %d\n", __func__, ret);
+		return -ENODEV;
+	}
+
+	dm_gpio_set_dir_flags(&desc, GPIOD_IS_OUT);
+	dm_gpio_set_value(&desc, 1);
+
 
 	/* Backlight power enable */
-	gpio_direction_output(IMX_GPIO_NR(2, 24) , 1);
-}
 
-static struct lcd_panel_info_t const displays[] = {{
-	.lcdif_base_addr = ELCDIF1_IPS_BASE_ADDR,
-	.depth = 24,
-	.enable	= do_enable_parallel_lcd,
-	.mode	= {
-		.name			= "Innolux-AT070TN",
-		.xres           = 800,
-		.yres           = 480,
-		.pixclock       = 29850,
-		.left_margin    = 89,
-		.right_margin   = 164,
-		.upper_margin   = 75,
-		.lower_margin   = 75,
-		.hsync_len      = 10,
-		.vsync_len      = 10,
-		.sync           = 0,
-		.vmode          = FB_VMODE_NONINTERLACED
-} } };
+	ret = dm_gpio_lookup_name("GPIO2_24", &desc);
+	if (ret) {
+		printf("%s lookup GPIO2_24 failed ret = %d\n", __func__, ret);
+		return -ENODEV;
+	}
 
-int board_video_skip(void)
-{
-	int i;
-	int ret;
-	char const *panel = env_get("panel");
-	if (!panel) {
-		panel = displays[0].mode.name;
-		printf("No panel detected: default to %s\n", panel);
-		i = 0;
-	} else {
-		for (i = 0; i < ARRAY_SIZE(displays); i++) {
-			if (!strcmp(panel, displays[i].mode.name))
-				break;
-		}
+	ret = dm_gpio_request(&desc, "backlight power enable");
+	if (ret) {
+		printf("%s request backlight power failed ret = %d\n", __func__, ret);
+		return -ENODEV;
 	}
-	if (i < ARRAY_SIZE(displays)) {
-		ret = mxs_lcd_panel_setup(displays[i].mode, displays[i].depth,
-				    displays[i].lcdif_base_addr);
-		if (!ret) {
-			if (displays[i].enable)
-				displays[i].enable(displays+i);
-			printf("Display: %s (%ux%u)\n",
-			       displays[i].mode.name,
-			       displays[i].mode.xres,
-			       displays[i].mode.yres);
-		} else
-			printf("LCD %s cannot be configured: %d\n",
-			       displays[i].mode.name, ret);
-	} else {
-		printf("unsupported panel %s\n", panel);
-		return -EINVAL;
-	}
+
+	dm_gpio_set_dir_flags(&desc, GPIOD_IS_OUT);
+	dm_gpio_set_value(&desc, 1);
 
 	return 0;
 }
-#endif /* CONFIG_CMD_EADISP */
-#endif /* CONFIG_VIDEO_MXS */
+#else
+static inline int setup_lcd(void) { return 0; }
+#endif
 
 static void setup_iomux_uart(void)
 {
@@ -471,6 +390,8 @@ int board_late_init(void)
 #endif
 
 	ea_gpio_exp_configure(1);
+
+	setup_lcd();
 
 	imx_iomux_v3_setup_multiple_pads(wdog_pads, ARRAY_SIZE(wdog_pads));
 
