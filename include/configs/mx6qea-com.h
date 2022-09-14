@@ -78,7 +78,7 @@
 	"fdt_addr=0x18000000\0" \
 	"boot_fdt=try\0" \
 	"ip_dyn=yes\0" \
-	"panel=Hannstar-XGA\0" \
+	"panel=Hannstar-XGA-LVDS0\0" \
 	"splashimage=0x28000000\0" \
 	"mmcdev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0" \
 	"mmcpart=1\0" \

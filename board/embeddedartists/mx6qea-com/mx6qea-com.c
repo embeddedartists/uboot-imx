@@ -15,10 +15,6 @@
 #include <asm/gpio.h>
 #include <asm/mach-imx/iomux-v3.h>
 #include <asm/mach-imx/boot_mode.h>
-#if defined(CONFIG_CMD_EADISP)
-#include <asm/mach-imx/eadisp.h>
-#include <asm/mach-imx/eatouch.h>
-#endif
 #include <mmc.h>
 #include <fsl_esdhc.h>
 #include <miiphy.h>
@@ -338,134 +334,6 @@ static iomux_v3_cfg_t const display_ctrl_pads[] = {
 #define BACKLIGHT_GP_LVDS1  IMX_GPIO_NR(2, 27)
 };
 
-#ifdef CONFIG_CMD_EADISP
-
-void board_enable_rgb(const struct display_info_t *di, int enable)
-{
-	if (enable) {
-		/* Setup pads for RGB */
-		imx_iomux_v3_setup_multiple_pads(rgb_pads, ARRAY_SIZE(rgb_pads));
-
-		/* Default interface is LVDS1 so pinning must be changed */
-		gpio_request(DISPENABLE_GP_LVDS0_RGB, "lcd pwr");
-		gpio_direction_output(DISPENABLE_GP_LVDS0_RGB, 1);
-
-		gpio_request(BRIGHTNESS_GP_LVDSx, "brightness lvds");
-		gpio_direction_output(BRIGHTNESS_GP_LVDSx, 0);
-
-		gpio_request(BRIGHTNESS_GP_RGB, "brightness rgb");
-		gpio_direction_output(BRIGHTNESS_GP_RGB, 1);
-
-		gpio_request(BACKLIGHT_GP_LVDS0_RGB, "backlight");
-		gpio_direction_output(BACKLIGHT_GP_LVDS0_RGB, 1);
-	}
-}
-void board_enable_lvds0(const struct display_info_t *di, int enable)
-{
-	if (enable) {
-		/* Default is lvds1 so change that to lvds0 */
-		struct iomuxc *iomux = (struct iomuxc *)IOMUXC_BASE_ADDR;
-
-		int reg = readl(&iomux->gpr[2]);
-
-		reg &= ~(IOMUXC_GPR2_LVDS_CH0_MODE_MASK |
-			 IOMUXC_GPR2_LVDS_CH1_MODE_MASK);
-		reg |= (IOMUXC_GPR2_LVDS_CH0_MODE_ENABLED_DI0 |
-			IOMUXC_GPR2_LVDS_CH1_MODE_DISABLED);
-
-		writel(reg, &iomux->gpr[2]);
-
-		reg = readl(&iomux->gpr[3]);
-		reg &= ~(IOMUXC_GPR3_LVDS0_MUX_CTL_MASK |
-			 IOMUXC_GPR3_LVDS1_MUX_CTL_MASK |
-			 IOMUXC_GPR3_HDMI_MUX_CTL_MASK);
-		reg |= (IOMUXC_GPR3_MUX_SRC_IPU1_DI0
-			   << IOMUXC_GPR3_LVDS0_MUX_CTL_OFFSET);
-
-		writel(reg, &iomux->gpr[3]);
-
-		/* Now change pinning as well */
-		gpio_request(DISPENABLE_GP_LVDS0_RGB, "lcd pwr");
-		gpio_direction_output(DISPENABLE_GP_LVDS0_RGB, 1);
-
-
-		gpio_request(BRIGHTNESS_GP_LVDSx, "brightness lvds");
-		gpio_direction_output(BRIGHTNESS_GP_LVDSx, 1);
-
-
-		gpio_request(BRIGHTNESS_GP_RGB, "brightness rgb");
-		gpio_direction_output(BRIGHTNESS_GP_RGB, 0);
-
-		gpio_request(BACKLIGHT_GP_LVDS0_RGB, "backlight");
-		gpio_direction_output(BACKLIGHT_GP_LVDS0_RGB, 1);
-	}
-}
-
-void board_enable_lvds1(const struct display_info_t *di, int enable)
-{
-	if (enable) {
-		/* Default interface so only pinning is needed */
-		gpio_request(DISPENABLE_GP_LVDS1, "lcd pwr");
-		gpio_direction_output(DISPENABLE_GP_LVDS1, 1);
-
-		gpio_request(BRIGHTNESS_GP_LVDSx, "brightness lvds");
-		gpio_direction_output(BRIGHTNESS_GP_LVDSx, 1);
-
-		gpio_request(BACKLIGHT_GP_LVDS1, "backlight lvds1");
-		gpio_direction_output(BACKLIGHT_GP_LVDS1, 1);
-	}
-}
-
-void board_enable_hdmi(const struct display_info_t *di, int enable)
-{
-	if (enable) {
-		/* Default is lvds1 so disable it */
-		struct iomuxc *iomux = (struct iomuxc *)IOMUXC_BASE_ADDR;
-
-		int reg = readl(&iomux->gpr[2]);
-
-		reg &= ~(IOMUXC_GPR2_LVDS_CH0_MODE_MASK |
-			 IOMUXC_GPR2_LVDS_CH1_MODE_MASK);
-
-		writel(reg, &iomux->gpr[2]);
-
-		/* Now enable HDMI */
-
-		/* NOTE:
-		 * We have seen problems with hdmi when it has been enabled both
-		 * in u-boot and in the Linux kernel. The kernel could seem to freeze
-		 * due to a massive amount of overflow interrupts.
-		 * https://community.nxp.com/thread/342916
-		 */
-
-		/*imx_enable_hdmi_phy();*/
-	}
-}
-
-static const struct display_info_t displays[] = {
-	/* LVDS */
-	EADISP_HANNSTAR10(LVDS0, 0, 0),
-	EADISP_NHD_1024600AF(LVDS0, 0, 0),
-	EADISP_HANNSTAR10(LVDS1, 0, 0),
-
-	/* RGB */
-	EADISP_INNOLUX_AT070TN(RGB, 0, 0),
-	EADISP_NHD_43480272EF(RGB, 0, 0),
-	EADISP_NHD_50800480TF(RGB, 0, 0),
-	EADISP_NHD_70800480EF(RGB, 0, 0),
-	EADISP_UMSH_8864(RGB, 0, 0),
-	EADISP_UMSH_8596_30T(RGB, 0, 0),
-	EADISP_UMSH_8596_33T(RGB, 0, 0),
-	EADISP_ROGIN_RX050A(RGB, 0, 0),
-
-	/* HDMI */
-	EADISP_HDMI_1280_720M_60(HDMI, 0, 0),
-	EADISP_HDMI_1920_1080M_60(HDMI, 0, 0),
-	EADISP_HDMI_640_480M_60(HDMI, 0, 0),
-	EADISP_HDMI_720_480M_60(HDMI, 0, 0),
-};
-
-#else  /* CONFIG_CMD_EADISP */
 struct display_info_t {
 	int	bus;
 	int	addr;
@@ -699,7 +567,6 @@ int board_video_skip(void)
 	return 0;
 }
 
-#endif  /* CONFIG_CMD_EADISP */
 
 int ipu_displays_init(void)
 {
@@ -832,9 +699,6 @@ int board_init(void)
 	setup_display();
 #endif
 
-#ifdef CONFIG_CMD_EADISP
-	eadisp_setup_display(displays, ARRAY_SIZE(displays));
-#endif
 #ifdef CONFIG_EA_IMX_PTP
 	ea_configure_tfp410();
 #endif
@@ -968,10 +832,6 @@ int board_late_init(void)
 
 #ifdef CONFIG_ENV_IS_IN_MMC
 	board_late_mmc_env_init();
-#endif
-
-#ifdef CONFIG_CMD_EADISP
-	eatouch_init();
 #endif
 
 #ifdef CONFIG_FEC_MXC

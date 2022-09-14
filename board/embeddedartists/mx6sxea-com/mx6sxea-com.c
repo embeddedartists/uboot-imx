@@ -504,10 +504,6 @@ int board_late_init(void)
 	board_late_mmc_env_init();
 #endif
 
-#ifdef CONFIG_CMD_EADISP
-	eatouch_init();
-#endif
-
 #ifdef CONFIG_FEC_MXC
 	/*
 	 * Loading ethernet addresses must be done in late_init

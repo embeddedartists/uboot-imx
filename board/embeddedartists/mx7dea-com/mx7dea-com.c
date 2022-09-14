@@ -267,11 +267,6 @@ int board_init(void)
 	board_qspi_init();
 #endif
 
-
-#ifdef CONFIG_CMD_EADISP
-	eadisp_setup_display(displays, ARRAY_SIZE(displays));
-#endif
-
 #ifdef CONFIG_EA_IMX_PTP
 	ea_configure_tfp410();
 #endif
@@ -372,10 +367,6 @@ int board_late_init(void)
 
 #ifdef CONFIG_ENV_IS_IN_MMC
 	board_late_mmc_env_init();
-#endif
-
-#ifdef CONFIG_CMD_EADISP
-	eatouch_init();
 #endif
 
 #ifdef CONFIG_FEC_MXC
