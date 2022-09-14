@@ -431,7 +431,7 @@
 
 	display = <&display1>;
 	disp-dev = "ldb";
-	status = "okay";
+	status = "disabled";
 
 	assigned-clocks = <&clks IMX6SX_CLK_LCDIF2_SEL>;
 	assigned-clock-parents = <&clks IMX6SX_CLK_LDB_DI0>;
@@ -444,7 +444,7 @@
 };
 
 &ldb {
-	status = "okay";
+	status = "disabled";
 
 	lvds-channel@0 {
 		fsl,data-mapping = "spwg";
