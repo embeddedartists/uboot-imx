@@ -20,10 +20,6 @@
 #include <asm/mach-imx/iomux-v3.h>
 #include <asm/mach-imx/boot_mode.h>
 #include <asm/mach-imx/mxc_i2c.h>
-#if defined(CONFIG_CMD_EADISP)
-#include <asm/mach-imx/eadisp.h>
-#include <asm/mach-imx/eatouch.h>
-#endif
 #include <asm/io.h>
 #include <common.h>
 #include <env.h>
@@ -142,170 +138,6 @@ int board_mmc_get_env_dev(int devno)
 
 #endif
 
-#ifdef CONFIG_VIDEO_MXS
-
-static iomux_v3_cfg_t const lcd_pads[] = {
-	MX6_PAD_LCD_CLK__LCDIF_CLK | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX6_PAD_LCD_ENABLE__LCDIF_ENABLE | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX6_PAD_LCD_HSYNC__LCDIF_HSYNC | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX6_PAD_LCD_VSYNC__LCDIF_VSYNC | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX6_PAD_LCD_DATA00__LCDIF_DATA00 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX6_PAD_LCD_DATA01__LCDIF_DATA01 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX6_PAD_LCD_DATA02__LCDIF_DATA02 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX6_PAD_LCD_DATA03__LCDIF_DATA03 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX6_PAD_LCD_DATA04__LCDIF_DATA04 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX6_PAD_LCD_DATA05__LCDIF_DATA05 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX6_PAD_LCD_DATA06__LCDIF_DATA06 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX6_PAD_LCD_DATA07__LCDIF_DATA07 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX6_PAD_LCD_DATA08__LCDIF_DATA08 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX6_PAD_LCD_DATA09__LCDIF_DATA09 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX6_PAD_LCD_DATA10__LCDIF_DATA10 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX6_PAD_LCD_DATA11__LCDIF_DATA11 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX6_PAD_LCD_DATA12__LCDIF_DATA12 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX6_PAD_LCD_DATA13__LCDIF_DATA13 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX6_PAD_LCD_DATA14__LCDIF_DATA14 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX6_PAD_LCD_DATA15__LCDIF_DATA15 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX6_PAD_LCD_DATA16__LCDIF_DATA16 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX6_PAD_LCD_DATA17__LCDIF_DATA17 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX6_PAD_LCD_DATA18__LCDIF_DATA18 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX6_PAD_LCD_DATA19__LCDIF_DATA19 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX6_PAD_LCD_DATA20__LCDIF_DATA20 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX6_PAD_LCD_DATA21__LCDIF_DATA21 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX6_PAD_LCD_DATA22__LCDIF_DATA22 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-	MX6_PAD_LCD_DATA23__LCDIF_DATA23 | MUX_PAD_CTRL(LCD_PAD_CTRL),
-
-	/*
-	 * Use GPIO for Brightness adjustment, duty cycle = period.
-	 */
-	MX6_PAD_GPIO1_IO08__GPIO1_IO08 | MUX_PAD_CTRL(NO_PAD_CTRL),
-
-	/* Display power enable */
-	MX6_PAD_GPIO1_IO02__GPIO1_IO02 | MUX_PAD_CTRL(NO_PAD_CTRL),
-	/* Backlight enable */
-	MX6_PAD_GPIO1_IO01__GPIO1_IO01 | MUX_PAD_CTRL(NO_PAD_CTRL),
-};
-
-#ifdef CONFIG_CMD_EADISP
-void board_enable_rgb(const struct display_info_t *di, int enable)
-{
-	if (enable) {
-		enable_lcdif_clock(LCDIF1_BASE_ADDR, 1);
-
-		imx_iomux_v3_setup_multiple_pads(lcd_pads, ARRAY_SIZE(lcd_pads));
-
-		mdelay(100); /* let panel sync up before enabling backlight */
-
-		/* Power up the LCD */
-		gpio_request(IMX_GPIO_NR(1, 2), "lcd pwr");
-		gpio_direction_output(IMX_GPIO_NR(1, 2) , 1);
-
-		/* Set Brightness to high */
-		gpio_request(IMX_GPIO_NR(1, 8), "lcd brightness");
-		gpio_direction_output(IMX_GPIO_NR(1, 8) , 1);
-
-		/* Backlight power enable */
-		gpio_request(IMX_GPIO_NR(1, 1), "nacklight pwr");
-		gpio_direction_output(IMX_GPIO_NR(1, 1) , 1);
-	}
-}
-
-static const struct display_info_t displays[] = {
-	/* RGB */
-	EADISP_INNOLUX_AT070TN(RGB, 0, 0),
-	EADISP_NHD_43480272EF(RGB, 0, 0),
-	EADISP_NHD_50800480TF(RGB, 0, 0),
-	EADISP_NHD_70800480EF(RGB, 0, 0),
-	EADISP_UMSH_8864(RGB, 0, 0),
-	EADISP_UMSH_8596_30T(RGB, 0, 0),
-	EADISP_UMSH_8596_33T(RGB, 0, 0),
-	EADISP_ROGIN_RX050A(RGB, 0, 0),
-};
-
-#else /* CONFIG_CMD_EADISP */
-
-struct lcd_panel_info_t {
-	unsigned int lcdif_base_addr;
-	int depth;
-	void (*enable)(struct lcd_panel_info_t const *dev);
-	struct fb_videomode mode;
-};
-
-void do_enable_parallel_lcd(struct lcd_panel_info_t const *dev)
-{
-	enable_lcdif_clock(dev->lcdif_base_addr, 1);
-
-	imx_iomux_v3_setup_multiple_pads(lcd_pads, ARRAY_SIZE(lcd_pads));
-
-	/* Power up the LCD */
-	gpio_request(IMX_GPIO_NR(1, 2), "lcd pwr");
-	gpio_direction_output(IMX_GPIO_NR(1, 2) , 1);
-
-	/* Set Brightness to high */
-	gpio_request(IMX_GPIO_NR(1, 8), "lcdbrightness");
-	gpio_direction_output(IMX_GPIO_NR(1, 8) , 1);
-
-	/* Backlight power enable */
-	gpio_request(IMX_GPIO_NR(1, 1), "backlight pwr");
-	gpio_direction_output(IMX_GPIO_NR(1, 1) , 1);
-}
-
-static struct lcd_panel_info_t const displays[] = {{
-	.lcdif_base_addr = MX6UL_LCDIF1_BASE_ADDR,
-	.depth = 24,
-	.enable	= do_enable_parallel_lcd,
-	.mode	= {
-		.name			= "Innolux-AT070TN",
-		.xres           = 800,
-		.yres           = 480,
-		.pixclock       = 29850,
-		.left_margin    = 89,
-		.right_margin   = 164,
-		.upper_margin   = 75,
-		.lower_margin   = 75,
-		.hsync_len      = 10,
-		.vsync_len      = 10,
-		.sync           = 0,
-		.vmode          = FB_VMODE_NONINTERLACED
-} } };
-
-int board_video_skip(void)
-{
-	int i;
-	int ret;
-	char const *panel = env_get("panel");
-	if (!panel) {
-		panel = displays[0].mode.name;
-		printf("No panel detected: default to %s\n", panel);
-		i = 0;
-	} else {
-		for (i = 0; i < ARRAY_SIZE(displays); i++) {
-			if (!strcmp(panel, displays[i].mode.name))
-				break;
-		}
-	}
-	if (i < ARRAY_SIZE(displays)) {
-		ret = mxs_lcd_panel_setup(displays[i].mode, displays[i].depth,
-				    displays[i].lcdif_base_addr);
-		if (!ret) {
-			if (displays[i].enable)
-				displays[i].enable(displays+i);
-			printf("Display: %s (%ux%u)\n",
-			       displays[i].mode.name,
-			       displays[i].mode.xres,
-			       displays[i].mode.yres);
-		} else
-			printf("LCD %s cannot be configured: %d\n",
-			       displays[i].mode.name, ret);
-	} else {
-		printf("unsupported panel %s\n", panel);
-		return -EINVAL;
-	}
-
-	return 0;
-}
-#endif /* CONFIG_CMD_EADISP */
-#endif
-
 #ifdef CONFIG_FEC_MXC
 
 static int setup_fec(void)
@@ -421,6 +253,7 @@ int board_early_init_f(void)
 
 int board_init_common(void)
 {
+
 	/* configure and enable pwr on carrier board*/
 	imx_iomux_v3_setup_multiple_pads(peri_pwr_pads,
 			ARRAY_SIZE(peri_pwr_pads));
@@ -458,10 +291,6 @@ int board_init(void)
 	setup_fec();
 #endif
 
-#ifdef CONFIG_CMD_EADISP
-	eadisp_setup_display(displays, ARRAY_SIZE(displays));
-#endif
-
 	ea_print_board();
 
 	return 0;
@@ -472,10 +301,6 @@ int board_late_init(void)
 
 #ifdef CONFIG_ENV_IS_IN_MMC
 	board_late_mmc_env_init();
-#endif
-
-#ifdef CONFIG_CMD_EADISP
-        eatouch_init();
 #endif
 
 #ifdef CONFIG_FEC_MXC
