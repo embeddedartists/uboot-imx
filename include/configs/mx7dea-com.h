@@ -79,11 +79,13 @@
 	"initrd_high=0xffffffff\0" \
 	"emmc_dev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0"\
 
-#ifdef EA_IMX_PTP
+#ifdef CONFIG_EA_IMX_PTP
 #define EA_IMX_PTP_ENV_SETTINGS "eadisp_rgb_enabled=yes\0"
 #else
 #define EA_IMX_PTP_ENV_SETTINGS ""
 #endif
+
+#define CONFIG_SERIAL_TAG
 
 #define CONFIG_DFU_ENV_SETTINGS \
 	"dfu_alt_info=image raw 0 0x800000;"\

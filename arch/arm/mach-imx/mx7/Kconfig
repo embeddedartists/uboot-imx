@@ -157,6 +157,7 @@ source "board/novtech/meerkat96/Kconfig"
 source "board/technexion/pico-imx7d/Kconfig"
 source "board/toradex/colibri_imx7/Kconfig"
 source "board/warp7/Kconfig"
+source "board/embeddedartists/common/Kconfig"
 source "board/embeddedartists/mx7dea-com/Kconfig"
 
 endif

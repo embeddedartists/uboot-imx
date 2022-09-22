@@ -63,7 +63,7 @@
 #define FDT_FILE "imx6qea-com-kit_v2.dtb"
 #endif
 
-#ifdef EA_IMX_PTP
+#ifdef CONFIG_EA_IMX_PTP
 #define EA_IMX_PTP_ENV_SETTINGS "eadisp_hdmi_enabled=yes\0eadisp_prefer=hdmi\0"
 #else
 #define EA_IMX_PTP_ENV_SETTINGS ""

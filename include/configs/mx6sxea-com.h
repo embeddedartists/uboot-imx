@@ -71,12 +71,14 @@
 	"initrd_high=0xffffffff\0" \
 	"emmc_dev=2\0"\
 
-#ifdef EA_IMX_PTP
+#ifdef CONFIG_EA_IMX_PTP
 /*		"earlyprintk loglevel=7 debug initcall_debug " */
 #define EA_IMX_PTP_ENV_SETTINGS "eadisp_lvds0_enabled=yes\0"
 #else
 #define EA_IMX_PTP_ENV_SETTINGS ""
 #endif
+
+#define CONFIG_SERIAL_TAG
 
 /*	"mmcdev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0"*/
 
