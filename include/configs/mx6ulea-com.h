@@ -54,6 +54,7 @@
 #define FDT_FILE "imx6ullea-com-kit_v2.dtb"
 #endif
 
+#define CONFIG_SERIAL_TAG
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	CONFIG_MFG_ENV_SETTINGS \
