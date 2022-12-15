@@ -92,8 +92,13 @@ static iomux_v3_cfg_t const phy_control_pads[] = {
 	/* ENET PHY Power */
 	MX6_PAD_ENET1_COL__GPIO2_IO_0 | MUX_PAD_CTRL(NO_PAD_CTRL),
 
-	/* AR8031 PHY Reset. */
+	/* PHY Reset. */
 	MX6_PAD_ENET2_CRS__GPIO2_IO_7 | MUX_PAD_CTRL(NO_PAD_CTRL),
+};
+
+static iomux_v3_cfg_t const phy_enet_ref_clk_pads[] = {
+	/* Change Ref Clk Pin to be GPIO */
+	MX6_PAD_ENET2_RX_CLK__GPIO2_IO_8 | MUX_PAD_CTRL(ENET_CLK_PAD_CTRL),
 };
 
 #endif
@@ -257,9 +262,9 @@ static int setup_fec(int fec_id)
 		/* Use 125M anatop loopback REF_CLK1 for ENET2, clear gpr1[14], gpr1[18]*/
 		clrsetbits_le32(&iomuxc_regs->gpr[1], IOMUX_GPR1_FEC2_MASK, 0);
 
-        ret = enable_fec_anatop_clock(fec_id, ENET_125MHZ);
-        if (ret)
-                return ret;
+	ret = enable_fec_anatop_clock(fec_id, ENET_125MHZ);
+	if (ret)
+		return ret;
 
 	imx_iomux_v3_setup_multiple_pads(phy_control_pads,
 		ARRAY_SIZE(phy_control_pads));
@@ -268,15 +273,16 @@ static int setup_fec(int fec_id)
 	gpio_request(IMX_GPIO_NR(2, 0), "enet pwr");
 	gpio_direction_output(IMX_GPIO_NR(2, 0) , 0);
 
-	/* Reset AR8031 PHY */
-	gpio_request(IMX_GPIO_NR(2, 7), "ar8081 phy");
+	/* Reset PHY */
+	gpio_request(IMX_GPIO_NR(2, 7), "fec_rst");
 	gpio_direction_output(IMX_GPIO_NR(2, 7) , 0);
-	udelay(10000);
+	udelay(25000);
 	gpio_set_value(IMX_GPIO_NR(2, 7), 1);
+	udelay(100000);
 
-        reg = readl(&anatop->pll_enet);
-        reg |= BM_ANADIG_PLL_ENET_REF_25M_ENABLE;
-        writel(reg, &anatop->pll_enet);
+	reg = readl(&anatop->pll_enet);
+	reg |= BM_ANADIG_PLL_ENET_REF_25M_ENABLE;
+	writel(reg, &anatop->pll_enet);
 
 	return 0;
 }
@@ -293,6 +299,10 @@ int board_phy_config(struct phy_device *phydev)
 		/* rgmii tx clock delay enable */
 		phy_write(phydev, MDIO_DEVAD_NONE, 0x1d, 0x05);
 		phy_write(phydev, MDIO_DEVAD_NONE, 0x1e, 0x100);
+	} else {
+		/* For non-Atheros PHY, disable Ref Clk out */
+		imx_iomux_v3_setup_multiple_pads(phy_enet_ref_clk_pads,
+			ARRAY_SIZE(phy_enet_ref_clk_pads));
 	}
 
 	if (phydev->drv->config)
@@ -486,7 +496,7 @@ int board_init(void)
 #endif
 
 #ifdef CONFIG_FEC_MXC
-        setup_fec(CONFIG_FEC_ENET_DEV);
+	setup_fec(CONFIG_FEC_ENET_DEV);
 #endif
 
 #ifdef CONFIG_EA_IMX_PTP
