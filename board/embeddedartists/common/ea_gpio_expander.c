@@ -86,13 +86,13 @@ int ea_get_carrier_board_version(int i2c_bus)
 #if !defined(CONFIG_DM_I2C)
 	i2c_set_bus_num(i2c_bus);
 	i2c_init(CONFIG_SYS_I2C_SPEED, PCA6416_ADDR_V2);
-	if (!i2c_probe(PCA6416_ADDR_V2)) {
-		// Found PCA6416 => it is a rev v2 board
-		return 2;
-	}
 	if (!i2c_probe(PCA6416_ADDR_V3)) {
 		// Found PCA6416 => it is a rev v3 board
 		return 3;
+	}
+	if (!i2c_probe(PCA6416_ADDR_V2)) {
+		// Found PCA6416 => it is a rev v2 board
+		return 2;
 	}
 
 #else
@@ -106,15 +106,15 @@ int ea_get_carrier_board_version(int i2c_bus)
 		return -1;
 	}
 
-	ret = dm_i2c_probe(bus, PCA6416_ADDR_V2, 0, &i2c_dev);
-	if (!ret) {
-		// Found PCA6416 => it is a rev v2 board
-		return 2;
-	}
 	ret = dm_i2c_probe(bus, PCA6416_ADDR_V3, 0, &i2c_dev);
 	if (!ret) {
 		// Found PCA6416 => it is a rev v3 board
 		return 3;
+	}
+	ret = dm_i2c_probe(bus, PCA6416_ADDR_V2, 0, &i2c_dev);
+	if (!ret) {
+		// Found PCA6416 => it is a rev v2 board
+		return 2;
 	}
 #endif
 	return 1;
