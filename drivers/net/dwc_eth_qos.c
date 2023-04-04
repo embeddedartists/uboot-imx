@@ -48,7 +48,7 @@
 #include <asm/gpio.h>
 #include <asm/io.h>
 #include <eth_phy.h>
-#if defined(CONFIG_IMX8MP) || defined(CONFIG_IMX8DXL)
+#if defined(CONFIG_IMX8MP) || defined(CONFIG_IMX8DXL) || defined(CONFIG_IMX93)
 #include <asm/arch/clock.h>
 #include <asm/mach-imx/sys_proto.h>
 #endif
@@ -757,6 +757,14 @@ static int eqos_stop_resets_tegra186(struct udevice *dev)
 	return 0;
 }
 
+static int eqos_start_resets_imx(struct udevice *dev)
+{
+	struct eqos_priv *eqos = dev_get_priv(dev);
+
+	writel(EQOS_DMA_MODE_SWR, &eqos->dma_regs->mode);
+	return 0;
+}
+
 static int eqos_calibrate_pads_tegra186(struct udevice *dev)
 {
 	struct eqos_priv *eqos = dev_get_priv(dev);
@@ -1094,7 +1102,7 @@ static int eqos_read_rom_hwaddr(struct udevice *dev)
 {
 	struct eth_pdata *pdata = dev_get_plat(dev);
 
-#if defined(CONFIG_IMX8MP) || defined(CONFIG_IMX8DXL)
+#if defined(CONFIG_IMX8MP) || defined(CONFIG_IMX8DXL) || defined(CONFIG_IMX93)
 	imx_get_mac_from_fuse(dev_seq(dev), pdata->enetaddr);
 #endif
 	return !is_valid_ethaddr(pdata->enetaddr);
@@ -1920,8 +1928,9 @@ static int eqos_remove_resources_tegra186(struct udevice *dev)
 
 static int eqos_remove_resources_stm32(struct udevice *dev)
 {
-#ifdef CONFIG_CLK
 	struct eqos_priv *eqos = dev_get_priv(dev);
+
+#ifdef CONFIG_CLK
 
 	debug("%s(dev=%p):\n", __func__, dev);
 
@@ -2129,7 +2138,7 @@ static struct eqos_ops eqos_imx_ops = {
 	.eqos_probe_resources = eqos_probe_resources_imx,
 	.eqos_remove_resources = eqos_remove_resources_imx,
 	.eqos_stop_resets = eqos_null_ops,
-	.eqos_start_resets = eqos_null_ops,
+	.eqos_start_resets = eqos_start_resets_imx,
 	.eqos_stop_clks = eqos_stop_clks_imx,
 	.eqos_start_clks = eqos_start_clks_imx,
 	.eqos_calibrate_pads = eqos_null_ops,

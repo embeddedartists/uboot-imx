@@ -13,7 +13,7 @@
 
 #define CONFIG_SYS_BOOTM_LEN		(64 * SZ_1M)
 
-#define CONFIG_SPL_MAX_SIZE		(152 * 1024)
+#define CONFIG_SPL_MAX_SIZE		(156 * 1024)
 #define CONFIG_SYS_MONITOR_LEN		(512 * 1024)
 
 #ifdef CONFIG_SPL_BUILD
@@ -72,6 +72,14 @@
 			   "else run jh_netboot; fi; \0" \
 	"jh_netboot=setenv fdtfile imx8mq-evk-root.dtb; setenv jh_clk clk_ignore_unused mem=1872MB; run netboot; \0 "
 
+#define SR_IR_V2_COMMAND \
+	"nodes=/soc@0/caam-sm@100000 /soc@0/bus@30000000/caam_secvio /soc@0/bus@30000000/caam-snvs@30370000 /soc@0/bus@32c00000/hdmi@32c00000 /soc@0/bus@32c00000/display-controller@32e00000 /soc@0/vpu@38300000 /audio-codec /sound-wm8524 /sound-spdif /sound-hdmi-arc /soc@0/pcie@33800000 /binman \0" \
+	"sr_ir_v2_cmd=cp.b ${fdtcontroladdr} ${fdt_addr_r} 0x10000;"\
+	"fdt addr ${fdt_addr_r};"\
+	"fdt set /soc@0/usb@38100000 compatible snps,dwc3;" \
+	"fdt set /soc@0/usb@38200000 compatible snps,dwc3;" \
+	"for i in ${nodes}; do fdt rm ${i}; done \0"
+
 #define CONFIG_MFG_ENV_SETTINGS \
 	CONFIG_MFG_ENV_SETTINGS_DEFAULT \
 	"initrd_addr=0x43800000\0" \
@@ -83,7 +91,9 @@
 #define CONFIG_EXTRA_ENV_SETTINGS		\
 	CONFIG_MFG_ENV_SETTINGS \
 	BOOTENV \
+	SR_IR_V2_COMMAND \
 	JAILHOUSE_ENV \
+	"prepare_mcore=setenv mcore_clk clk-imx8mq.mcore_booted;\0" \
 	"scriptaddr=0x43500000\0" \
 	"kernel_addr_r=" __stringify(CONFIG_SYS_LOAD_ADDR) "\0" \
 	"bsp_script=boot.scr\0" \
@@ -100,7 +110,7 @@
 	"mmcpart=1\0" \
 	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
 	"mmcautodetect=yes\0" \
-	"mmcargs=setenv bootargs ${jh_clk} console=${console} root=${mmcroot}\0 " \
+	"mmcargs=setenv bootargs ${jh_clk} ${mcore_clk} console=${console} root=${mmcroot}\0 " \
 	"loadbootscript=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${bsp_script};\0" \
 	"bootscript=echo Running bootscript from mmc ...; " \
 		"source\0" \
@@ -117,7 +127,7 @@
 		"else " \
 			"echo wait for boot; " \
 		"fi;\0" \
-	"netargs=setenv bootargs ${jh_clk} console=${console} " \
+	"netargs=setenv bootargs ${jh_clk} ${mcore_clk} console=${console} " \
 		"root=/dev/nfs " \
 		"ip=dhcp nfsroot=${serverip}:${nfsroot},v3,tcp\0" \
 	"netboot=echo Booting from net ...; " \

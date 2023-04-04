@@ -968,13 +968,16 @@ dtb-$(CONFIG_ARCH_IMX8ULP) += \
 	imx8ulp-evk.dtb \
 	imx8ulp-evk-i3c.dtb \
 	imx8ulp-9x9-evk.dtb \
-	imx8ulp-9x9-evk-i3c.dtb
+	imx8ulp-9x9-evk-i3c.dtb \
+	imx8ulp-watch.dtb
 
 dtb-$(CONFIG_ARCH_IMX8M) += \
 	imx8mm-ddr4-evk.dtb \
+	imx8mm-ddr4-ab2.dtb \
 	imx8mm-ddr3l-val.dtb \
 	imx8mm-ddr4-val.dtb \
 	imx8mm-evk.dtb \
+	imx8mm-ab2.dtb \
 	imx8mm-icore-mx8mm-ctouch2.dtb \
 	imx8mm-icore-mx8mm-edimm2.2.dtb \
 	imx8mm-kontron-n801x-s.dtb \
@@ -989,8 +992,10 @@ dtb-$(CONFIG_ARCH_IMX8M) += \
 	phycore-imx8mm.dtb \
 	imx8mn-ddr3l-evk.dtb \
 	imx8mn-ddr4-evk.dtb \
+	imx8mn-ddr4-ab2.dtb \
 	imx8mq-cm.dtb \
 	imx8mn-evk.dtb \
+	imx8mn-ab2.dtb \
 	imx8mn-var-som-symphony.dtb \
 	imx8mn-venice.dtb \
 	imx8mn-venice-gw7902.dtb \
@@ -1010,6 +1015,12 @@ dtb-$(CONFIG_ARCH_IMX8M) += \
 	imx8mq-ea-com-kit_v2.dtb \
 	imx8mm-ea-ucom-kit_v2.dtb \
 	imx8mn-ea-ucom-kit_v2.dtb
+
+dtb-$(CONFIG_ARCH_IMX9) += \
+	imx93-11x11-evk.dtb \
+	imx93-14x14-evk.dtb \
+	imx93-9x9-qsb.dtb \
+	imx93-9x9-qsb-ontat-wvga-panel.dts
 
 dtb-$(CONFIG_ARCH_IMXRT) += imxrt1050-evk.dtb \
 	imxrt1020-evk.dtb

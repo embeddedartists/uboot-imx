@@ -21,7 +21,7 @@
 #include <asm/arch/rdc.h>
 #include <asm/arch/upower.h>
 #include <asm/mach-imx/boot_mode.h>
-#include <asm/arch/s400_api.h>
+#include <asm/mach-imx/s400_api.h>
 #include <asm/arch/clock.h>
 #include <asm/arch/pcc.h>
 
@@ -123,14 +123,11 @@ void spl_board_init(void)
 {
 	struct udevice *dev;
 	u32 res;
-	int node, ret;
+	int ret;
 
-	node = fdt_node_offset_by_compatible(gd->fdt_blob, -1, "fsl,imx8ulp-mu");
-	ret = uclass_get_device_by_of_offset(UCLASS_MISC, node, &dev);
-	if (ret) {
+	ret = arch_cpu_init_dm();
+	if (ret)
 		return;
-	}
-	device_probe(dev);
 
 	board_early_init_f();
 
@@ -156,9 +153,6 @@ void spl_board_init(void)
 
 	clock_init_late();
 
-	/* DDR initialization */
-	spl_dram_init();
-
 	/* This must place after upower init, so access to MDA and MRC are valid */
 	/* Init XRDC MDA  */
 	xrdc_init_mda();
@@ -166,12 +160,19 @@ void spl_board_init(void)
 	/* Init XRDC MRC for VIDEO, DSP domains */
 	xrdc_init_mrc();
 
+	xrdc_init_pdac_msc();
+
+	/* DDR initialization */
+	spl_dram_init();
+
 	/* Call it after PS16 power up */
 	set_lpav_qos();
 
 	/* Asks S400 to release CAAM for A35 core */
 	ret = ahab_release_caam(7, &res);
 	if (!ret) {
+		if (((res >> 8) & 0xff) == ELE_NON_SECURE_STATE_FAILURE_IND)
+			printf("Warning: CAAM is in non-secure state, 0x%x\n", res);
 
 		/* Only two UCLASS_MISC devicese are present on the platform. There
 		 * are MU and CAAM. Here we initialize CAAM once it's released by
@@ -182,6 +183,16 @@ void spl_board_init(void)
 			if (ret)
 				printf("Failed to initialize caam_jr: %d\n", ret);
 		}
+	}
+
+	/*
+	 * RNG start only available on the A1 soc revision.
+	 * Check some JTAG register for the SoC revision.
+	 */
+	if (!is_soc_rev(CHIP_REV_1_0)) {
+		ret = ahab_start_rng();
+		if (ret)
+			printf("Fail to start RNG: %d\n", ret);
 	}
 }
 

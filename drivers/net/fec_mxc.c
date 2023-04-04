@@ -630,7 +630,8 @@ static int fec_init(struct eth_device *dev, struct bd_info *bd)
 	writel(0x00000000, &fec->eth->gaddr2);
 
 	/* Do not access reserved register */
-	if (!is_mx6ul() && !is_mx6ull() && !is_imx8() && !is_imx8m() && !is_imx8ulp()) {
+	if (!is_mx6ul() && !is_mx6ull() && !is_imx8() && !is_imx8m() && !is_imx8ulp() &&
+	    !is_imx93()) {
 		/* clear MIB RAM */
 		for (i = mib_ptr; i <= mib_ptr + 0xfc; i += 4)
 			writel(0, i);
@@ -882,6 +883,9 @@ static int fec_recv(struct eth_device *dev)
 #else
 	ALLOC_CACHE_ALIGN_BUFFER(uchar, buff, FEC_MAX_PKT_SIZE);
 #endif
+
+	if (!(readl(&fec->eth->ecntrl) & FEC_ECNTRL_ETHER_EN))
+		return 0;
 
 	/* Check if any critical events have happened */
 	ievent = readl(&fec->eth->ievent);
@@ -1647,6 +1651,7 @@ static const struct udevice_id fecmxc_ids[] = {
 	{ .compatible = "fsl,imx7d-fec" },
 	{ .compatible = "fsl,mvf600-fec" },
 	{ .compatible = "fsl,imx8qm-fec" },
+	{ .compatible = "fsl,imx93-fec" },
 	{ }
 };
 

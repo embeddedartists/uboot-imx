@@ -69,8 +69,8 @@ static iomux_cfg_t gpmi_nand_pads[] = {
 	SC_P_EMMC0_STROBE | MUX_MODE_ALT(1) | MUX_PAD_CTRL(GPMI_NAND_PAD_CTRL),
 	SC_P_EMMC0_RESET_B | MUX_MODE_ALT(1) | MUX_PAD_CTRL(GPMI_NAND_PAD_CTRL),
 	SC_P_EMMC0_CLK | MUX_MODE_ALT(1) | MUX_PAD_CTRL(GPMI_NAND_PAD_CTRL),
-	SC_P_EMMC0_CMD | MUX_MODE_ALT(1) | MUX_PAD_CTRL(GPMI_NAND_PAD_CTRL),
 
+	SC_P_USDHC1_CD_B | MUX_MODE_ALT(3) | MUX_PAD_CTRL(GPMI_NAND_PAD_CTRL),
 	SC_P_USDHC1_RESET_B | MUX_MODE_ALT(3) | MUX_PAD_CTRL(GPMI_NAND_PAD_CTRL),
 	SC_P_USDHC1_WP | MUX_MODE_ALT(3) | MUX_PAD_CTRL(GPMI_NAND_PAD_CTRL),
 	SC_P_USDHC1_VSELECT | MUX_MODE_ALT(3) | MUX_PAD_CTRL(GPMI_NAND_PAD_CTRL),
@@ -328,7 +328,10 @@ int board_late_init(void)
 
 	if (fdt_file && !strcmp(fdt_file, "undefined")) {
 #if defined(CONFIG_TARGET_IMX8DXL_DDR3_EVK)
-		env_set("fdt_file", "imx8dxl-ddr3l-evk.dtb");
+		if (m4_booted)
+			env_set("fdt_file", "imx8dxl-ddr3l-evk-rpmsg.dtb");
+		else
+			env_set("fdt_file", "imx8dxl-ddr3l-evk.dtb");
 #else
 		if (m4_booted)
 			env_set("fdt_file", "imx8dxl-evk-rpmsg.dtb");

@@ -100,9 +100,18 @@ config VIDEO_IMX_NW_DSI
 	  This option enables support DSI internal bridge which can be used on
 	  devices which have DSI devices connected.
 
+config VIDEO_IMX_DW_DSI
+	bool "Enable Synopsys DW DSI video support"
+	select VIDEO_BRIDGE
+	select VIDEO_DW_MIPI_DSI
+	select VIDEO_LINK
+	help
+	  This option enables support DSI internal bridge which can be used on
+	  devices which have DSI devices connected.
+
 config VIDEO_IMX_LCDIFV3
 	bool "i.MX LCDIFv3 support"
-	depends on DM_VIDEO && IMX8MP
+	depends on DM_VIDEO && (IMX8MP || ARCH_IMX9)
 	select VIDEO_LINK
 	help
 	  Support for i.MX8MP LCDIFv3 controller.
@@ -114,3 +123,10 @@ config VIDEO_IMX_DCNANO
 	help
 	  Support for i.MX8ULP DCNANO LCD controller.
 
+config VIDEO_IMX93_PARALLEL_DISPLAY_FORMAT
+	bool "Support for i.MX93 parallel display format"
+	select VIDEO_BRIDGE
+	select VIDEO_LINK
+	help
+	  Choose this to enable the internal parallel display format
+	  configuration found on i.MX93 processors.

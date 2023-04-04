@@ -45,7 +45,11 @@ int power_domain_lookup_name(const char *name, struct power_domain *power_domain
 	ret = uclass_find_device_by_name(UCLASS_POWER_DOMAIN, name, &dev);
 	if (!ret) {
 		/* Probe the dev */
-		device_probe(dev);
+		ret = device_probe(dev);
+		if (ret) {
+			printf("Power domain probe device %s failed: %d\n", name, ret);
+			return ret;
+		}
 		ops = power_domain_dev_ops(dev);
 
 		power_domain->dev = dev;
@@ -177,8 +181,7 @@ static int dev_power_domain_ctrl(struct udevice *dev, bool on)
 	 * off their power-domain parent. So we will get here again and
 	 * again and will be stuck in an endless loop.
 	 */
-	if (!on && dev_get_parent(dev) == pd.dev &&
-	    device_get_uclass_id(dev) == UCLASS_POWER_DOMAIN)
+	if (!on && dev_get_parent(dev) == pd.dev)
 		return ret;
 
 	/*

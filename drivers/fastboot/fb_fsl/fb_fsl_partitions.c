@@ -62,7 +62,7 @@ static ulong bootloader_mmc_offset(void)
 		else
 		/* target device is SD card, bootloader offset is 0x8000 */
 			return 0x8000;
-	} else if (is_imx8mn() || is_imx8mp() || is_imx8dxl() || is_imx8ulp()) {
+	} else if (is_imx8mn() || is_imx8mp() || is_imx8dxl() || is_imx8ulp() || is_imx93()) {
 		/* target device is eMMC boot0 partition, bootloader offset is 0x0 */
 		if (env_get_ulong("emmc_dev", 10, 2) == fastboot_devinfo.dev_id)
 			return 0;
@@ -118,16 +118,16 @@ static int _fastboot_parts_add_ptable_entry(int ptable_index,
 	    !strcmp((const char *)info.name, FASTBOOT_PARTITION_OEM_A) ||
 	    !strcmp((const char *)info.name, FASTBOOT_PARTITION_VENDOR_A) ||
 	    !strcmp((const char *)info.name, FASTBOOT_PARTITION_OEM_B) ||
-	    !strcmp((const char *)info.name, FASTBOOT_PARTITION_VENDOR_B) ||
-	    !strcmp((const char *)info.name, FASTBOOT_PARTITION_DATA) ||
+	    !strcmp((const char *)info.name, FASTBOOT_PARTITION_VENDOR_B))
 #else
 	if (!strcmp((const char *)info.name, FASTBOOT_PARTITION_SYSTEM) ||
-	    !strcmp((const char *)info.name, FASTBOOT_PARTITION_DATA) ||
 	    !strcmp((const char *)info.name, FASTBOOT_PARTITION_DEVICE) ||
-	    !strcmp((const char *)info.name, FASTBOOT_PARTITION_CACHE) ||
+	    !strcmp((const char *)info.name, FASTBOOT_PARTITION_CACHE))
 #endif
-	    !strcmp((const char *)info.name, FASTBOOT_PARTITION_METADATA))
-		strcpy(ptable[ptable_index].fstype, "ext4");
+		strcpy(ptable[ptable_index].fstype, "erofs");
+	else if (!strcmp((const char *)info.name, FASTBOOT_PARTITION_DATA) ||
+	         !strcmp((const char *)info.name, FASTBOOT_PARTITION_METADATA))
+		strcpy(ptable[ptable_index].fstype, "f2fs");
 	else
 		strcpy(ptable[ptable_index].fstype, "raw");
 	return 0;

@@ -164,7 +164,6 @@ void reset_lsm6dsx(uint8_t i2c_bus, uint8_t addr)
 
 int board_init(void)
 {
-	int sync = -ENODEV;
 #if defined(CONFIG_NXP_FSPI) || defined(CONFIG_FSL_FSPI_NAND)
 	setup_flexspi();
 
@@ -177,13 +176,8 @@ int board_init(void)
 	setup_fec();
 #endif
 
-	if (m33_image_booted()) {
-		sync = m33_image_handshake(1000);
-		printf("M33 Sync: %s\n", sync? "Timeout": "OK");
-	}
-
 	/* When sync with M33 is failed, use local driver to set for video */
-	if (sync != 0 && IS_ENABLED(CONFIG_DM_VIDEO)) {
+	if (!is_m33_handshake_necessary() && IS_ENABLED(CONFIG_DM_VIDEO)) {
 		mipi_dsi_mux_panel();
 		mipi_dsi_panel_backlight();
 	}
@@ -198,6 +192,8 @@ int board_early_init_f(void)
 
 int board_late_init(void)
 {
+	ulong addr;
+
 #ifdef CONFIG_ENV_IS_IN_MMC
 	board_late_mmc_env_init();
 #endif
@@ -211,14 +207,55 @@ int board_late_init(void)
 	reset_lsm6dsx(8, 0x9);
 #endif
 
+	/* clear fdtaddr to avoid obsolete data */
+	addr = env_get_hex("fdt_addr_r", 0);
+	if (addr)
+		memset((void *)addr, 0, 0x400);
+
 	return 0;
 }
 
 #ifdef CONFIG_FSL_FASTBOOT
 #ifdef CONFIG_ANDROID_RECOVERY
+#ifdef CONFIG_TARGET_IMX8ULP_EVK
+static iomux_cfg_t const recovery_pad[] = {
+	IMX8ULP_PAD_PTF7__PTF7 | MUX_PAD_CTRL(PAD_CTL_IBE_ENABLE),
+};
+#endif
 int is_recovery_key_pressing(void)
 {
-	return 0; /*TODO*/
+#ifdef CONFIG_TARGET_IMX8ULP_EVK
+	int ret;
+	struct gpio_desc desc;
+
+	imx8ulp_iomux_setup_multiple_pads(recovery_pad, ARRAY_SIZE(recovery_pad));
+
+	ret = dm_gpio_lookup_name("GPIO3_7", &desc);
+	if (ret) {
+		printf("%s lookup GPIO3_7 failed ret = %d\n", __func__, ret);
+		return 0;
+	}
+
+	ret = dm_gpio_request(&desc, "recovery");
+	if (ret) {
+		printf("%s request recovery pad failed ret = %d\n", __func__, ret);
+		return 0;
+	}
+
+	dm_gpio_set_dir_flags(&desc, GPIOD_IS_IN);
+
+	ret = dm_gpio_get_value(&desc);
+	if (ret < 0) {
+                printf("%s error in retrieving GPIO value ret = %d\n", __func__, ret);
+                return 0;
+        }
+
+	dm_gpio_free(desc.dev, &desc);
+
+	return !ret;
+#else
+	return 0;
+#endif
 }
 #endif /*CONFIG_ANDROID_RECOVERY*/
 #endif /*CONFIG_FSL_FASTBOOT*/

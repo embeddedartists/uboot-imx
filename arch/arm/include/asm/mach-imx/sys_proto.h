@@ -32,6 +32,7 @@ struct bd_info;
 #define is_mx7() (is_soc_type(MXC_SOC_MX7))
 #define is_imx8m() (is_soc_type(MXC_SOC_IMX8M))
 #define is_imx8() (is_soc_type(MXC_SOC_IMX8))
+#define is_imx9() (is_soc_type(MXC_SOC_IMX9))
 #define is_imxrt() (is_soc_type(MXC_SOC_IMXRT))
 
 #define is_mx6dqp() (is_cpu_type(MXC_CPU_MX6QP) || is_cpu_type(MXC_CPU_MX6DP))
@@ -82,6 +83,17 @@ struct bd_info;
 
 #define is_imx8qxp() (is_cpu_type(MXC_CPU_IMX8QXP))
 #define is_imx8dxl() (is_cpu_type(MXC_CPU_IMX8DXL))
+
+#define is_imx93() (is_cpu_type(MXC_CPU_IMX93) || is_cpu_type(MXC_CPU_IMX9331) || \
+	is_cpu_type(MXC_CPU_IMX9332) || is_cpu_type(MXC_CPU_IMX9351) || is_cpu_type(MXC_CPU_IMX9322) || \
+	is_cpu_type(MXC_CPU_IMX9321) || is_cpu_type(MXC_CPU_IMX9312) || is_cpu_type(MXC_CPU_IMX9311))
+#define is_imx9351() (is_cpu_type(MXC_CPU_IMX9351))
+#define is_imx9332() (is_cpu_type(MXC_CPU_IMX9332))
+#define is_imx9331() (is_cpu_type(MXC_CPU_IMX9331))
+#define is_imx9322() (is_cpu_type(MXC_CPU_IMX9322))
+#define is_imx9321() (is_cpu_type(MXC_CPU_IMX9321))
+#define is_imx9312() (is_cpu_type(MXC_CPU_IMX9312))
+#define is_imx9311() (is_cpu_type(MXC_CPU_IMX9311))
 
 #define is_imxrt1020() (is_cpu_type(MXC_CPU_IMXRT1020))
 #define is_imxrt1050() (is_cpu_type(MXC_CPU_IMXRT1050))
@@ -151,7 +163,7 @@ struct rproc_att {
 	u32 size; /* size of reg range */
 };
 
-#if defined(CONFIG_IMX8M) || defined(CONFIG_IMX8ULP)
+#if defined(CONFIG_IMX8M) || defined(CONFIG_IMX8ULP) || defined(CONFIG_IMX9)
 struct rom_api {
 	u16 ver;
 	u16 tag;
@@ -170,6 +182,13 @@ enum boot_dev_type_e {
 	BT_DEV_TYPE_MEM_DEV = 0xF,
 
 	BT_DEV_TYPE_INVALID = 0xFF
+};
+
+enum boot_stage_type {
+	BT_STAGE_PRIMARY = 0x6,
+	BT_STAGE_SECONDARY = 0x9,
+	BT_STAGE_RECOVERY = 0xa,
+	BT_STAGE_USB = 0x5,
 };
 
 #define QUERY_ROM_VER		1

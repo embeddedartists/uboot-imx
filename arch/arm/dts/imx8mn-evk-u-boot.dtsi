@@ -87,6 +87,10 @@
 	/delete-property/ assigned-clock-rates;
 };
 
+&cpu_pd_wait {
+	/delete-property/ compatible;
+};
+
 &osc_24m {
 	u-boot,dm-spl;
 	u-boot,dm-pre-reloc;
@@ -335,6 +339,8 @@
 
 &fec1 {
 	phy-reset-gpios = <&gpio4 22 GPIO_ACTIVE_LOW>;
+	phy-reset-duration = <15>;
+	phy-reset-post-delay = <100>;
 };
 
 &ethphy0 {

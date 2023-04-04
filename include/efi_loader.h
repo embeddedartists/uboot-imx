@@ -312,8 +312,6 @@ extern const efi_guid_t efi_guid_firmware_management_protocol;
 extern const efi_guid_t efi_esrt_guid;
 /* GUID of the SMBIOS table */
 extern const efi_guid_t smbios_guid;
-/* GUID of memory only reset control */
-extern const efi_guid_t efi_memory_only_reset_control_guid;
 
 extern char __efi_runtime_start[], __efi_runtime_stop[];
 extern char __efi_runtime_rel_start[], __efi_runtime_rel_stop[];
@@ -980,6 +978,42 @@ efi_status_t efi_capsule_authenticate(const void *capsule,
 				      void **image, efi_uintn_t *image_size);
 
 #define EFI_CAPSULE_DIR u"\\EFI\\UpdateCapsule\\"
+
+/**
+ * struct efi_fw_image -  Information on firmware images updatable through
+ *                        capsule update
+ *
+ * This structure gives information about the firmware images on the platform
+ * which can be updated through the capsule update mechanism
+ *
+ * @image_type_id:	Image GUID. Same value is to be used in the capsule
+ * @fw_name:		Name of the firmware image
+ * @image_index:	Image Index, same as value passed to SetImage FMP
+ *                      function
+ */
+struct efi_fw_image {
+	efi_guid_t image_type_id;
+	u16 *fw_name;
+	u8 image_index;
+};
+
+/**
+ * struct efi_capsule_update_info - Information needed for capsule updates
+ *
+ * This structure provides information needed for performing firmware
+ * updates. The structure needs to be initialised per platform, for all
+ * platforms which enable capsule updates
+ *
+ * @dfu_string:		String used to populate dfu_alt_info
+ * @images:		Pointer to an array of updatable images
+ */
+struct efi_capsule_update_info {
+	const char *dfu_string;
+	struct efi_fw_image *images;
+};
+
+extern struct efi_capsule_update_info update_info;
+extern u8 num_image_type_guids;
 
 /**
  * Install the ESRT system table.
