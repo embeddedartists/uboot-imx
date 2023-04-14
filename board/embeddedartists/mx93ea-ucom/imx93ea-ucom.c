@@ -85,13 +85,12 @@ static void board_gpio_init(void)
 
 int board_init(void)
 {
-	//if (CONFIG_IS_ENABLED(FEC_MXC))
-	//	setup_fec();
-
 	if (CONFIG_IS_ENABLED(DWC_ETH_QOS))
 		setup_eqos();
 
 	board_gpio_init();
+
+	ea_print_board();
 
 	return 0;
 }
