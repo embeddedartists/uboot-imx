@@ -33,7 +33,27 @@
 #include <power/pca9450.h>
 #include <asm/arch/trdc.h>
 
+#include <gzip.h>
+#include "../common/ea_common.h"
+#include "../common/ea_eeprom.h"
+
 DECLARE_GLOBAL_DATA_PTR;
+
+#define I2C_PAD_CTRL	(PAD_CTL_DSE(6) | PAD_CTL_HYS | PAD_CTL_PUE)
+#define PC MUX_PAD_CTRL(I2C_PAD_CTRL)
+struct i2c_pads_info i2c_pad_info1 = {
+	.scl = {
+		.i2c_mode = MX93_PAD_I2C1_SCL__LPI2C1_SCL | PC,
+		.gpio_mode = MX93_PAD_I2C1_SCL__GPIO1_IO00 | PC,
+		.gp = IMX_GPIO_NR(1, 0),
+	},
+	.sda = {
+		.i2c_mode = MX93_PAD_I2C1_SDA__LPI2C1_SDA | PC,
+		.gpio_mode = MX93_PAD_I2C1_SDA__GPIO1_IO01 | PC,
+		.gp = IMX_GPIO_NR(1, 1),
+	},
+};
+
 
 int spl_board_boot_device(enum boot_device boot_dev_spl)
 {
@@ -64,8 +84,165 @@ void spl_board_init(void)
 		printf("Fail to start RNG: %d\n", ret);
 }
 
-void spl_dram_init(void)
+enum ea_ddr_field {
+	EA_DDR_DDRC   = 1,
+	EA_DDR_DDRPHY,
+	EA_DDR_DDRPHY_TRAINED,
+	EA_DDR_PHY_PIE,
+	EA_DDR_FSP_INFO,
+	EA_DDR_FSP0,
+	EA_DDR_FSP1,
+	EA_DDR_FSP2,
+	EA_DDR_FSP3,
+};
+
+struct dram_fsp_msg ea_ddr_dram_fsp_msg[4] = {{1}};
+
+#define EA_DBUF_SZ (16384)
+#define EA_GZBUF_SZ (6144)
+static unsigned char ea_dbuf[EA_DBUF_SZ] = {1};
+static unsigned char ea_gzbuf[EA_GZBUF_SZ] = {1};
+
+static void spl_ddr_map_array(enum ea_ddr_field idx, struct dram_cfg_param* a, int sz)
 {
+	switch(idx) {
+	case EA_DDR_DDRC:
+		dram_timing.ddrc_cfg = a;
+		dram_timing.ddrc_cfg_num = sz;
+
+		break;
+	case EA_DDR_DDRPHY:
+		dram_timing.ddrphy_cfg = a;
+		dram_timing.ddrphy_cfg_num = sz;
+
+		break;
+	case EA_DDR_DDRPHY_TRAINED:
+		dram_timing.ddrphy_trained_csr = a;
+		dram_timing.ddrphy_trained_csr_num = sz;
+
+		break;
+	case EA_DDR_PHY_PIE:
+		dram_timing.ddrphy_pie = a;
+		dram_timing.ddrphy_pie_num = sz;
+
+		break;
+	case EA_DDR_FSP_INFO:
+		/*
+		 * [0].reg = size of the fsp table
+		 * [1].reg = fsp_table[0]
+		 * [1].val = fsp_table[1]
+		 * [2].reg = fsp_table[2]
+		 * [2].val = fsp_table[3]
+		 */
+		dram_timing.fsp_msg_num = a[0].reg;
+		dram_timing.fsp_msg = ea_ddr_dram_fsp_msg;
+		dram_timing.fsp_table[0] = a[1].reg;
+		dram_timing.fsp_table[1] = a[1].val;
+		dram_timing.fsp_table[2] = a[2].reg;
+		dram_timing.fsp_table[3] = a[2].val;
+		break;
+	case EA_DDR_FSP0:
+		/*
+		 * First pair conatins drate and fw_type
+		 */
+		ea_ddr_dram_fsp_msg[0].drate   = a[0].reg;
+		ea_ddr_dram_fsp_msg[0].fw_type = a[0].val;
+		ea_ddr_dram_fsp_msg[0].fsp_cfg = &a[1];
+
+		/* sz also contains the drate and fw_type pair -> remove one */
+		ea_ddr_dram_fsp_msg[0].fsp_cfg_num = sz-1;
+
+		break;
+	case EA_DDR_FSP1:
+		ea_ddr_dram_fsp_msg[1].drate   = a[0].reg;
+		ea_ddr_dram_fsp_msg[1].fw_type = a[0].val;
+		ea_ddr_dram_fsp_msg[1].fsp_cfg = &a[1];
+		ea_ddr_dram_fsp_msg[1].fsp_cfg_num = sz-1;
+
+		break;
+	case EA_DDR_FSP2:
+		ea_ddr_dram_fsp_msg[2].drate   = a[0].reg;
+		ea_ddr_dram_fsp_msg[2].fw_type = a[0].val;
+		ea_ddr_dram_fsp_msg[2].fsp_cfg = &a[1];
+		ea_ddr_dram_fsp_msg[2].fsp_cfg_num = sz-1;
+
+		break;
+	case EA_DDR_FSP3:
+		ea_ddr_dram_fsp_msg[3].drate   = a[0].reg;
+		ea_ddr_dram_fsp_msg[3].fw_type = a[0].val;
+		ea_ddr_dram_fsp_msg[3].fsp_cfg = &a[1];
+		ea_ddr_dram_fsp_msg[3].fsp_cfg_num = sz-1;
+
+		break;
+	default:
+		printf("Invalid ddr field index (%d). Invalid data in eeprom?\n", idx);
+		break;
+	}
+}
+
+static int spl_ddr_unpack_data(ea_eeprom_config_t* cfg)
+{
+	int ret;
+	int offset;
+	int nread=0;
+	unsigned long len;
+	struct dram_cfg_param* p;
+
+	/* data_size is in this case the size of the gzipped data */
+	len = cfg->data_size;
+
+	ret = ea_eeprom_read_all_data(ea_gzbuf, EA_GZBUF_SZ, &nread);
+	if (ret) {
+		printf("Failed to read ddr data from eeprom %d\n", ret);
+		return ret;
+	}
+
+	ret = gunzip(ea_dbuf, EA_DBUF_SZ, ea_gzbuf, &len);
+	if (ret) {
+		printf("Failed to unpack ddr data %d\n", ret);
+		return ret;
+	}
+
+	p = (struct dram_cfg_param*)&ea_dbuf[0];
+
+	offset = 0;
+	while(offset*sizeof(struct dram_cfg_param) < len) {
+		spl_ddr_map_array(p[offset].reg, &p[offset+1], p[offset].val);
+		offset += (p[offset].val+1);
+	}
+
+	return ret;
+}
+
+void spl_dram_init(uint32_t *size)
+{
+	ea_eeprom_config_t cfg;
+	int ret;
+
+	/* set default value, will be replaced if  eeprom cfg is valid */
+	*size = (PHYS_SDRAM_SIZE >> 20);
+
+#ifdef CONFIG_EA_IMX_PTP
+	/* Skip reading eeprom */
+	(void)cfg;
+	(void)ret;
+#else
+	ret = ea_eeprom_get_config(&cfg);
+
+	/* If eeprom is valid read ddr config; otherwise use default */
+	if (!ret) {
+		*size = cfg.ddr_size;
+
+		/*
+		 * timing values might exist in eeprom as gzipped data
+		 */
+		if (cfg.data_type == EA_EEPROM_DATA_TYPE_GZIP) {
+			printf("EA: Using gzipped ddr data from eeprom\n");
+			ret = spl_ddr_unpack_data(&cfg);
+		}
+	}
+#endif
+
 	ddr_init(&dram_timing);
 }
 
@@ -116,6 +293,7 @@ int power_init_board(void)
 void board_init_f(ulong dummy)
 {
 	int ret;
+	uint32_t size;
 
 	/* Clear the BSS. */
 	memset(__bss_start, 0, __bss_end - __bss_start);
@@ -150,7 +328,7 @@ void board_init_f(ulong dummy)
 	trdc_init();
 
 	/* DDR initialization */
-	spl_dram_init();
+	spl_dram_init(&size);
 
 	/* Put M33 into CPUWAIT for following kick */
 	ret = m33_prepare();

@@ -20,6 +20,9 @@
 #include <dwc3-uboot.h>
 #include <asm/gpio.h>
 
+#include "../common/ea_common.h"
+#include "../common/ea_eeprom.h"
+
 DECLARE_GLOBAL_DATA_PTR;
 
 #define UART_PAD_CTRL	(PAD_CTL_DSE(6) | PAD_CTL_FSEL2)
@@ -85,6 +88,9 @@ static void board_gpio_init(void)
 
 int board_init(void)
 {
+	if (CONFIG_IS_ENABLED(FEC_MXC))
+		setup_fec();
+
 	if (CONFIG_IS_ENABLED(DWC_ETH_QOS))
 		setup_eqos();
 

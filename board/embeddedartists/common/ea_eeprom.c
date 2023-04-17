@@ -172,14 +172,18 @@ int ea_eeprom_ddr_cfg_read(ea_ddr_cfg_t *cfg, ea_ddr_cfg_pair_t* pairs,
 
 int ea_eeprom_read_all_data(uint8_t* buf, int buf_sz, int *read)
 {
+#define MAX_BLOCK_LEN (100)
 	int to_read;
+#if defined(CONFIG_TARGET_MX93EA_UCOM)
+	int bytes_read = 0;
+#endif
+
         ea_eeprom_config_t config;
         int ret = 0;
 
         ea_eeprom_init();
         ret = ea_eeprom_get_config(&config);
         if (ret) return ret;
-
 
 #ifdef CONFIG_DM_I2C
 	struct udevice *i2c_dev = NULL;
@@ -206,6 +210,28 @@ int ea_eeprom_read_all_data(uint8_t* buf, int buf_sz, int *read)
 		return -EIO;
 	}
 #else
+
+
+#if defined(CONFIG_TARGET_MX93EA_UCOM)
+
+	while(bytes_read < to_read) {
+		int remaining = to_read - bytes_read;
+		int bytes_to_read = remaining > MAX_BLOCK_LEN ? MAX_BLOCK_LEN : remaining;
+
+		ret = dm_i2c_read(i2c_dev,
+			sizeof(ea_eeprom_config_t)+bytes_read,
+			buf + bytes_read,
+			bytes_to_read);
+		if (ret) {
+			printf("%s dm_i2c_read failed, err %d\n", __func__, ret);
+			return -EIO;
+		}
+
+		bytes_read += bytes_to_read;
+	}
+
+#else
+
 	ret = dm_i2c_read(i2c_dev,
 		sizeof(ea_eeprom_config_t),
 		buf,
@@ -214,6 +240,7 @@ int ea_eeprom_read_all_data(uint8_t* buf, int buf_sz, int *read)
 		printf("%s dm_i2c_read failed, err %d\n", __func__, ret);
 		return -EIO;
 	}
+#endif
 #endif
 
 	*read = to_read;
