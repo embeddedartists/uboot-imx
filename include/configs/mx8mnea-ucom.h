@@ -12,8 +12,6 @@
 
 #include "imx_env.h"
 
-#define CONFIG_SYS_BOOTM_LEN            (32 * SZ_1M)
-
 #define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_USE_SECTOR
 #define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR	0x300
 #define CONFIG_SYS_UBOOT_BASE \
