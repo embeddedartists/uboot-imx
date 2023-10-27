@@ -24,7 +24,6 @@
 #ifdef CONFIG_SPL_BUILD
 #define CONFIG_SPL_STACK		0x95fff0
 #define CONFIG_SPL_BSS_START_ADDR      0x00950000
-#define CONFIG_SPL_BSS_MAX_SIZE        SZ_8K	/* 8 KB */
 
 /* malloc f used before GD_FLG_FULL_MALLOC_INIT set */
 #define CONFIG_MALLOC_F_ADDR		0x00940000

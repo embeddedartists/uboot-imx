@@ -20,7 +20,6 @@
 #ifdef CONFIG_SPL_BUILD
 #define CONFIG_SPL_STACK		0x20519dd0
 #define CONFIG_SPL_BSS_START_ADDR	0x2051a000
-#define CONFIG_SPL_BSS_MAX_SIZE		SZ_8K	/* 8 KB */
 #define CONFIG_SYS_SPL_MALLOC_START	0x83200000 /* Need disable simple malloc where still uses malloc_f area */
 #define CONFIG_SYS_SPL_MALLOC_SIZE	SZ_512K	/* 512 KB */
 
