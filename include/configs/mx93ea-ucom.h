@@ -180,9 +180,6 @@
 #define PHYS_SDRAM_SIZE			0x40000000 /* 1GB DDR */
 #endif
 
-/* Monitor Command Prompt */
-#define CONFIG_SYS_BARGSIZE		CONFIG_SYS_CBSIZE
-
 #define CONFIG_IMX_BOOTAUX
 
 #define CONFIG_SYS_FSL_USDHC_NUM	2
