@@ -1,0 +1,70 @@
+setenv args_from_script ''
+
+#if load ${dtype} ${disk}:1 ${a_script} uEnv.txt ; then
+#    env import -t ${a_script} ${filesize}
+#fi
+
+
+if run loadfdt ; then
+	fdt addr ${fdt_addr}
+	setenv fdt_high 0xffffffff
+else
+	echo "!!!! Error loading ${fdt_file}";
+	exit;
+fi
+	
+
+fdt resize
+if itest.s "x" != "x${cmd_custom}" ; then
+	run cmd_custom
+fi
+
+if itest.s "x" != "x${cmd_hdmi}" ; then
+	run cmd_hdmi
+	if itest.s x == x${allow_noncea} ; then
+		setenv args_from_script ${args_from_script} mxc_hdmi.only_cea=1;
+		echo "only CEA modes allowed on HDMI port";
+	else
+		setenv args_from_script ${args_from_script} mxc_hdmi.only_cea=0;
+		echo "non-CEA modes allowed on HDMI, audio may be affected";
+	fi
+fi
+
+if itest.s "x" != "x${cmd_rgb}" ; then
+	run cmd_rgb
+fi
+if itest.s "x" != "x${cmd_lvds0}" ; then
+	run cmd_lvds0
+fi
+if itest.s "x" != "x${cmd_lvds1}" ; then
+	run cmd_lvds1
+fi
+
+if itest.s "x" != "x${cmd_ts}" ; then
+	run cmd_ts
+fi
+
+if itest.s "x" != "x${extra_bootargs}" ; then
+	setenv args_from_script "${args_from_script} ${extra_bootargs}"
+fi
+
+if itest.s "x" != "x${show_fdt}" ; then
+	fdt print /
+fi
+
+if itest.s "x" != "x${show_env}" ; then
+	printenv
+fi
+
+if itest.s "x" != "x${skip_booting}" ; then
+	echo "!!!! Selected to skip booting !!!!";
+	echo "!!!! Unset skip_booting variable to enable booting again !!!!";
+	exit;
+fi
+
+if run loadimage; then
+	run mmcargs;
+	bootz ${loadaddr} - ${fdt_addr}
+fi
+
+echo "Error loading kernel image"

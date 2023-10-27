@@ -45,10 +45,15 @@ config TARGET_IMX91P_9X9_QSB
 	select IMX93
 	select IMX9_LPDDR4X
 
+config TARGET_MX93EA_UCOM
+	bool "mx93ea-ucom"
+	select IMX93
+
 endchoice
 
 source "board/freescale/imx93_evk/Kconfig"
 source "board/freescale/imx93_qsb/Kconfig"
+source "board/embeddedartists/mx93ea-ucom/Kconfig"
 
 endif
 
