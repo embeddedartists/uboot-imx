@@ -21,7 +21,6 @@
 
 #endif
 
-#define CONFIG_CMD_READ
 #define CONFIG_SERIAL_TAG
 
 #ifdef CONFIG_AHAB_BOOT
