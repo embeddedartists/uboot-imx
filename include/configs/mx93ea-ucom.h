@@ -188,9 +188,6 @@
 
 #define CONFIG_SYS_I2C_SPEED		100000
 
-/* USB configs */
-#define CONFIG_USB_MAX_CONTROLLER_COUNT         2
-
 #if defined(CONFIG_CMD_NET)
 #define CONFIG_ETHPRIME                 "eth1"
 
