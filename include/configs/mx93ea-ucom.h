@@ -171,7 +171,7 @@
 
 #define CONFIG_MMCROOT			"/dev/mmcblk1p2"  /* USDHC2 */
 
-#define CONFIG_SYS_SDRAM_BASE           0x80000000
+#define CFG_SYS_SDRAM_BASE              0x80000000
 #define PHYS_SDRAM                      0x80000000
 #ifdef CONFIG_IMX9_DRAM_INLINE_ECC
 #define PHYS_SDRAM_SIZE			0x70000000 /* 1/8 DDR is used by ECC */
