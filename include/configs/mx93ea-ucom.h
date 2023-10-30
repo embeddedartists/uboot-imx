@@ -181,8 +181,6 @@
 
 #define CONFIG_IMX_BOOTAUX
 
-#define CONFIG_SYS_FSL_USDHC_NUM	2
-
 /* Using ULP WDOG for reset */
 #define WDOG_BASE_ADDR          WDG3_BASE_ADDR
 
