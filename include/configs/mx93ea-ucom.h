@@ -51,8 +51,8 @@
 	"jh_netboot=setenv fdt_file ${jh_root_dtb}; " \
 		    "setenv jh_clk clk_ignore_unused mem=1248MB kvm-arm.mode=nvhe; run netboot; \0 "
 
-#define CONFIG_MFG_ENV_SETTINGS \
-	CONFIG_MFG_ENV_SETTINGS_DEFAULT \
+#define CFG_MFG_ENV_SETTINGS \
+	CFG_MFG_ENV_SETTINGS_DEFAULT \
 	"initrd_addr=0x83800000\0" \
 	"initrd_high=0xffffffffffffffff\0" \
 	"emmc_dev=0\0"\
@@ -65,9 +65,9 @@
 	"cm_boot=run cm_loadimage; cp.b ${loadaddr} ${cm_addr} ${filesize}; dcache flush; bootaux ${cm_addr}\0"
 
 /* Initial environment variables */
-#define CONFIG_EXTRA_ENV_SETTINGS		\
+#define CFG_EXTRA_ENV_SETTINGS		\
 	JAILHOUSE_ENV \
-	CONFIG_MFG_ENV_SETTINGS \
+	CFG_MFG_ENV_SETTINGS \
 	BOOTENV \
 	AHAB_ENV \
 	"scriptaddr=0x83500000\0" \

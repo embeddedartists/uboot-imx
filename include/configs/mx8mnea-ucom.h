@@ -70,8 +70,8 @@
 			   "else run jh_netboot; fi; \0" \
 	"jh_netboot=mw 0x303d0518 0xff; setenv fdt_file fsl-imx8mn-ddr4-evk-root.dtb; setenv jh_clk clk_ignore_unused; run netboot; \0 "
 
-#define CONFIG_MFG_ENV_SETTINGS \
-	CONFIG_MFG_ENV_SETTINGS_DEFAULT \
+#define CFG_MFG_ENV_SETTINGS \
+	CFG_MFG_ENV_SETTINGS_DEFAULT \
 	"initrd_addr=0x43800000\0" \
 	"initrd_high=0xffffffffffffffff\0" \
 	"emmc_dev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0"\
@@ -84,8 +84,8 @@
 	"cm_boot=run cm_loadimage; cp.b ${loadaddr} ${cm_addr} ${filesize}; dcache flush; bootaux ${cm_addr}\0"
 
 /* Initial environment variables */
-#define CONFIG_EXTRA_ENV_SETTINGS		\
-	CONFIG_MFG_ENV_SETTINGS \
+#define CFG_EXTRA_ENV_SETTINGS		\
+	CFG_MFG_ENV_SETTINGS \
 	JAILHOUSE_ENV \
 	M_CORE_ENV \
 	BOOTENV \
