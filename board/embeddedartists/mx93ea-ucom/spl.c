@@ -20,7 +20,7 @@
 #include <asm/mach-imx/mxc_i2c.h>
 #include <asm/arch-mx7ulp/gpio.h>
 #include <asm/mach-imx/syscounter.h>
-#include <asm/mach-imx/s400_api.h>
+#include <asm/mach-imx/ele_api.h>
 #include <dm/uclass.h>
 #include <dm/device.h>
 #include <dm/uclass-internal.h>
@@ -308,7 +308,7 @@ void board_init_f(ulong dummy)
 
 	preloader_console_init();
 
-	ret = arch_cpu_init_dm();
+	ret = arch_cpu_init();
 	if (ret) {
 		printf("Fail to init Sentinel API\n");
 	} else {
