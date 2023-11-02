@@ -11,6 +11,11 @@
 #include <asm/arch/imx-regs.h>
 #include "imx_env.h"
 
+#if defined(CONFIG_SPL_BUILD)
+#undef CONFIG_DM_I2C
+#endif
+
+
 #define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_USE_SECTOR
 #define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR	0x300
 #define CFG_SYS_UBOOT_BASE		(QSPI0_AMBA_BASE + CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR * 512)
