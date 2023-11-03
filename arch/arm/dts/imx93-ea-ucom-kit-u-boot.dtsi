@@ -151,10 +151,6 @@
 	phy-reset-post-delay = <100>;
 };
 
-&eqos {
-	compatible = "fsl,imx-eqos";
-};
-
 &ethphy1 {
 	reset-gpios = <&pcal6524 15 GPIO_ACTIVE_LOW>;  //ANDLI -> EVK:15:ENET1_nRST, EA:15:ENET1_NRST
 	reset-assert-us = <15000>;

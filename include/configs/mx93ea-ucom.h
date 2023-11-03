@@ -189,15 +189,7 @@
 #define CONFIG_SYS_I2C_SPEED		100000
 
 #if defined(CONFIG_CMD_NET)
-#define CONFIG_ETHPRIME                 "eth1"
-
-#define CONFIG_FEC_XCV_TYPE             RGMII
-#define CONFIG_FEC_MXC_PHYADDR          1
-
-#define DWC_NET_PHYADDR			1
-
 #define PHY_ANEG_TIMEOUT 20000
-
 #endif
 
 #endif
