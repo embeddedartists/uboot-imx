@@ -179,6 +179,7 @@
 	u-boot,dm-spl;
 	/delete-property/ assigned-clocks;
 	/delete-property/ assigned-clock-rates;
+	/delete-property/ assigned-clock-parents;
 };
 
 &osc_32k {
