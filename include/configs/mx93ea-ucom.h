@@ -14,15 +14,6 @@
 #define CFG_SYS_UBOOT_BASE	\
 	(QSPI0_AMBA_BASE + CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR * 512)
 
-#ifdef CONFIG_SPL_BUILD
-
-/* For RAW image gives a error info not panic */
-#define CONFIG_SPL_ABORT_ON_RAW_IMAGE
-
-#endif
-
-#define CONFIG_SERIAL_TAG
-
 #ifdef CONFIG_AHAB_BOOT
 #define AHAB_ENV "sec_boot=yes\0"
 #else
@@ -86,7 +77,7 @@
 	"bootm_size=0x10000000\0" \
 	"mmcdev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0" \
 	"mmcpart=1\0" \
-	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
+	"mmcroot=" CFG_MMCROOT " rootwait rw\0" \
 	"mmcautodetect=yes\0" \
 	"mmcargs=setenv bootargs ${jh_clk} console=${console} root=${mmcroot}\0 " \
 	"loadbootscript=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${script};\0" \
@@ -169,7 +160,7 @@
 #define CFG_SYS_INIT_RAM_ADDR        0x80000000
 #define CFG_SYS_INIT_RAM_SIZE        0x200000
 
-#define CONFIG_MMCROOT			"/dev/mmcblk1p2"  /* USDHC2 */
+#define CFG_MMCROOT			"/dev/mmcblk1p2"  /* USDHC2 */
 
 #define CFG_SYS_SDRAM_BASE              0x80000000
 #define PHYS_SDRAM                      0x80000000
@@ -179,14 +170,10 @@
 #define PHYS_SDRAM_SIZE			0x40000000 /* 1GB DDR */
 #endif
 
-#define CONFIG_IMX_BOOTAUX
-
 #define CFG_SYS_FSL_USDHC_NUM	2
 
 /* Using ULP WDOG for reset */
 #define WDOG_BASE_ADDR          WDG3_BASE_ADDR
-
-#define CONFIG_SYS_I2C_SPEED		100000
 
 #if defined(CONFIG_CMD_NET)
 #define PHY_ANEG_TIMEOUT 20000
