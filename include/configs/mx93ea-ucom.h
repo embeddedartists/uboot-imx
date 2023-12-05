@@ -64,6 +64,7 @@
 	"scriptaddr=0x83500000\0" \
 	"kernel_addr_r=" __stringify(CONFIG_SYS_LOAD_ADDR) "\0" \
 	M_CORE_ENV \
+	"bsp_script=boot.scr\0" \
 	"image=Image\0" \
 	"splashimage=0x90000000\0" \
 	"console=ttyLP0,115200 earlycon\0" \
@@ -79,8 +80,8 @@
 	"mmcpart=1\0" \
 	"mmcroot=" CFG_MMCROOT " rootwait rw\0" \
 	"mmcautodetect=yes\0" \
-	"mmcargs=setenv bootargs ${jh_clk} console=${console} root=${mmcroot}\0 " \
-	"loadbootscript=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${script};\0" \
+	"mmcargs=setenv bootargs ${jh_clk} console=${console} root=${mmcroot} ${args_from_script}\0 " \
+	"loadbootscript=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${bsp_script};\0" \
 	"bootscript=echo Running bootscript from mmc ...; " \
 		"source\0" \
 	"loadimage=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${image}\0" \
