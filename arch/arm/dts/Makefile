@@ -986,7 +986,9 @@ dtb-$(CONFIG_MX7) += imx7d-sdb.dtb \
 	imx7d-12x12-ddr3-val.dtb \
 	imx7d-19x19-ddr3-val.dtb \
 	imx7d-19x19-lpddr2-val.dtb \
-	imx7d-19x19-lpddr3-val.dtb
+	imx7d-19x19-lpddr3-val.dtb \
+	imx7dea-com-kit.dtb \
+	imx7dea-ucom-kit.dtb
 
 dtb-$(CONFIG_ARCH_MX7ULP) += imx7ulp-com.dtb \
 	imx7ulp-10x10-val.dtb \
