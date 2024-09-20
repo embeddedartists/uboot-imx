@@ -913,7 +913,8 @@ dtb-$(CONFIG_MX6SX) += \
 	imx6sx-softing-vining-2000.dtb \
 	imx6sx-udoo-neo-basic.dtb \
 	imx6sx-udoo-neo-extended.dtb \
-	imx6sx-udoo-neo-full.dtb
+	imx6sx-udoo-neo-full.dtb \
+	imx6sxea-com-kit.dtb
 
 dtb-$(CONFIG_MX6UL) += \
 	imx6ul-geam.dtb \
