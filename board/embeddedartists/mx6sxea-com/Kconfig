@@ -15,7 +15,7 @@ config SYS_CONFIG_NAME
 config IMX_CONFIG
 	default "board/embeddedartists/mx6sxea-com/imximage.cfg"
 
-config SYS_TEXT_BASE
+config TEXT_BASE
         default 0x87800000
 endif
 

@@ -496,7 +496,7 @@ int board_init(void)
 #endif
 
 #ifdef CONFIG_FEC_MXC
-	setup_fec(CONFIG_FEC_ENET_DEV);
+	setup_fec(CFG_FEC_ENET_DEV);
 #endif
 
 #ifdef CONFIG_EA_IMX_PTP
