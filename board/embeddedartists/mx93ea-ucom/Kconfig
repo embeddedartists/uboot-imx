@@ -1,0 +1,19 @@
+if TARGET_MX93EA_UCOM
+
+config SYS_BOARD
+	default "mx93ea-ucom"
+
+config SYS_VENDOR
+	default "embeddedartists"
+
+config SYS_CONFIG_NAME
+	default "mx93ea-ucom"
+
+config IMX93_EA_LPDDR4X
+	bool "Using LPDDR4X Timing and PMIC voltage"
+	default y
+	select IMX9_LPDDR4X
+	help
+	  Select the LPDDR4X timing and 0.6V VDDQ
+
+endif
