@@ -21,6 +21,7 @@
 #include <asm/arch-mx6/mx6-ddr.h>
 #include <init.h>
 #include <timer.h>
+#include <asm/sections.h>
 
 #include "../common/ea_common.h"
 #include "../common/ea_eeprom.h"
