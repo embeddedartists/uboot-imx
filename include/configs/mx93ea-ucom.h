@@ -50,10 +50,11 @@
 	"sd_dev=1\0" \
 
 #define M_CORE_ENV \
-	"cm_addr=0x201e0000\0" \
+	"cm_load_addr=0x201e0000\0" \
+	"cm_run_addr=0x1ffe0000 \0" \
 	"cm_image=cm_TCM_rpmsg_lite_str_echo_rtos.bin\0" \
 	"cm_loadimage=fatload mmc ${mmcdev} ${loadaddr} ${cm_image}\0" \
-	"cm_boot=run cm_loadimage; cp.b ${loadaddr} ${cm_addr} ${filesize}; dcache flush; bootaux ${cm_addr}\0"
+	"cm_boot=run cm_loadimage; cp.b ${loadaddr} ${cm_load_addr} ${filesize}; dcache flush; bootaux ${cm_run_addr}\0"
 
 /* Initial environment variables */
 #define CFG_EXTRA_ENV_SETTINGS		\
