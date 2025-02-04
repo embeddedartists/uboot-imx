@@ -68,22 +68,32 @@ static int setup_eqos(void)
 	return set_clk_eqos(ENET_125MHZ);
 }
 
-static void board_gpio_init(void)
+static void board_gpio_configure_pin(const char* pin_name, const char* request_name, int value)
 {
 	struct gpio_desc desc;
 	int ret;
-
-	/* Deassert M2_SDIO_RST */
-	ret = dm_gpio_lookup_name("gpio@21_12", &desc);
-	if (ret)
+	ret = dm_gpio_lookup_name(pin_name, &desc);
+	if (ret) {
 		return;
-
-	ret = dm_gpio_request(&desc, "M2_SDIO_RST");
-	if (ret)
+	}
+	ret = dm_gpio_request(&desc, request_name);
+	if (ret) {
 		return;
-
+	}
 	dm_gpio_set_dir_flags(&desc, GPIOD_IS_OUT);
-	dm_gpio_set_value(&desc, 1);
+	dm_gpio_set_value(&desc, value);
+}
+
+static void board_gpio_init(void)
+{
+	/* Deassert M2_SDIO_RST */
+	board_gpio_configure_pin("gpio@21_11", "M2_SDIO_RST", 1);
+
+	/* Turn control of BT_REG_ON and WL_REG_ON over to PCA6416 in Linux */
+	board_gpio_configure_pin("gpio@21_0", "BT_REG_ON", 0);
+	board_gpio_configure_pin("gpio@21_1", "WL_REG_ON", 0);
+	board_gpio_configure_pin("gpio@22_19", "ONBOARD_BT_REG_ON", 0);
+	board_gpio_configure_pin("gpio@22_20", "ONBOARD_WL_REG_ON", 1);
 }
 
 int board_init(void)
