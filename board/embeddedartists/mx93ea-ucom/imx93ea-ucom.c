@@ -93,7 +93,10 @@ static void board_gpio_init(void)
 	board_gpio_configure_pin("gpio@21_0", "BT_REG_ON", 0);
 	board_gpio_configure_pin("gpio@21_1", "WL_REG_ON", 0);
 	board_gpio_configure_pin("gpio@22_19", "ONBOARD_BT_REG_ON", 0);
-	board_gpio_configure_pin("gpio@22_20", "ONBOARD_WL_REG_ON", 1);
+	board_gpio_configure_pin("gpio@22_20", "ONBOARD_WL_REG_ON", 0);
+
+	/* Pull WL_DEV_WAKE LOW */
+	board_gpio_configure_pin("gpio@22_12", "ONBOARD_WL_DEV_WAKE", 0);
 }
 
 int board_init(void)
