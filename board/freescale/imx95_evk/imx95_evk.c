@@ -10,6 +10,7 @@
 #include <asm/arch-imx9/ccm_regs.h>
 #include <asm/arch/clock.h>
 #include <fdt_support.h>
+#include <fuse.h>
 #include <usb.h>
 #include "../common/tcpc.h"
 #include <dwc3-uboot.h>
@@ -24,6 +25,7 @@
 #include <i2c.h>
 #include <dm/uclass.h>
 #include <dm/uclass-internal.h>
+#include <power/regulator.h>
 
 #ifdef CONFIG_SCMI_FIRMWARE
 #include <scmi_agent.h>
@@ -31,6 +33,8 @@
 #include <dt-bindings/clock/fsl,imx95-clock.h>
 #include <dt-bindings/power/fsl,imx95-power.h>
 #endif
+
+extern int board_fix_fdt_fuse(void *fdt);
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -311,9 +315,31 @@ static void netc_phy_rst(const char *gpio_name, const char *label)
 
 }
 
+static void netc_regulator_enable(const char *devname, bool enable)
+{
+	int ret;
+	struct udevice *dev;
+
+	ret = regulator_get_by_devname(devname, &dev);
+	if (ret) {
+		printf("Get %s regulator failed %d\n", devname, ret);
+		return;
+	}
+
+	ret = regulator_set_enable_if_allowed(dev, enable);
+	if (ret) {
+		printf("%s %s regulator %d\n",
+			enable ? "Enable": "Disable", devname, ret);
+		return;
+	}
+}
+
 void netc_init(void)
 {
 	int ret;
+
+	ret = imx9_scmi_power_domain_enable(IMX95_PD_NETC, false);
+	udelay(10000);
 
 	/* Power up the NETC MIX. */
 	ret = imx9_scmi_power_domain_enable(IMX95_PD_NETC, true);
@@ -329,6 +355,24 @@ void netc_init(void)
 	netc_phy_rst("gpio@22_5", "ENET2_RST_B");
 #else
 	netc_phy_rst("i2c5_io@21_2", "ENET1_RST_B");
+
+	/* Enable in SW count */
+	netc_regulator_enable("regulator-aqr-stby", true);
+	netc_regulator_enable("regulator-mac-stby", true);
+	netc_regulator_enable("regulator-aqr-en", true);
+	netc_regulator_enable("regulator-mac-en", true);
+
+	/* Disable regulator to have explicit reset to AQR PHY and clock generator */
+	udelay(10000);
+	netc_regulator_enable("regulator-aqr-stby", false);
+	netc_regulator_enable("regulator-mac-stby", false);
+	netc_regulator_enable("regulator-aqr-en", false);
+	netc_regulator_enable("regulator-mac-en", false);
+
+	udelay(10000);
+	netc_regulator_enable("regulator-aqr-stby", true);
+	netc_regulator_enable("regulator-mac-stby", true);
+
 #endif
 	pci_init();
 }
@@ -389,6 +433,29 @@ int board_phy_config(struct phy_device *phydev)
 }
 #endif
 
+void lvds_backlight_on(void)
+{
+	struct udevice *dev;
+	int ret;
+	u8 reg;
+
+	if (!IS_ENABLED(CONFIG_TARGET_IMX95_15X15_EVK))
+		return;
+
+	ret = i2c_get_chip_for_busnum(2, 0x62, 1, &dev);
+	if (ret) {
+		printf("%s: Cannot find pca9632 led dev\n",
+		       __func__);
+		return;
+	}
+
+	reg = 1;
+	dm_i2c_write(dev, 0x1, &reg, 1);
+
+	reg = 5;
+	dm_i2c_write(dev, 0x8, &reg, 1);
+}
+
 int board_init(void)
 {
 	int ret;
@@ -411,6 +478,8 @@ int board_init(void)
 
 	power_on_m7("mx95alt");
 
+	lvds_backlight_on();
+
 	return 0;
 }
 
@@ -431,6 +500,40 @@ int board_late_init(void)
 #ifdef CONFIG_OF_BOARD_SETUP
 int ft_board_setup(void *blob, struct bd_info *bd)
 {
+	char *p, *b, *s;
+	char *token = NULL;
+	int i, ret = 0;
+	u64 base[CONFIG_NR_DRAM_BANKS] = {0};
+	u64 size[CONFIG_NR_DRAM_BANKS] = {0};
+
+	p = env_get("jh_root_mem");
+	if (!p)
+		return 0;
+
+	i = 0;
+	token = strtok(p, ",");
+	while (token) {
+		if (i >= CONFIG_NR_DRAM_BANKS) {
+			printf("Error: The number of size@base exceeds CONFIG_NR_DRAM_BANKS.\n");
+			return -EINVAL;
+		}
+
+		b = token;
+		s = strsep(&b, "@");
+		if (!s) {
+			printf("The format of jh_root_mem is size@base[,size@base...].\n");
+			return -EINVAL;
+		}
+		base[i] = simple_strtoull(b, NULL, 16);
+		size[i] = simple_strtoull(s, NULL, 16);
+		token = strtok(NULL, ",");
+		i++;
+	}
+
+	ret = fdt_fixup_memory_banks(blob, base, size, CONFIG_NR_DRAM_BANKS);
+	if (ret)
+		return ret;
+
 	return 0;
 }
 #endif
@@ -582,6 +685,9 @@ static int board_fix_19x19_evk(void *fdt)
 
 int board_fix_fdt(void *fdt)
 {
+	/* Remove nodes based on fuses. */
+	board_fix_fdt_fuse(fdt);
+	
 #if IS_ENABLED(CONFIG_TARGET_IMX95_15X15_EVK)
 	return board_fix_15x15_evk(fdt);
 #else

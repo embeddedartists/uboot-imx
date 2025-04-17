@@ -24,6 +24,7 @@
 #include <i2c.h>
 #include <dm/uclass.h>
 #include <dm/uclass-internal.h>
+#include <power/regulator.h>
 
 #ifdef CONFIG_SCMI_FIRMWARE
 #include <scmi_agent.h>
@@ -33,6 +34,8 @@
 #endif
 
 DECLARE_GLOBAL_DATA_PTR;
+
+extern int board_fix_fdt_fuse(void *fdt);
 
 int board_early_init_f(void)
 {
@@ -261,9 +264,31 @@ static void netc_phy_rst(void)
 	udelay(80000);
 }
 
+static void netc_regulator_enable(const char *devname, bool enable)
+{
+	int ret;
+	struct udevice *dev;
+
+	ret = regulator_get_by_devname(devname, &dev);
+	if (ret) {
+		printf("Get %s regulator failed %d\n", devname, ret);
+		return;
+	}
+
+	ret = regulator_set_enable_if_allowed(dev, enable);
+	if (ret) {
+		printf("%s %s regulator %d\n",
+			enable ? "Enable": "Disable", devname, ret);
+		return;
+	}
+}
+
 void netc_init(void)
 {
 	int ret;
+
+	ret = imx9_scmi_power_domain_enable(IMX95_PD_NETC, false);
+	udelay(10000);
 
 	/* Power up the NETC MIX. */
 	ret = imx9_scmi_power_domain_enable(IMX95_PD_NETC, true);
@@ -275,6 +300,20 @@ void netc_init(void)
 	set_clk_netc(ENET_125MHZ);
 
 	netc_phy_rst();
+
+	/* Enable in SW count */
+	netc_regulator_enable("regulator-aqr-stby", true);
+	netc_regulator_enable("regulator-aqr-en", true);
+	netc_regulator_enable("regulator-mac-en", true);
+
+	/* Disable regulator to have explicit reset to AQR PHY and clock generator */
+	udelay(10000);
+	netc_regulator_enable("regulator-aqr-stby", false);
+	netc_regulator_enable("regulator-aqr-en", false);
+	netc_regulator_enable("regulator-mac-en", false);
+
+	udelay(10000);
+	netc_regulator_enable("regulator-aqr-stby", true);
 
 	pci_init();
 }
@@ -325,6 +364,50 @@ int board_late_init(void)
 #ifdef CONFIG_OF_BOARD_SETUP
 int ft_board_setup(void *blob, struct bd_info *bd)
 {
+	char *p, *b, *s;
+	char *token = NULL;
+	int i, ret = 0;
+	u64 base[CONFIG_NR_DRAM_BANKS] = {0};
+	u64 size[CONFIG_NR_DRAM_BANKS] = {0};
+
+	p = env_get("jh_root_mem");
+	if (!p)
+		return 0;
+
+	i = 0;
+	token = strtok(p, ",");
+	while (token) {
+		if (i >= CONFIG_NR_DRAM_BANKS) {
+			printf("Error: The number of size@base exceeds CONFIG_NR_DRAM_BANKS.\n");
+			return -EINVAL;
+		}
+
+		b = token;
+		s = strsep(&b, "@");
+		if (!s) {
+			printf("The format of jh_root_mem is size@base[,size@base...].\n");
+			return -EINVAL;
+		}
+		base[i] = simple_strtoull(b, NULL, 16);
+		size[i] = simple_strtoull(s, NULL, 16);
+		token = strtok(NULL, ",");
+		i++;
+	}
+
+	ret = fdt_fixup_memory_banks(blob, base, size, CONFIG_NR_DRAM_BANKS);
+	if (ret)
+		return ret;
+
+	return 0;
+}
+#endif
+
+#if IS_ENABLED(CONFIG_OF_BOARD_FIXUP)
+int board_fix_fdt(void *fdt)
+{
+	/* Remove nodes based on fuses. */
+	board_fix_fdt_fuse(fdt);
+
 	return 0;
 }
 #endif

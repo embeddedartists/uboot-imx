@@ -39,7 +39,8 @@
 #include <asm/arch/ddr.h>
 #include <asm/mach-imx/optee.h>
 #include <fuse.h>
-
+#include <dt-bindings/clock/imx91-clock.h>
+#include <dt-bindings/clock/imx93-clock.h>
 DECLARE_GLOBAL_DATA_PTR;
 
 struct rom_api *g_rom_api = (struct rom_api *)0x1980;
@@ -687,35 +688,6 @@ static int delete_fdt_nodes(void *blob, const char *const nodes_path[], int size
 	return 0;
 }
 
-static int disable_eqos_nodes(void *blob)
-{
-	static const char * const nodes_path_eqos[] = {
-		"/soc@0/bus@42800000/ethernet@428a0000"
-	};
-
-	return delete_fdt_nodes(blob, nodes_path_eqos, ARRAY_SIZE(nodes_path_eqos));
-}
-
-static int disable_flexcan_nodes(void *blob)
-{
-	static const char * const nodes_path_flexcan[] = {
-		"/soc@0/bus@44000000/can@443a0000",
-		"/soc@0/bus@42000000/can@425b0000"
-	};
-
-	return delete_fdt_nodes(blob, nodes_path_flexcan, ARRAY_SIZE(nodes_path_flexcan));
-}
-
-static int disable_parallel_display_nodes(void *blob)
-{
-	static const char * const nodes_path_display[] = {
-		"/soc@0/system-controller@4ac10000/dpi",
-		"/soc@0/lcd-controller@4ae30000"
-	};
-
-	return delete_fdt_nodes(blob, nodes_path_display, ARRAY_SIZE(nodes_path_display));
-}
-
 static int disable_npu_nodes(void *blob)
 {
 	static const char * const nodes_path_npu[] = {
@@ -797,13 +769,18 @@ struct low_drive_freq_entry {
 	const char *node_path;
 	u32 clk;
 	u32 new_rate;
+	u32 new_parent;
 };
 
-static int low_drive_fdt_fix_clock(void *fdt, int node_off, u32 clk_index, u32 new_rate)
+static int low_drive_fdt_fix_clock(void *fdt, int node_off, u32 clk_index,
+				   u32 new_rate, u32 new_parent)
 {
 #define MAX_ASSIGNED_CLKS 8
 	int cnt, j;
+	int cnt_parent;
+	int ret;
 	u32 assignedclks[MAX_ASSIGNED_CLKS]; /* max 8 clocks*/
+	u32 assignedparentclks[MAX_ASSIGNED_CLKS * 2] = {0};
 
 	cnt = fdtdec_get_int_array_count(fdt, node_off, "assigned-clock-rates",
 		assignedclks, MAX_ASSIGNED_CLKS);
@@ -811,18 +788,50 @@ static int low_drive_fdt_fix_clock(void *fdt, int node_off, u32 clk_index, u32 n
 		if (cnt <= clk_index)
 			return -ENOENT;
 
-		if (assignedclks[clk_index] <= new_rate)
-			return 0;
+		cnt_parent = fdtdec_get_int_array_count(fdt, node_off,
+							"assigned-clock-parents",
+							assignedparentclks,
+							MAX_ASSIGNED_CLKS * 2);
+
+		if (cnt_parent <= 0)
+			return -ENOENT;
 
 		assignedclks[clk_index] = new_rate;
+		if (new_parent)
+			assignedparentclks[clk_index * 2 + 1] = new_parent;
 		for (j = 0; j < cnt; j++)
 			assignedclks[j] = cpu_to_fdt32(assignedclks[j]);
+		for (j = 0; j < cnt * 2; j++)
+			assignedparentclks[j] = cpu_to_fdt32(assignedparentclks[j]);
 
-		return fdt_setprop(fdt, node_off, "assigned-clock-rates", &assignedclks, cnt * sizeof(u32));
+		ret = fdt_setprop(fdt, node_off, "assigned-clock-rates",
+				  &assignedclks, cnt * sizeof(u32));
+		if (ret) {
+			printf("setprop rates failed!\r\n");
+			return ret;
+		}
+
+		ret = fdt_setprop(fdt, node_off, "assigned-clock-parents",
+				  &assignedparentclks, cnt * sizeof(u32) * 2);
+		if (ret) {
+			printf("setprop parents failed!\r\n");
+			return ret;
+		}
+
+		return 0;
 	}
 
 	return -ENOENT;
 }
+
+#ifdef CONFIG_IMX93
+#	define MEDIA_AXI_PARENT IMX93_CLK_SYS_PLL_PFD1
+#	define MEDIA_APB_PARENT IMX93_CLK_SYS_PLL_PFD1_DIV2
+#endif
+#ifdef CONFIG_IMX91
+#	define MEDIA_AXI_PARENT IMX91_CLK_SYS_PLL_PFD1
+#	define MEDIA_APB_PARENT IMX91_CLK_SYS_PLL_PFD1_DIV2
+#endif
 
 static int low_drive_freq_update(void *blob)
 {
@@ -831,8 +840,12 @@ static int low_drive_freq_update(void *blob)
 
 	/* Update kernel dtb clocks for low drive mode */
 	struct low_drive_freq_entry table[] = {
-		{"/soc@0/lcd-controller@4ae30000", 2, 200000000},
-		{"/soc@0/bus@42800000/camera/isi@4ae40000", 0, 200000000},
+		{"/soc@0/lcd-controller@4ae30000", 2, 200000000, MEDIA_AXI_PARENT},
+		{"/soc@0/lcd-controller@4ae30000", 3, 133333334, MEDIA_APB_PARENT},
+		{"/soc@0/bus@42800000/camera/isi@4ae40000", 0, 200000000, MEDIA_AXI_PARENT},
+		{"/soc@0/bus@42800000/camera/isi@4ae40000", 1, 133333334, MEDIA_APB_PARENT},
+		{"/soc@0/bus@42800000/isi@4ae40000", 0, 200000000, MEDIA_AXI_PARENT},
+		{"/soc@0/bus@42800000/isi@4ae40000", 1, 133333334, MEDIA_APB_PARENT},
 		{"/soc@0/bus@42800000/mmc@42850000", 0, 266666667},
 		{"/soc@0/bus@42800000/mmc@42860000", 0, 266666667},
 		{"/soc@0/bus@42800000/mmc@428b0000", 0, 266666667},
@@ -841,7 +854,8 @@ static int low_drive_freq_update(void *blob)
 	for (i = 0; i < ARRAY_SIZE(table); i++) {
 		nodeoff = fdt_path_offset(blob, table[i].node_path);
 		if (nodeoff >= 0) {
-			ret = low_drive_fdt_fix_clock(blob, nodeoff, table[i].clk, table[i].new_rate);
+			ret = low_drive_fdt_fix_clock(blob, nodeoff, table[i].clk,
+						      table[i].new_rate, table[i].new_parent);
 			if (!ret)
 				printf("%s freq updated\n", table[i].node_path);
 		}
@@ -889,7 +903,8 @@ int board_fix_fdt(void *fdt)
 		int i;
 
 		struct low_drive_freq_entry table[] = {
-			{"/soc@0/lcd-controller@4ae30000", 0, 200000000},
+			{"/soc@0/lcd-controller@4ae30000", 0, 200000000, MEDIA_AXI_PARENT},
+			{"/soc@0/lcd-controller@4ae30000", 1, 133333334, MEDIA_APB_PARENT},
 			{"/soc@0/bus@42800000/mmc@42850000", 0, 266666667},
 			{"/soc@0/bus@42800000/mmc@42860000", 0, 266666667},
 			{"/soc@0/bus@42800000/mmc@428b0000", 0, 266666667},
@@ -898,32 +913,8 @@ int board_fix_fdt(void *fdt)
 		for (i = 0; i < ARRAY_SIZE(table); i++) {
 			nodeoff = fdt_path_offset(fdt, table[i].node_path);
 			if (nodeoff >= 0)
-				low_drive_fdt_fix_clock(fdt, nodeoff, table[i].clk, table[i].new_rate);
-		}
-	}
-
-	if (is_imx9101()) {
-		int i = 0;
-		int nodeoff, ret;
-		const char *status = "disabled";
-		static const char * const nodes[] = {
-			"/soc@0/bus@42800000/ethernet@428a0000",
-			"/soc@0/system-controller@4ac10000/dpi",
-			"/soc@0/lcd-controller@4ae30000"
-		};
-
-		for (i = 0; i < ARRAY_SIZE(nodes); i++) {
-			nodeoff = fdt_path_offset(fdt, nodes[i]);
-			if (nodeoff > 0) {
-set_status:
-				ret = fdt_setprop(fdt, nodeoff, "status", status,
-						  strlen(status) + 1);
-				if (ret == -FDT_ERR_NOSPACE) {
-					ret = fdt_increase_size(fdt, 512);
-					if (!ret)
-						goto set_status;
-				}
-			}
+				low_drive_fdt_fix_clock(fdt, nodeoff, table[i].clk,
+							table[i].new_rate, table[i].new_parent);
 		}
 	}
 
@@ -943,12 +934,6 @@ int ft_system_setup(void *blob, struct bd_info *bd)
 	if (is_imx9332() || is_imx9331() || is_imx9312() || is_imx9311() || is_imx9302() ||
 	    is_imx9301())
 		disable_npu_nodes(blob);
-
-	if (is_imx9101()) {
-		disable_eqos_nodes(blob);
-		disable_flexcan_nodes(blob);
-		disable_parallel_display_nodes(blob);
-	}
 
 	if (is_voltage_mode(VOLT_LOW_DRIVE)) {
 		low_drive_freq_update(blob);
