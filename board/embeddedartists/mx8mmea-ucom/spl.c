@@ -199,6 +199,9 @@ static int spl_ddr_unpack_data(ea_eeprom_config_t* cfg)
 
 	p = (struct dram_cfg_param*)&ea_dbuf[0];
 
+	flush_dcache_all();
+	invalidate_icache_all();
+
 	offset = 0;
 	while(offset*sizeof(struct dram_cfg_param) < len) {
 		spl_ddr_map_array(p[offset].reg, &p[offset+1], p[offset].val);
