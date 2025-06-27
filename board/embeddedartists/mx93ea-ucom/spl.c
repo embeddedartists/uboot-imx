@@ -96,9 +96,11 @@ enum ea_ddr_field {
 	EA_DDR_FSP1,
 	EA_DDR_FSP2,
 	EA_DDR_FSP3,
+	EA_DDR_FSP_CFG,
 };
 
 struct dram_fsp_msg ea_ddr_dram_fsp_msg[4] = {{1}};
+struct dram_fsp_cfg ea_ddr_dram_fsp_cfg[4] = {0};
 
 #define EA_DBUF_SZ (16384)
 #define EA_GZBUF_SZ (6144)
@@ -175,6 +177,31 @@ static void spl_ddr_map_array(enum ea_ddr_field idx, struct dram_cfg_param* a, i
 		ea_ddr_dram_fsp_msg[3].fsp_cfg = &a[1];
 		ea_ddr_dram_fsp_msg[3].fsp_cfg_num = sz-1;
 
+		break;
+	case EA_DDR_FSP_CFG:
+		/*
+		 * [0].reg = size of the fsp cfg
+		 * [1].reg = size of the first fsp cfg's ddrc_cfg
+		 * [2].. ddrc_cfg
+		 * [2].reg = fsp_table[2]
+		 * [2].val = fsp_table[3]
+		 */
+		dram_timing.fsp_cfg_num = a[0].reg;
+		dram_timing.fsp_cfg = ea_ddr_dram_fsp_cfg;
+		int off = 1;
+		memset(&ea_ddr_dram_fsp_cfg, 0, sizeof(struct dram_fsp_cfg));
+		for (int i = 0; i < dram_timing.fsp_cfg_num; i++) {
+			 /* Copy ddrc_cfg */
+			 int num = a[off++].reg;
+			 memcpy(ea_ddr_dram_fsp_cfg[i].ddrc_cfg, &(a[off]), num*sizeof(a[0]));
+			 off += num;
+			 /* Copy mr_cfg */
+			 num = a[off++].reg;
+			 memcpy(ea_ddr_dram_fsp_cfg[i].mr_cfg, &(a[off]), num*sizeof(a[0]));
+			 off += num;
+			 /* Bypass */
+			 ea_ddr_dram_fsp_cfg[i].bypass = a[off++].reg;
+		}
 		break;
 	default:
 		printf("Invalid ddr field index (%d). Invalid data in eeprom?\n", idx);
