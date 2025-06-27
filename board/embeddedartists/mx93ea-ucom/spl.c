@@ -179,13 +179,6 @@ static void spl_ddr_map_array(enum ea_ddr_field idx, struct dram_cfg_param* a, i
 
 		break;
 	case EA_DDR_FSP_CFG:
-		/*
-		 * [0].reg = size of the fsp cfg
-		 * [1].reg = size of the first fsp cfg's ddrc_cfg
-		 * [2].. ddrc_cfg
-		 * [2].reg = fsp_table[2]
-		 * [2].val = fsp_table[3]
-		 */
 		dram_timing.fsp_cfg_num = a[0].reg;
 		dram_timing.fsp_cfg = ea_ddr_dram_fsp_cfg;
 		int off = 1;
