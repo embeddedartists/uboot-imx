@@ -494,6 +494,7 @@ source "board/variscite/imx8mn_var_som/Kconfig"
 source "board/toradex/verdin-imx8mm/Kconfig"
 source "board/toradex/verdin-imx8mp/Kconfig"
 source "board/voxelbotics/navqp/Kconfig"
+source "board/embeddedartists/common/Kconfig"
 source "board/embeddedartists/mx8mmea-ucom/Kconfig"
 source "board/embeddedartists/mx8mnea-ucom/Kconfig"
 
