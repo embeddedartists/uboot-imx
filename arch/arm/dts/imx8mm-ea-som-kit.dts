@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 NXP
+ * Copyright 2025 Embedded Artists AB
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -286,6 +286,13 @@
 			};
 		};
 	};
+};
+
+&i2c2 {
+	clock-frequency = <400000>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_i2c2>;
+	status = "okay";
 
 	adv_bridge: adv7535@3d {
 		compatible = "adi,adv7535";
@@ -302,15 +309,8 @@
 	};
 };
 
-&i2c2 {
-	clock-frequency = <400000>;
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_i2c2>;
-	status = "okay";
-};
-
 &i2c3 {
-	clock-frequency = <100000>;
+	clock-frequency = <400000>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_i2c3>;
 	status = "okay";
@@ -397,7 +397,7 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_hog_1>;
 
-	imx8mmea-ucom {
+	imx8mmea-som-kit {
 		pinctrl_hog_1: hoggrp-1 {
 			fsl,pins = <
 				MX8MM_IOMUXC_GPIO1_IO08_GPIO1_IO8		0x19
