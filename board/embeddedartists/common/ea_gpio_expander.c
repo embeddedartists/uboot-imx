@@ -4,7 +4,6 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-#include <common.h>
 #include <i2c.h>
 #include <dm/uclass.h>
 #include "ea_gpio_expander.h"

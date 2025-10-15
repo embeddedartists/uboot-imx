@@ -4,7 +4,6 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-#include <common.h>
 #include "ea_common.h"
 #include "ea_eeprom.h"
 #include <net.h>

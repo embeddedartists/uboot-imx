@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2015 Embedded Artists AB
  *
- * Configuration parameters stored in EEPROM for the Embedded Artists 
+ * Configuration parameters stored in EEPROM for the Embedded Artists
  * i.MX 6 COM Board.
  *
  * SPDX-License-Identifier:	GPL-2.0+
@@ -10,6 +10,7 @@
 #ifndef __MX6SXEA_EEPROM_H
 #define __MX6SXEA_EEPROM_H
 
+#include <linux/types.h>
 
 #ifdef CONFIG_MX7ULP
   #define EA_EEPROM_I2C_BUS   5

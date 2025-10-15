@@ -7,6 +7,8 @@
 #ifndef __EA_COMMON_H
 #define __EA_COMMON_H
 
+#include <linux/types.h>
+
 #define EA_CONFIG_MAGIC 0xEA534852
 
 /*

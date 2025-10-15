@@ -3,7 +3,8 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-#include <common.h>
+#include <vsprintf.h>
+#include <stdio.h>
 #include <env.h>
 #include "ea_eeprom.h"
 

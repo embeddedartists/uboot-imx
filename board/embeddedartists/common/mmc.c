@@ -4,12 +4,12 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-#include <common.h>
 #include <asm/arch/sys_proto.h>
 #include <linux/errno.h>
 #include <asm/io.h>
 #include <stdbool.h>
 #include <mmc.h>
+#include <vsprintf.h>
 #include <env.h>
 #include <command.h>
 
