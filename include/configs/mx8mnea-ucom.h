@@ -10,7 +10,6 @@
 #include <linux/sizes.h>
 #include <asm/arch/imx-regs.h>
 
-#include "imx_env.h"
 
 #if defined(CONFIG_SPL_BUILD)
 #undef CONFIG_DM_I2C
