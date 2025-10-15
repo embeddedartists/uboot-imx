@@ -1,0 +1,11 @@
+config EA_NO_UART_FLUSH
+	bool "Disable flush of UART at boot"
+	default n
+
+config EA_IMX_PTP
+	bool "Enable when using EA test platform"
+	default n
+	help
+	  Enable this option when building a u-boot for the EA
+	  test platform
+
