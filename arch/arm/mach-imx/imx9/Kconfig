@@ -180,6 +180,8 @@ config TARGET_IMX943_EVK
 config TARGET_MX93EA_UCOM
 	bool "mx93ea-ucom"
 	select IMX93
+	imply BOOTSTD_FULL
+	imply BOOTSTD_BOOTCOMMAND
 
 endchoice
 
