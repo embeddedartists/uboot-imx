@@ -3,7 +3,6 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-#include <common.h>
 #include <i2c.h>
 #include <dm.h>
 
