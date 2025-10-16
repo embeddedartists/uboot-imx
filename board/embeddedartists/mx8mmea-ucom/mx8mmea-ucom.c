@@ -188,7 +188,7 @@ int board_late_init(void)
 	 * This functionality can be overridden by setting
 	 * the fdt_file variable in the u-boot environment.
 	 */
-	fdt_file = env_get("fdt_file");
+	fdt_file = env_get("fdtfile");
 	if (fdt_file == NULL || strlen(fdt_file) == 0) {
 		carrier_version = ea_get_carrier_board_version(1);
 		if (carrier_version == 3) {
@@ -201,7 +201,7 @@ int board_late_init(void)
 			fdt_file = CONFIG_DEFAULT_FDT_FILE;
 		}
 
-		env_set("fdt_file", fdt_file);
+		env_set("fdtfile", fdt_file);
 	}
 
 	ea_gpio_exp_configure(1);

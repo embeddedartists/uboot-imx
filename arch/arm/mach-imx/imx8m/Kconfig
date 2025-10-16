@@ -513,22 +513,28 @@ config TARGET_LIBREM5
 	select IMX8M_LPDDR4
 
 config TARGET_MX8MMEA_SOM
-        bool "mx8mmea_som"
-        select IMX8MM
-        select SUPPORT_SPL
-        select IMX8M_LPDDR4
+	bool "mx8mmea_som"
+	select IMX8MM
+	select SUPPORT_SPL
+	select IMX8M_LPDDR4
+	imply BOOTSTD_FULL
+	imply BOOTSTD_BOOTCOMMAND
 
 config TARGET_MX8MMEA_UCOM
 	bool "mx8mmea_ucom"
 	select IMX8MM
 	select SUPPORT_SPL
 	select IMX8M_LPDDR4
+	imply BOOTSTD_FULL
+	imply BOOTSTD_BOOTCOMMAND
 
 config TARGET_MX8MNEA_UCOM
 	bool "mx8mnea_ucom"
 	select IMX8MN
 	select SUPPORT_SPL
 	select IMX8M_DDR4
+	imply BOOTSTD_FULL
+	imply BOOTSTD_BOOTCOMMAND
 
 endchoice
 
