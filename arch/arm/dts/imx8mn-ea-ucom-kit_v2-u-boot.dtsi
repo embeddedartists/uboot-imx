@@ -6,18 +6,23 @@
 #include "imx8mn-sec-def.h"
 
 / {
+	chosen {
+		bootargs = "console=ttymxc1,115200 earlycon=ec_imx6q,0x30890000,115200";
+	};
+
 	binman: binman {
-		multiple-images;
 	};
 
 	wdt-reboot {
 		compatible = "wdt-reboot";
 		wdt = <&wdog1>;
-		u-boot,dm-spl;
+		bootph-pre-ram;
 	};
 
 	aliases {
-		usbgadget0 = &usbg1;
+		spi0 = &flexspi;
+		usb0 = &usbotg1;
+		usb_gadget0 = &usbg1;
 	};
 
 	usbg1: usbg1 {
@@ -27,12 +32,14 @@
 		status = "okay";
 	};
 
+#ifdef CONFIG_OPTEE
 	firmware {
 		optee {
 			compatible = "linaro,optee-tz";
 			method = "smc";
 		};
 	};
+#endif
 
 	mcu_rdc {
 		compatible = "imx8m,mcu_rdc";
@@ -77,114 +84,372 @@
 };
 
 &{/soc@0} {
-	u-boot,dm-pre-reloc;
-	u-boot,dm-spl;
+	bootph-all;
+	bootph-pre-ram;
+};
+
+&aips1 {
+	bootph-pre-ram;
+	bootph-all;
+};
+
+&aips2 {
+	bootph-pre-ram;
+};
+
+&aips3 {
+	bootph-pre-ram;
+};
+
+&aips4 {
+	bootph-pre-ram;
 };
 
 &clk {
-	u-boot,dm-spl;
-	u-boot,dm-pre-reloc;
+	bootph-pre-ram;
+	bootph-all;
 	/delete-property/ assigned-clocks;
 	/delete-property/ assigned-clock-parents;
 	/delete-property/ assigned-clock-rates;
 };
 
-&osc_24m {
-	u-boot,dm-spl;
-	u-boot,dm-pre-reloc;
+#ifdef CONFIG_FSL_CAAM
+&crypto {
+	bootph-pre-ram;
 };
-
-&aips1 {
-	u-boot,dm-spl;
-	u-boot,dm-pre-reloc;
-};
-
-&aips2 {
-	u-boot,dm-spl;
-};
-
-&aips3 {
-	u-boot,dm-spl;
-};
+#endif
 
 &iomuxc {
-	u-boot,dm-spl;
+	bootph-pre-ram;
 };
 
-&reg_usdhc2_vmmc {
-	u-boot,dm-spl;
-	u-boot,off-on-delay-us = <20000>;
+&cpu_pd_wait {
+	/delete-property/ compatible;
 };
 
-&pinctrl_reg_usdhc2_vmmc {
-	u-boot,dm-spl;
+&osc_24m {
+	bootph-pre-ram;
+	bootph-all;
 };
 
-&pinctrl_uart2 {
-	u-boot,dm-spl;
+&osc_32k {
+	bootph-pre-ram;
+	bootph-all;
 };
 
-&pinctrl_usdhc2_gpio {
-	u-boot,dm-spl;
-};
-
-&pinctrl_usdhc2 {
-	u-boot,dm-spl;
-};
-
-&pinctrl_usdhc3 {
-	u-boot,dm-spl;
-};
-
-&gpio1 {
-	u-boot,dm-spl;
-};
-
-&gpio2 {
-	u-boot,dm-spl;
-};
-
-&gpio3 {
-	u-boot,dm-spl;
-};
-
-&gpio4 {
-	u-boot,dm-spl;
-};
-
-&gpio5 {
-	u-boot,dm-spl;
-};
-
-&uart2 {
-	u-boot,dm-spl;
-};
-
-&crypto {
-	u-boot,dm-spl;
-};
-
+#ifdef CONFIG_FSL_CAAM
 &sec_jr0 {
-	u-boot,dm-spl;
+	bootph-pre-ram;
 };
 
 &sec_jr1 {
-	u-boot,dm-spl;
+	bootph-pre-ram;
 };
 
 &sec_jr2 {
-	u-boot,dm-spl;
+	bootph-pre-ram;
+};
+#endif
+
+&clk_ext1 {
+	bootph-pre-ram;
+	bootph-all;
+};
+
+&clk_ext2 {
+	bootph-pre-ram;
+	bootph-all;
+};
+
+&clk_ext3 {
+	bootph-pre-ram;
+	bootph-all;
+};
+
+&clk_ext4 {
+	bootph-pre-ram;
+	bootph-all;
+};
+
+&spba1 {
+	bootph-pre-ram;
+};
+
+&wdog1 {
+	bootph-pre-ram;
+};
+
+&snvs {
+	status = "disabled";
+};
+
+&snvs_rtc {
+	status = "disabled";
+};
+
+&binman {
+	filename = "flash.bin";
+	section {
+		pad-byte = <0x00>;
+
+#ifdef CONFIG_FSPI_CONF_HEADER
+		fspi_conf_block {
+			filename = CONFIG_FSPI_CONF_FILE;
+			type = "blob-ext";
+			offset = <0x400>;
+		};
+#endif
+
+#ifdef CONFIG_IMX_HAB
+		nxp-imx8mcst@0 {
+			filename = "u-boot-spl-mkimage.signed.bin";
+			nxp,loader-address = <CONFIG_SPL_TEXT_BASE>;
+			nxp,unlock;
+			args;	/* Needed by mkimage etype superclass */
+#endif
+
+			binman_imx_spl: nxp-imx8mimage {
+				filename = "u-boot-spl-mkimage.bin";
+				nxp,boot-from = "sd";
+				nxp,rom-version = <2>;
+				nxp,loader-address = <CONFIG_SPL_TEXT_BASE>;
+				args;	/* Needed by mkimage etype superclass */
+
+				section {
+					filename = "u-boot-spl-ddr.bin";
+					pad-byte = <0xff>;
+					align-size = <4>;
+					align = <4>;
+
+					u-boot-spl {
+						align-end = <4>;
+						filename = "u-boot-spl.bin";
+					};
+
+					ddr-1d-imem-fw {
+#ifdef CONFIG_IMX8M_LPDDR4
+						filename = "lpddr4_pmu_train_1d_imem.bin";
+#elif CONFIG_IMX8M_DDR4
+						filename = "ddr4_imem_1d_201810.bin";
+#else
+						filename = "ddr3_imem_1d.bin";
+#endif
+						type = "blob-ext";
+						align-end = <4>;
+					};
+
+					ddr-1d-dmem-fw {
+#ifdef CONFIG_IMX8M_LPDDR4
+						filename = "lpddr4_pmu_train_1d_dmem.bin";
+#elif CONFIG_IMX8M_DDR4
+						filename = "ddr4_dmem_1d_201810.bin";
+#else
+						filename = "ddr3_dmem_1d.bin";
+#endif
+						type = "blob-ext";
+						align-end = <4>;
+					};
+
+#if defined(CONFIG_IMX8M_LPDDR4) || defined(CONFIG_IMX8M_DDR4)
+					ddr-2d-imem-fw {
+#ifdef CONFIG_IMX8M_LPDDR4
+						filename = "lpddr4_pmu_train_2d_imem.bin";
+#else
+						filename = "ddr4_imem_2d_201810.bin";
+#endif
+						type = "blob-ext";
+						align-end = <4>;
+					};
+
+					ddr-2d-dmem-fw {
+#ifdef CONFIG_IMX8M_LPDDR4
+						filename = "lpddr4_pmu_train_2d_dmem.bin";
+#else
+						filename = "ddr4_dmem_2d_201810.bin";
+#endif
+						type = "blob-ext";
+						align-end = <4>;
+					};
+#endif
+				};
+			};
+
+#ifdef CONFIG_IMX_HAB
+		};
+
+		nxp-imx8mcst@1 {
+			filename = "u-boot-fit.signed.bin";
+			nxp,loader-address = <CONFIG_SPL_LOAD_FIT_ADDRESS>;
+#ifdef CONFIG_FSPI_CONF_HEADER
+			offset = <0x59000>;
+#else
+			offset = <0x58000>;
+#endif
+			args;	/* Needed by mkimage etype superclass */
+#endif
+
+			binman_imx_fit: fit {
+				description = "Configuration to load ATF before U-Boot";
+				filename = "u-boot.itb";
+#ifndef CONFIG_IMX_HAB
+				fit,external-offset = <CONFIG_FIT_EXTERNAL_OFFSET>;
+#endif
+				fit,fdt-list = "of-list";
+				#address-cells = <1>;
+#ifdef CONFIG_FSPI_CONF_HEADER
+				offset = <0x59000>;
+#else
+				offset = <0x58000>;
+#endif
+
+				images {
+					uboot {
+						arch = "arm64";
+						compression = "none";
+						description = "U-Boot (64-bit)";
+						load = <CONFIG_TEXT_BASE>;
+						type = "standalone";
+
+						uboot-blob {
+							filename = "u-boot-nodtb.bin";
+							type = "blob-ext";
+						};
+					};
+
+#ifndef CONFIG_ARMV8_PSCI
+					atf {
+						arch = "arm64";
+						compression = "none";
+						description = "ARM Trusted Firmware";
+						entry = <0x960000>;
+						load = <0x960000>;
+						type = "firmware";
+
+						atf-blob {
+							filename = "bl31.bin";
+							type = "atf-bl31";
+						};
+					};
+#endif
+
+#ifdef CONFIG_OPTEE
+					tee: tee {
+						description = "OP-TEE";
+						type = "tee";
+						arch = "arm64";
+						compression = "none";
+						os = "tee";
+						load = <CONFIG_IMX8M_OPTEE_LOAD_ADDR>;
+						entry = <CONFIG_IMX8M_OPTEE_LOAD_ADDR>;
+
+						tee-os {
+							filename = "tee.bin";
+						};
+					};
+#endif
+
+					binman_fip: fip {
+						arch = "arm64";
+						compression = "none";
+						description = "Trusted Firmware FIP";
+						load = <0x40310000>;
+						type = "firmware";
+					};
+
+					@fdt-SEQ {
+						compression = "none";
+						description = "NAME";
+						type = "flat_dt";
+
+						uboot-fdt-blob {
+							filename = "u-boot.dtb";
+							type = "blob-ext";
+						};
+					};
+				};
+
+				configurations {
+					default = "@config-DEFAULT-SEQ";
+
+					@config-SEQ {
+						description = "NAME";
+						fdt = "fdt-SEQ";
+						firmware = "uboot";
+#ifndef CONFIG_ARMV8_PSCI
+#ifdef CONFIG_OPTEE
+						loadables = "atf", "tee";
+#else
+						loadables = "atf";
+#endif
+#endif
+					};
+				};
+			};
+#ifdef CONFIG_IMX_HAB
+		};
+#endif
+	};
+};
+
+
+&reg_usdhc2_vmmc {
+	bootph-pre-ram;
+	u-boot,off-on-delay-us = <20000>;
+};
+
+&pinctrl_uart2 {
+	bootph-pre-ram;
+};
+
+&pinctrl_usdhc2_gpio {
+	bootph-pre-ram;
+};
+
+&pinctrl_usdhc2 {
+	bootph-pre-ram;
+};
+
+&pinctrl_usdhc3 {
+	bootph-pre-ram;
+};
+
+&pinctrl_wdog {
+	bootph-pre-ram;
+};
+
+&gpio1 {
+	bootph-pre-ram;
+};
+
+&gpio2 {
+	bootph-pre-ram;
+};
+
+&gpio3 {
+	bootph-pre-ram;
+};
+
+&gpio4 {
+	bootph-pre-ram;
+};
+
+&gpio5 {
+	bootph-pre-ram;
+};
+
+&uart2 {
+	bootph-pre-ram;
 };
 
 &usdhc1 {
-	u-boot,dm-spl;
+	bootph-pre-ram;
 	assigned-clocks = <&clk IMX8MN_CLK_USDHC1>;
 	assigned-clock-rates = <400000000>;
 	assigned-clock-parents = <&clk IMX8MN_SYS_PLL1_400M>;
 };
 
 &usdhc2 {
-	u-boot,dm-spl;
+	bootph-pre-ram;
 	sd-uhs-sdr104;
 	sd-uhs-ddr50;
 	assigned-clocks = <&clk IMX8MN_CLK_USDHC2>;
@@ -193,7 +458,7 @@
 };
 
 &usdhc3 {
-	u-boot,dm-spl;
+	bootph-pre-ram;
 	mmc-hs400-1_8v;
 	mmc-hs400-enhanced-strobe;
 	assigned-clocks = <&clk IMX8MN_CLK_USDHC3>;
@@ -201,140 +466,28 @@
 	assigned-clock-parents = <&clk IMX8MN_SYS_PLL1_400M>;
 };
 
-&wdog1 {
-	u-boot,dm-spl;
-};
-
-&binman {
-	 u-boot-spl-ddr {
-		filename = "u-boot-spl-ddr.bin";
-		pad-byte = <0xff>;
-		align-size = <4>;
-		align = <4>;
-
-		u-boot-spl {
-			align-end = <4>;
-		};
-
-		blob_1: blob-ext@1 {
-			filename = "ddr4_imem_1d_201810.bin";
-			size = <0x8000>;
-		};
-
-		blob_2: blob-ext@2 {
-			filename = "ddr4_dmem_1d_201810.bin";
-			size = <0x4000>;
-		};
-
-		blob_3: blob-ext@3 {
-			filename = "ddr4_imem_2d_201810.bin";
-			size = <0x8000>;
-		};
-
-		blob_4: blob-ext@4 {
-			filename = "ddr4_dmem_2d_201810.bin";
-			size = <0x4000>;
-		};
-	};
-
-
-	spl {
-		filename = "spl.bin";
-
-		mkimage {
-			args = "-n spl/u-boot-spl.cfgout -T imx8mimage -e 0x912000";
-
-			blob {
-				filename = "u-boot-spl-ddr.bin";
-			};
-		};
-	};
-
-	itb {
-		filename = "u-boot.itb";
-
-		fit {
-			description = "Configuration to load ATF before U-Boot";
-			#address-cells = <1>;
-			fit,external-offset = <CONFIG_FIT_EXTERNAL_OFFSET>;
-
-			images {
-				uboot {
-					description = "U-Boot (64-bit)";
-					type = "standalone";
-					arch = "arm64";
-					compression = "none";
-					load = <CONFIG_TEXT_BASE>;
-
-					uboot_blob: blob-ext {
-						filename = "u-boot-nodtb.bin";
-					};
-				};
-
-				atf {
-					description = "ARM Trusted Firmware";
-					type = "firmware";
-					arch = "arm64";
-					compression = "none";
-					load = <0x960000>;
-					entry = <0x960000>;
-
-					atf_blob: blob-ext {
-						filename = "bl31.bin";
-					};
-				};
-
-				fdt {
-					description = "NAME";
-					type = "flat_dt";
-					compression = "none";
-
-					uboot_fdt_blob: blob-ext {
-						filename = "u-boot.dtb";
-					};
-				};
-			};
-
-			configurations {
-				default = "conf";
-
-				conf {
-					description = "NAME";
-					firmware = "uboot";
-					loadables = "atf";
-					fdt = "fdt";
-				};
-			};
-		};
-	};
-};
-
 &tmu {
-	u-boot,dm-pre-reloc;
+	bootph-all;
 };
 
 &i2c1 {
-	u-boot,dm-spl;
+	bootph-pre-ram;
 };
 
 &{/soc@0/bus@30800000/i2c@30a20000/bd71837@4b} {
-	u-boot,dm-spl;
+	bootph-pre-ram;
 };
 
 &{/soc@0/bus@30800000/i2c@30a20000/bd71837@4b/regulators} {
-	u-boot,dm-spl;
+	bootph-pre-ram;
 };
 
 &pinctrl_i2c1 {
-	u-boot,dm-spl;
-};
-
-&pinctrl_i2c1_gpio {
-	u-boot,dm-spl;
+	bootph-pre-ram;
 };
 
 &pinctrl_pmic {
-	u-boot,dm-spl;
+	bootph-pre-ram;
 };
 
 &ethphy0 {

@@ -13,7 +13,7 @@
 
 static int gpio_exp_configure(int i2c_bus, int i2c_addr, unsigned char* data)
 {
-#if !defined(CONFIG_DM_I2C)
+#if !CONFIG_IS_ENABLED(DM_I2C)
 
 	i2c_set_bus_num(i2c_bus);
 	if (!i2c_probe(i2c_addr)) {
@@ -82,7 +82,7 @@ static int gpio_exp_configure(int i2c_bus, int i2c_addr, unsigned char* data)
 
 int ea_get_carrier_board_version(int i2c_bus)
 {
-#if !defined(CONFIG_DM_I2C)
+#if !CONFIG_IS_ENABLED(DM_I2C)
 	i2c_set_bus_num(i2c_bus);
 	i2c_init(CONFIG_SYS_I2C_SPEED, PCA6416_ADDR_V2);
 	if (!i2c_probe(PCA6416_ADDR_V3)) {

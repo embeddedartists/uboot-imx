@@ -14,7 +14,7 @@
 
 #include "ea_eeprom.h"
 
-#ifdef CONFIG_DM_I2C
+#if CONFIG_IS_ENABLED(DM_I2C)
 static int ea_dm_i2c_init(struct udevice **i2c_dev)
 {
 	struct udevice *bus;
@@ -41,7 +41,7 @@ static int ea_dm_i2c_init(struct udevice **i2c_dev)
 
 int ea_eeprom_init(void)
 {
-#if !defined(CONFIG_DM_I2C)
+#if !CONFIG_IS_ENABLED(DM_I2C)
 	i2c_set_bus_num(EA_EEPROM_I2C_BUS);
 	i2c_init(CONFIG_SYS_I2C_SPEED, EA_EEPROM_I2C_SLAVE);
 #endif
@@ -51,7 +51,7 @@ int ea_eeprom_init(void)
 
 int ea_eeprom_get_config(ea_eeprom_config_t* config)
 {
-#if !defined(CONFIG_DM_I2C)
+#if !CONFIG_IS_ENABLED(DM_I2C)
 
 	i2c_set_bus_num(EA_EEPROM_I2C_BUS);
 
@@ -119,7 +119,7 @@ int ea_eeprom_ddr_cfg_read(ea_ddr_cfg_t *cfg, ea_ddr_cfg_pair_t* pairs,
 {
 	int to_read;
 
-#ifdef CONFIG_DM_I2C
+#if CONFIG_IS_ENABLED(DM_I2C)
 	int ret;
 	struct udevice *i2c_dev = NULL;
 
@@ -142,7 +142,7 @@ int ea_eeprom_ddr_cfg_read(ea_ddr_cfg_t *cfg, ea_ddr_cfg_pair_t* pairs,
 	if (num < to_read) to_read = num;
 
 
-#if !defined(CONFIG_DM_I2C)
+#if !CONFIG_IS_ENABLED(DM_I2C)
 	ea_eeprom_init();
 	if (i2c_read(EA_EEPROM_I2C_SLAVE,
 		sizeof(ea_eeprom_config_t)+cfg->next*sizeof(ea_ddr_cfg_pair_t),
@@ -184,7 +184,7 @@ int ea_eeprom_read_all_data(uint8_t* buf, int buf_sz, int *read)
         ret = ea_eeprom_get_config(&config);
         if (ret) return ret;
 
-#ifdef CONFIG_DM_I2C
+#if CONFIG_IS_ENABLED(DM_I2C)
 	struct udevice *i2c_dev = NULL;
 
         ret = ea_dm_i2c_init(&i2c_dev);
@@ -198,7 +198,7 @@ int ea_eeprom_read_all_data(uint8_t* buf, int buf_sz, int *read)
 	if (buf_sz < to_read) return -EINVAL;
 
 
-#if !defined(CONFIG_DM_I2C)
+#if !CONFIG_IS_ENABLED(DM_I2C)
 
 	if (i2c_read(EA_EEPROM_I2C_SLAVE,
 		sizeof(ea_eeprom_config_t),

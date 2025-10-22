@@ -55,13 +55,15 @@ int board_early_init_f(void)
 
 int board_phys_sdram_size(phys_size_t *size)
 {
-	ea_config_t *ea_conf = (ea_config_t *)EA_SHARED_CONFIG_MEM;
+	ea_eeprom_config_t cfg;
+	int ret;
 
 	/* default size from configuration file */
 	*size = PHYS_SDRAM_SIZE;
 
-	if (ea_conf->magic == EA_CONFIG_MAGIC) {
-		*size = (ea_conf->ddr_size << 20);
+	ret = ea_eeprom_get_config(&cfg);
+	if (!ret) {
+		*size = (cfg.ddr_size << 20);
 	}
 
 	return 0;
@@ -184,7 +186,7 @@ int board_late_init(void)
 	 * This functionality can be overridden by setting
 	 * the fdt_file variable in the u-boot environment.
 	 */
-	fdt_file = env_get("fdt_file");
+	fdt_file = env_get("fdtfile");
 	if (fdt_file == NULL || strlen(fdt_file) == 0) {
 		carrier_version = ea_get_carrier_board_version(1);
 		if (carrier_version == 3) {
@@ -197,7 +199,7 @@ int board_late_init(void)
 			fdt_file = CONFIG_DEFAULT_FDT_FILE;
 		}
 
-		env_set("fdt_file", fdt_file);
+		env_set("fdtfile", fdt_file);
 	}
 
 	ea_gpio_exp_configure(1);
