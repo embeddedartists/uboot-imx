@@ -15,3 +15,6 @@ obj-y  += ea_board.o
 
 obj-$(CONFIG_EA_IMX_PTP)	+= ea_ptp.o
 
+ifndef CONFIG_XPL_BUILD
+obj-$(CONFIG_USB_TCPC) += tcpc.o
+endif

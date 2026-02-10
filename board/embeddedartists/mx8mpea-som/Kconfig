@@ -1,0 +1,20 @@
+if TARGET_MX8MPEA_SOM
+
+config SYS_BOARD
+	default "mx8mpea-som"
+
+config SYS_VENDOR
+	default "embeddedartists"
+
+config SYS_CONFIG_NAME
+	default "mx8mpea-som"
+
+config IMX_CONFIG
+	default "board/embeddedartists/mx8mpea-som/imximage-8mp-lpddr4.cfg"
+
+config IMX8MP_GP5_LOCK_UPDATE
+	bool "Enable burn GP5_LOCK fuse at boot"
+	help
+	  Select to check the GP5_LOCK fuse and burn it to WP+OP
+
+endif

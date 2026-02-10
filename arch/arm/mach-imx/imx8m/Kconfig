@@ -406,6 +406,19 @@ config TARGET_IMX8MP_DDR4_EVK
 	imply BOOTSTD_FULL
 	imply BOOTSTD_BOOTCOMMAND
 
+config TARGET_MX8MPEA_SOM
+        bool "mx8mpea_som"
+        select IMX8MP
+        select SUPPORT_SPL
+        select IMX8M_LPDDR4
+        select FSL_CAAM
+        select FSL_BLOB
+        select ARCH_MISC_INIT
+        select SPL_CRYPTO if SPL
+        imply OF_UPSTREAM
+        imply BOOTSTD_FULL
+        imply BOOTSTD_BOOTCOMMAND
+
 config TARGET_PICO_IMX8MQ
 	bool "Support Technexion Pico iMX8MQ"
 	select IMX8MQ
@@ -577,5 +590,6 @@ source "board/toradex/verdin-imx8mp/Kconfig"
 source "board/embeddedartists/mx8mmea-som/Kconfig"
 source "board/embeddedartists/mx8mmea-ucom/Kconfig"
 source "board/embeddedartists/mx8mnea-ucom/Kconfig"
+source "board/embeddedartists/mx8mpea-som/Kconfig"
 
 endif
