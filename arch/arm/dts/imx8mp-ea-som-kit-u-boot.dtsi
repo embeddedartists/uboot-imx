@@ -7,8 +7,6 @@
 #include "imx8mp-u-boot.dtsi"
 
 / {
-	model = "NXP i.MX8MPlus LPDDR4 EVK board";
-
 	chosen {
 		bootargs = "console=ttymxc1,115200 earlycon=ec_imx6q,0x30890000,115200";
 	};
