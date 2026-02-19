@@ -93,16 +93,6 @@
 	};
 };
 
-&{/gpio-leds} {
-	/delete-node/ status;
-
-	led-0 {
-		label = "yellow:status";
-		gpios = <&gpio3 16 GPIO_ACTIVE_HIGH>;
-		default-state = "on";
-	};
-};
-
 &pinctrl_i2c1 {
 	bootph-all;
 };
@@ -243,7 +233,7 @@
 };
 
 &ethphy0 {
-	reset-gpios = <&gpio4 22 GPIO_ACTIVE_LOW>;
+	reset-gpios = <&gpio3 16 GPIO_ACTIVE_LOW>;
 	reset-assert-us = <15000>;
 	reset-deassert-us = <100000>;
 };
