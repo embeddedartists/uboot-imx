@@ -30,6 +30,8 @@
 #include <fuse.h>
 #include <mmc.h>
 
+#include "../common/ea_common.h"
+
 DECLARE_GLOBAL_DATA_PTR;
 
 #define UART_PAD_CTRL	(PAD_CTL_DSE6 | PAD_CTL_FSEL1)
@@ -328,6 +330,17 @@ int board_late_init(void)
 {
 #if CONFIG_IS_ENABLED(ENV_IS_IN_MMC)
 	board_late_mmc_env_init();
+#endif
+
+#ifdef CONFIG_FEC_MXC
+	/*
+	 * Loading ethernet addresses must be done in late_init
+	 * since they update the environment (env_set). The
+	 * environment isn't loaded and ready at board_init.
+	 */
+	if (ea_load_ethaddr()) {
+		printf("Failed to load MAC addresses\n");
+	}
 #endif
 
 #ifdef CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
